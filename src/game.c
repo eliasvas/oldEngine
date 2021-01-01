@@ -1,18 +1,20 @@
 #include "platform.h"
 #include "tools.h"
+#include "objloader.h"
 #include "camera.h"
+#include "model.h"
 
 #include "quad.h" 
 global mat4 view, proj;
 
-global Quad q;
 global Camera cam;
+global Model debug_cube;
 
 internal void 
 init(void)
 {
-    quad_init(&q, "../assets/dirt.tga");
     camera_init(&cam);
+    model_init_cube(&debug_cube);
 }
 
 
@@ -32,5 +34,6 @@ render(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0.7,0.8,1,1);
 
-    quad_render(&q);
+
+    model_render(&debug_cube, &proj, &view);
 }

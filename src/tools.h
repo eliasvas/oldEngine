@@ -1996,26 +1996,6 @@ internal void *buf__grow(const void *buf, u32 new_len, u32 element_size)
         buf_free(arr);
 }
 */
-typedef struct Vertex
-{
-   vec3 position; 
-   vec3 normal;
-   vec2 tex_coord;
-}Vertex;
-
-internal Vertex vert(vec3 p, vec3 n, vec2 t)
-{
-    Vertex res;
-    res.position = p;
-    res.normal = n;
-    res.tex_coord = t;
-    return res;
-}
-
-
-
-
-
 
 
 

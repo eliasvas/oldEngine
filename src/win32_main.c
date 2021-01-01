@@ -215,9 +215,7 @@ WinMain(HINSTANCE Instance,
             global_platform.window_width = client_rect.right - client_rect.left;
             global_platform.window_height = client_rect.bottom - client_rect.top;
         }
-        f32 dt = (st.QuadPart - ft.QuadPart)/ (float)fr.QuadPart; //NOTE(ilias): check on actual simulation!!
-        global_platform.dt = 1.f / 60;//dt;
-        global_platform.current_time +=1.f/60;//dt;
+        f32 frame_dt = (st.QuadPart - ft.QuadPart)/ (float)fr.QuadPart; //NOTE(ilias): check on actual simulation!!
         update();
         render();
         SwapBuffers(GetDC(WND));
@@ -226,10 +224,10 @@ WinMain(HINSTANCE Instance,
 
         QueryPerformanceCounter(&ft);
 
-        if (global_platform.vsync){
+        i64 frame_count = ft.QuadPart - st.QuadPart;
+        i64 desired_frame_count = (f32)fr.QuadPart / global_platform.target_fps;
+        if (desired_frame_count > frame_count){
             //NOTE(ilias): wait remaining time --this is wrong
-            i64 frame_count = ft.QuadPart - st.QuadPart;
-            i64 desired_frame_count = (f32)fr.QuadPart / global_platform.target_fps;
             i64 counts_to_wait = desired_frame_count - frame_count;
 
             LARGE_INTEGER begin_wait_time_delta;
@@ -242,6 +240,9 @@ WinMain(HINSTANCE Instance,
                 counts_to_wait -= (end_wait_time_delta.QuadPart - begin_wait_time_delta.QuadPart);
                 begin_wait_time_delta = end_wait_time_delta;
             }
+            f32 wait_dt = (begin_wait_time_delta.QuadPart - end_wait_time_delta.QuadPart)/ (float)fr.QuadPart; //NOTE(ilias): check on actual simulation!!
+            global_platform.dt = frame_dt + wait_dt;
+            global_platform.current_time += global_platform.dt;//dt;
         }
         if (strlen(error_log) != 0){
             MessageBox(WND, error_log, "FATAL ERROR", MB_OK);
