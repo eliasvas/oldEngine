@@ -216,7 +216,7 @@ WinMain(HINSTANCE Instance,
             global_platform.window_height = client_rect.bottom - client_rect.top;
         }
         f32 dt = (st.QuadPart - ft.QuadPart)/ (float)fr.QuadPart; //NOTE(ilias): check on actual simulation!!
-        global_platform.dt = dt;
+        global_platform.dt = 1.f / 60;//dt;
         global_platform.current_time +=1.f/60;//dt;
         update();
         render();

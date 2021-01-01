@@ -38,10 +38,12 @@ quad_init(Quad* q, char *tex_name)
     glBindVertexArray(0);
 }
 
+extern mat4 view, proj;
+
 internal void 
 quad_render(Quad* q)
 {
-    mat4 mvp = m4d(1.f);//if you want you can render with a MVP matrix
+    mat4 mvp = mat4_mul(proj, mat4_mul(view, mat4_translate(v3(0,0,0)))); 
     use_shader(&q->shader);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, q->texture.id);
