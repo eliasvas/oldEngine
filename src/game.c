@@ -3,19 +3,21 @@
 #include "objloader.h"
 #include "camera.h"
 #include "model.h"
-#include "fbo.h"
-
 #include "quad.h" 
-global mat4 view, proj;
+#include "fbo.h"
+#include "renderer.h"
+mat4 view,proj;
 
 global Camera cam;
 global Model debug_cube;
+global Renderer rend;
 
 internal void 
 init(void)
 {
     camera_init(&cam);
     model_init_cube(&debug_cube);
+    renderer_init(&rend);
 }
 
 
@@ -23,9 +25,10 @@ init(void)
 internal void 
 update(void)
 {
+  renderer_begin_frame(&rend);
   camera_update(&cam);
-  proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,100.f); 
-  view = get_view_mat(&cam);
+  rend.proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,100.f); 
+  rend.view = get_view_mat(&cam);
 }
 
 internal void 
@@ -40,9 +43,10 @@ render(void)
       for (int j = 0; j < 20;j+=2)
       {
         debug_cube.position = v3(i + 0.001,sin(i * global_platform.current_time),j);
-        model_render(&debug_cube, &proj, &view);
+        renderer_push_model(&rend, &debug_cube);
       }
     }
 
     //model_render(&debug_cube, &proj, &view);
+    renderer_end_frame(&rend);
 }

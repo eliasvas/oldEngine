@@ -44,6 +44,8 @@ typedef char      b8;
 #define terabytes(val) ((gigabytes(val))*1024LL)
 
 #define PI 3.1415926535897f
+#define TRUE 1
+#define FALSE 0
 
 #ifdef CRTLESS | 1 
 #define offsetof2(type, member) ((unsigned int)((unsigned char*)&((type*)0)->member - (unsigned char*)0)) 

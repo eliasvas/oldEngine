@@ -233,5 +233,15 @@ render_model_textured(Model* m, mat4* projection, mat4* view, vec3 light_pos, ve
     glBindVertexArray(0);
 }
 */
+internal Material 
+material_default(void)
+{
+  Material material = (Material){0};
+  material.ambient = v3(0.3f,0.3f,0.3f);
+  material.diffuse = v3(0.5f,0.5f,0.5f);
+  material.specular = v3(0.1f,0.1f,0.1f);
+  material.shininess = 0.5f;
+}
+
 
 #endif
