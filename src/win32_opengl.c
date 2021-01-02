@@ -82,9 +82,9 @@ GLFunc( TEXIMAGE3D, glTexImage3D);
 GLFunc( BINDIMAGETEXTURE, glBindImageTexture);
 GLFunc( MEMORYBARRIER, glMemoryBarrier);
 GLFunc( COPYIMAGESUBDATA, glCopyImageSubData);
-//GLFunc( BLENDFUNCSEPARATE, glBlendFuncSeparate);
-//GLFunc( DELETEFRAMEBUFFERS, glDeleteFramebuffers);
-//GLFunc( BLITFRAMEBUFFER, glBlitFramebuffer);
+GLFunc( BLENDFUNCSEPARATE, glBlendFuncSeparate);
+GLFunc( DELETEFRAMEBUFFERS, glDeleteFramebuffers);
+GLFunc( BLITFRAMEBUFFER, glBlitFramebuffer);
 
 
 static void *GetGLFuncAddress(const char *name)
@@ -153,10 +153,10 @@ LoadAllOpenGLProcedures()
    glBindImageTexture = (PFNGLBINDIMAGETEXTUREPROC)GetGLFuncAddress("glBindImageTexture");
    glMemoryBarrier = (PFNGLMEMORYBARRIERPROC)GetGLFuncAddress("glMemoryBarrier");
    glCopyImageSubData = (PFNGLCOPYIMAGESUBDATAPROC)GetGLFuncAddress("glCopyImageSubData");
-   //glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC)GetGLFuncAddress("glBlendFuncSeparate");
+   glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC)GetGLFuncAddress("glBlendFuncSeparate");
 
-   //glDeleteFramebuffers =  (PFNGLDELETEFRAMEBUFFERSPROC)GetGLFuncAddress("glDeleteFramebuffers");
-   //glBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)GetGLFuncAddress("glBlitFramebuffer");
+   glDeleteFramebuffers =  (PFNGLDELETEFRAMEBUFFERSPROC)GetGLFuncAddress("glDeleteFramebuffers");
+   glBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)GetGLFuncAddress("glBlitFramebuffer");
 
    //and on and on and on......
 }

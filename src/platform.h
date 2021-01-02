@@ -197,5 +197,9 @@ extern PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage;
 extern PFNGLGENRENDERBUFFERSPROC glGenRenderbuffers;
 extern PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer;
 extern PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
+extern PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate;
+extern PFNGLBLITFRAMEBUFFERPROC glBlitFramebuffer;
+
+
 
 #endif

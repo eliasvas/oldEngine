@@ -31,7 +31,13 @@ renderer_init(Renderer *rend)
 void
 renderer_begin_frame(Renderer *rend)
 {
+  rend->renderer_settings.render_dim = (ivec2){global_platform.window_width, global_platform.window_height};
+
   fbo_resize(&rend->main_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
+  fbo_bind(&rend->main_fbo);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearColor(0.7,0.8,1,1);
+
   fbo_resize(&rend->ui_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
   fbo_resize(&rend->shadowmap_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
   fbo_resize(&rend->depthpeel_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
@@ -42,6 +48,7 @@ renderer_begin_frame(Renderer *rend)
 void
 renderer_end_frame(Renderer *rend)
 {
+  fbo_bind(&rend->main_fbo);
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];
@@ -61,6 +68,10 @@ renderer_end_frame(Renderer *rend)
     glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
     glBindVertexArray(0);
   }
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0,0,rend->renderer_settings.render_dim.x,rend->renderer_settings.render_dim.y);
+
+  fbo_copy_contents(rend->main_fbo.fbo,0);
 }
 
 /*
@@ -85,5 +96,6 @@ void renderer_push_model(Renderer *rend, Model *m)
   data.diff = &m->diff;
   data.spec = &m->spec;
   rend->model_instance_data[rend->model_alloc_pos++] = data;
+
 }
 

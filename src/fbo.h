@@ -108,7 +108,7 @@ fbo_init(u32 width, u32 height, i32 flags)
 static void
 fbo_cleanup(OpenGLFBO *fbo)
 {
-    //glDeleteFramebuffers(1, &fbo->fbo);
+    glDeleteFramebuffers(1, &fbo->fbo);
     for(u32 i = 0; i < array_count(fbo->color_attachments); ++i)
     {
         if(fbo->color_attachments[i])
