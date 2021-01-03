@@ -241,7 +241,8 @@ WinMain(HINSTANCE Instance,
                 begin_wait_time_delta = end_wait_time_delta;
             }
             f32 wait_dt = (begin_wait_time_delta.QuadPart - end_wait_time_delta.QuadPart)/ (float)fr.QuadPart; //NOTE(ilias): check on actual simulation!!
-            global_platform.dt = frame_dt + wait_dt;
+            //global_platform.dt = frame_dt + wait_dt;
+            global_platform.dt = 1.f/60;
             global_platform.current_time += global_platform.dt;//dt;
         }
         if (strlen(error_log) != 0){

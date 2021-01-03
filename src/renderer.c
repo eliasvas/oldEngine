@@ -25,7 +25,7 @@ renderer_init(Renderer *rend)
 
     rend->default_material = material_default();
 
-    shader_load(&rend->shaders[0],"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
+    shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
 }
 
 void
@@ -49,20 +49,24 @@ void
 renderer_end_frame(Renderer *rend)
 {
   fbo_bind(&rend->main_fbo);
+  mat4 inv_view = mat4_inv(rend->view);
+  vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];
 
     use_shader(&rend->shaders[0]);
-    shader_set_int(&rend->shaders[0], "sampler", 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data.diff->id);
-    shader_set_int(&rend->shaders[0], "m.specular", 1);
+    shader_set_int(&rend->shaders[0], "sampler", 0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, data.spec->id);
+    shader_set_int(&rend->shaders[0], "sampler2", 1);
     shader_set_mat4fv(&rend->shaders[0], "model", (GLfloat*)data.model.elements);
     shader_set_mat4fv(&rend->shaders[0], "view", (GLfloat*)rend->view.elements);
     shader_set_mat4fv(&rend->shaders[0], "proj", (GLfloat*)rend->proj.elements);
+    shader_set_vec3(&rend->shaders[0], "light_pos", v3(10*cos(global_platform.current_time*4),10*sin(global_platform.current_time),sin(global_platform.current_time * 3.4f)));
+    shader_set_vec3(&rend->shaders[0], "view_pos", view_pos);
 
     glBindVertexArray(data.model_vao);
     glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);

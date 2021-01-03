@@ -34,19 +34,17 @@ update(void)
 internal void 
 render(void)
 {
-    glViewport(0,0,global_platform.window_width, global_platform.window_height);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.7,0.8,1,1);
-
-    for (int i = 0; i < 20; i+=2)
+    for (i32 i = 0; i < 20; i+=2)
     {
-      for (int j = 0; j < 20;j+=2)
+      for (i32 j = 0; j < 20;j+=2)
       {
-        debug_cube.position = v3(i + 0.001,sin(i * global_platform.current_time),j);
+        debug_cube.position = v3(i + 0.001,sin(i * global_platform.current_time),-j);
         renderer_push_model(&rend, &debug_cube);
       }
     }
 
-    //model_render(&debug_cube, &proj, &view);
+
+    debug_cube.position = v3(10*cos(global_platform.current_time*4),10*sin(global_platform.current_time),sin(global_platform.current_time * 3.4f));
+    renderer_push_model(&rend, &debug_cube);
     renderer_end_frame(&rend);
 }
