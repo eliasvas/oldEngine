@@ -58,15 +58,21 @@ renderer_end_frame(Renderer *rend)
     use_shader(&rend->shaders[0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data.diff->id);
-    shader_set_int(&rend->shaders[0], "sampler", 0);
+    shader_set_int(&rend->shaders[0], "material.diffuse", 0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, data.spec->id);
-    shader_set_int(&rend->shaders[0], "sampler2", 1);
+    shader_set_int(&rend->shaders[0], "material.specular", 1);
     shader_set_mat4fv(&rend->shaders[0], "model", (GLfloat*)data.model.elements);
     shader_set_mat4fv(&rend->shaders[0], "view", (GLfloat*)rend->view.elements);
     shader_set_mat4fv(&rend->shaders[0], "proj", (GLfloat*)rend->proj.elements);
-    shader_set_vec3(&rend->shaders[0], "light_pos", v3(10*cos(global_platform.current_time*4),10*sin(global_platform.current_time),sin(global_platform.current_time * 3.4f)));
     shader_set_vec3(&rend->shaders[0], "view_pos", view_pos);
+    //set material properties
+    shader_set_float(&rend->shaders[0], "material.shininess", data.material->shininess);
+    //light properties
+    shader_set_vec3(&rend->shaders[0], "light.position", v3(10*cos(global_platform.current_time*4),10*sin(global_platform.current_time),sin(global_platform.current_time * 3.4f)));
+    shader_set_vec3(&rend->shaders[0], "light.ambient", v3(0.2,0.2,0.2));
+    shader_set_vec3(&rend->shaders[0], "light.diffuse", v3(0.6,0.6,0.6));
+    shader_set_vec3(&rend->shaders[0], "light.specular", v3(1,1,0.8f));
 
     glBindVertexArray(data.model_vao);
     glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
@@ -99,6 +105,8 @@ void renderer_push_model(Renderer *rend, Model *m)
   data.model_vertex_count = m->mesh->vertices_count;
   data.diff = &m->diff;
   data.spec = &m->spec;
+  data.material = ALLOC(sizeof(Material));
+  *data.material = material_default();
   rend->model_instance_data[rend->model_alloc_pos++] = data;
 
 }
