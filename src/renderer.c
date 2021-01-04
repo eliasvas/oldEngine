@@ -1,5 +1,6 @@
 #include "renderer.h"
 #include "fbo.h"
+#include "skybox.h"
 #include "tools.h"
 
 local_persist char point_attr[7][64] = {
@@ -49,6 +50,9 @@ renderer_init(Renderer *rend)
     rend->directional_light = (DirLight){v3(-0.2,-1,-0.3),v3(0.2,0.1,0.1),v3(0.5,0.4,0.4),v3(0.7,0.6,0.6)};
     rend->point_light_count = 0;
 
+    char **faces= cubemap_default();
+    skybox_init(&rend->skybox, faces);
+
     shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
 }
 
@@ -76,6 +80,8 @@ renderer_end_frame(Renderer *rend)
   fbo_bind(&rend->main_fbo);
   mat4 inv_view = mat4_inv(rend->view);
   vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
+
+  skybox_render(&rend->skybox, rend->proj, rend->view);
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];

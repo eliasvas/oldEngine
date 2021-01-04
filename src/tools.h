@@ -1698,6 +1698,42 @@ internal void tga_load_image_data(FILE *file, TGAInfo *info) {
 			info->image_data[i] = info->image_data[i+2];
 			info->image_data[i+2] = aux;
 		}
+  /*
+    //flip the image
+    u8* pixels_new = (u8*)ALLOC(sizeof(u8) * info->width * info->height * (info->bits_per_pixel / 8));
+    i32 new_i = 0;
+    if (mode == 3)
+    {
+      for (i32 j = info->height - 1; j >=0; --j)
+      {
+          for (i32 i = 0; i < info->width-1; ++i)
+          {
+              i32 index = info->width * 3 *j + 3 * i;
+              u8 cmp[3];
+              pixels_new[new_i++]= (u8)(info->image_data[index]);
+              pixels_new[new_i++]= (u8)(info->image_data[index+1]);
+              pixels_new[new_i++]= (u8)(info->image_data[index+2]);
+        }
+      }
+
+    info->image_data = pixels_new;
+    }else if (mode == 4)
+    {
+     for (i32 j = info->height - 1; j >=0; --j)
+      {
+          for (i32 i = 0; i < info->width; ++i)
+          {
+              i32 index = info->width * 4 *j + 4 * i;
+              u8 cmp[3];
+              pixels_new[new_i++]= (u8)(info->image_data[index]);
+              pixels_new[new_i++]= (u8)(info->image_data[index+1]);
+              pixels_new[new_i++]= (u8)(info->image_data[index+2]);
+              pixels_new[new_i++]= (u8)(info->image_data[index+3]);
+        }
+      }
+    info->image_data = pixels_new;
+    }
+    */
 }
 
 internal TGAInfo* 

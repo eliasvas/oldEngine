@@ -3,6 +3,7 @@
 #include "tools.h"
 #include "shader.h"
 #include "texture.h"
+#include "skybox.h"
 #include "model.h"
 #include "fbo.h"
 
@@ -56,6 +57,7 @@ typedef struct Renderer
   u32 point_light_count;
   DirLight directional_light;
   Material default_material;
+  Skybox skybox;
   mat4 view;
   mat4 proj;
 }Renderer;
