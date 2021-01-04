@@ -55,6 +55,7 @@ typedef struct PointLight {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+    f32 shininess;
 }PointLight;  
 
 //NOTE(ilias): these are for debug, in case the renderer

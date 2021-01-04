@@ -2,6 +2,27 @@
 #include "fbo.h"
 #include "tools.h"
 
+local_persist char point_attr[7][64] = {
+        "point_lights[x].position",
+        "point_lights[x].ambient",
+        "point_lights[x].diffuse",
+        "point_lights[x].specular",
+
+        "point_lights[x].constant",
+        "point_lights[x].linear",
+        "point_lights[x].quadratic",
+};
+local_persist char big_point_attr[7][64] = {
+        "point_lights[xx].position",
+        "point_lights[xx].ambient",
+        "point_lights[xx].diffuse",
+        "point_lights[xx].specular",
+
+        "point_lights[xx].constant",
+        "point_lights[xx].linear",
+        "point_lights[xx].quadratic",
+};
+
 void
 renderer_init(Renderer *rend)
 {
@@ -25,6 +46,9 @@ renderer_init(Renderer *rend)
 
     rend->default_material = material_default();
 
+    rend->directional_light = (DirLight){v3(-0.2,-1,-0.3),v3(0.2,0.1,0.1),v3(0.5,0.4,0.4),v3(0.7,0.6,0.6)};
+    rend->point_light_count = 0;
+
     shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
 }
 
@@ -43,6 +67,7 @@ renderer_begin_frame(Renderer *rend)
   fbo_resize(&rend->depthpeel_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
   rend->current_fbo = &rend->main_fbo;
   rend->model_alloc_pos = 0;
+  rend->point_light_count = 0;
 }
 
 void
@@ -69,10 +94,47 @@ renderer_end_frame(Renderer *rend)
     //set material properties
     shader_set_float(&rend->shaders[0], "material.shininess", data.material->shininess);
     //light properties
-    shader_set_vec3(&rend->shaders[0], "light.position", v3(10*cos(global_platform.current_time*4),10*sin(global_platform.current_time),sin(global_platform.current_time * 3.4f)));
-    shader_set_vec3(&rend->shaders[0], "light.ambient", v3(0.2,0.2,0.2));
-    shader_set_vec3(&rend->shaders[0], "light.diffuse", v3(0.6,0.6,0.6));
-    shader_set_vec3(&rend->shaders[0], "light.specular", v3(1,1,0.8f));
+    shader_set_int(&rend->shaders[0], "point_light_count", rend->point_light_count);
+    for (i32 i = 0; i < rend->point_light_count;++i)
+    {
+      if (i < 10)
+      {
+        point_attr[0][13] = '0'+i;
+        point_attr[1][13] = '0'+i;
+        point_attr[2][13] = '0'+i;
+        point_attr[3][13] = '0'+i;
+        point_attr[4][13] = '0'+i;
+        point_attr[5][13] = '0'+i;
+        point_attr[6][13] = '0'+i;
+        shader_set_vec3(&rend->shaders[0],point_attr[0], rend->point_lights[i].position);
+        shader_set_vec3(&rend->shaders[0],point_attr[1], rend->point_lights[i].ambient);
+        shader_set_vec3(&rend->shaders[0],point_attr[2], rend->point_lights[i].diffuse);
+        shader_set_vec3(&rend->shaders[0],point_attr[3], rend->point_lights[i].specular);
+        shader_set_float(&rend->shaders[0],point_attr[4], rend->point_lights[i].constant);
+        shader_set_float(&rend->shaders[0],point_attr[5], rend->point_lights[i].linear);
+        shader_set_float(&rend->shaders[0],point_attr[6], rend->point_lights[i].quadratic);
+      }
+      else
+      {
+
+        point_attr[0][13] = '0'+ (i / 10);
+        point_attr[0][14] = '0'+ (i % 10);
+        shader_set_vec3(&rend->shaders[0],big_point_attr[0], rend->point_lights[i].position);
+        shader_set_vec3(&rend->shaders[0],big_point_attr[1], rend->point_lights[i].ambient);
+        shader_set_vec3(&rend->shaders[0],big_point_attr[2], rend->point_lights[i].diffuse);
+        shader_set_vec3(&rend->shaders[0],big_point_attr[3], rend->point_lights[i].specular);
+        shader_set_float(&rend->shaders[0],big_point_attr[4], rend->point_lights[i].constant);
+        shader_set_float(&rend->shaders[0],big_point_attr[5], rend->point_lights[i].linear);
+        shader_set_float(&rend->shaders[0],big_point_attr[6], rend->point_lights[i].quadratic);
+      }
+    }
+    //directional light properties
+    shader_set_vec3(&rend->shaders[0], "dirlight.direction", rend->directional_light.direction);
+    shader_set_vec3(&rend->shaders[0], "dirlight.ambient", rend->directional_light.ambient);
+    shader_set_vec3(&rend->shaders[0], "dirlight.diffuse", rend->directional_light.diffuse);
+    shader_set_vec3(&rend->shaders[0], "dirlight.specular", rend->directional_light.specular);
+
+
 
     glBindVertexArray(data.model_vao);
     glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
@@ -110,4 +172,9 @@ void renderer_push_model(Renderer *rend, Model *m)
   rend->model_instance_data[rend->model_alloc_pos++] = data;
 
 }
+void renderer_push_point_light(Renderer *rend, PointLight l)
+{
+  rend->point_lights[rend->point_light_count++] = l;
+}
+
 

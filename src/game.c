@@ -44,7 +44,11 @@ render(void)
     }
 
 
+    renderer_push_point_light(&rend,(PointLight){v3(10*cos(global_platform.current_time*4),10*sin(global_platform.current_time),sin(global_platform.current_time * 3.4f)),
+        1.f,0.09f,0.0032f,v3(0.2,0.2,0.2),v3(0.7,0.6,0.6),v3(1,0.9,0.8),256.f});
+
     debug_cube.position = v3(10*cos(global_platform.current_time*4),10*sin(global_platform.current_time),sin(global_platform.current_time * 3.4f));
     renderer_push_model(&rend, &debug_cube);
     renderer_end_frame(&rend);
 }
+
