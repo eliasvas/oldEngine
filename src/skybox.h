@@ -125,7 +125,8 @@ skybox_init(Skybox* skybox, char**faces) {
 internal void 
 skybox_render(Skybox* skybox, mat4 proj, mat4 view) {
     use_shader(&skybox->shader);
-    glDepthMask(GL_FALSE);
+    //glDepthMask(GL_FALSE);
+    glDepthFunc(GL_LEQUAL);
     glBindVertexArray(skybox->vao);
     shader_set_mat4fv(&skybox->shader, "uniform_projection_matrix", (float*)proj.elements);
     shader_set_mat4fv(&skybox->shader, "uniform_view_matrix", (float*)view.elements);
@@ -134,7 +135,8 @@ skybox_render(Skybox* skybox, mat4 proj, mat4 view) {
     shader_set_int(&skybox->shader, "skybox", 0);
 
     glDrawArrays(GL_TRIANGLES, 0,36);
-    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
+    //glDepthMask(GL_TRUE);
 }
 
 #endif

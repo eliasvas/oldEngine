@@ -53,7 +53,8 @@ renderer_init(Renderer *rend)
     char **faces= cubemap_default();
     skybox_init(&rend->skybox, faces);
 
-    shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
+    shader_load(&rend->shaders[1],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
+    shader_load(&rend->shaders[0],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
 }
 
 void
@@ -81,7 +82,6 @@ renderer_end_frame(Renderer *rend)
   mat4 inv_view = mat4_inv(rend->view);
   vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
 
-  skybox_render(&rend->skybox, rend->proj, rend->view);
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];
@@ -93,6 +93,12 @@ renderer_end_frame(Renderer *rend)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, data.spec->id);
     shader_set_int(&rend->shaders[0], "material.specular", 1);
+
+    //in case we need the skybox's texture for the rendering
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, rend->skybox.tex_id);
+    shader_set_int(&rend->skybox.shader, "skybox", 3);
+
     shader_set_mat4fv(&rend->shaders[0], "model", (GLfloat*)data.model.elements);
     shader_set_mat4fv(&rend->shaders[0], "view", (GLfloat*)rend->view.elements);
     shader_set_mat4fv(&rend->shaders[0], "proj", (GLfloat*)rend->proj.elements);
@@ -146,6 +152,9 @@ renderer_end_frame(Renderer *rend)
     glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
     glBindVertexArray(0);
   }
+
+  //at the end we render the skybox
+  skybox_render(&rend->skybox, rend->proj, rend->view);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0,0,rend->renderer_settings.render_dim.x,rend->renderer_settings.render_dim.y);
 
