@@ -5,7 +5,7 @@ in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 uniform float flag;
-float offset = 1.0 / 200.0; //tweak this
+float offset = 1.0 / 300.0; //tweak this
 
 
 
@@ -41,6 +41,7 @@ void main()
 		KernelColor += SampleTex[i] * kernel[i];
 	
 	FragColor = vec4(vec3(texture(screenTexture, TexCoords)), 1.0) * (1 - flag) + vec4(KernelColor,1.0) * (flag);
-	float gamma = 1.0;
+	//FragColor = vec4(KernelColor,1.0);
+	float gamma = 2.2;
     FragColor.rgb = pow(FragColor.rgb, vec3(gamma));
 }
