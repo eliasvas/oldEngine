@@ -78,7 +78,8 @@ void main()
 		specular = point_lights[i].specular * spec * vec3(texture(material.specular,f_tex_coord));
 		
 		float distance = length(point_lights[i].position - f_frag_pos);
-		float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
+		//float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
+		float attenuation = 1.0/(distance);
 		ambient *= attenuation;
 		diffuse *= attenuation;
 		specular *= attenuation;

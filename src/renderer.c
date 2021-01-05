@@ -23,6 +23,15 @@ local_persist char big_point_attr[7][64] = {
         "point_lights[xx].linear",
         "point_lights[xx].quadratic",
 };
+local_persist f32 screen_verts[] = { 
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
+};
 
 void
 renderer_init(Renderer *rend)
@@ -37,6 +46,7 @@ renderer_init(Renderer *rend)
 
 
     rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_DEPTH);
+    rend->postproc_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_DEPTH);
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
     rend->shadowmap_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_DEPTH);
     rend->depthpeel_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_COLOR_0 | FBO_DEPTH);
@@ -47,14 +57,30 @@ renderer_init(Renderer *rend)
 
     rend->default_material = material_default();
 
-    rend->directional_light = (DirLight){v3(-0.2,-1,-0.3),v3(0.2,0.1,0.1),v3(0.5,0.4,0.4),v3(0.7,0.6,0.6)};
+    rend->directional_light = (DirLight){v3(-0.2,-1,-0.3),v3(0.7,0.6,0.6),v3(0.8,0.7,0.7),v3(0.9,0.8,0.8)};
     rend->point_light_count = 0;
 
     char **faces= cubemap_default();
     skybox_init(&rend->skybox, faces);
 
-    shader_load(&rend->shaders[1],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
-    shader_load(&rend->shaders[0],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
+    //initialize postproc VAO
+    {
+        GLuint quad_vbo;
+        glGenVertexArrays(1, &rend->postproc_vao);
+        glGenBuffers(1, &quad_vbo);
+        glBindVertexArray(rend->postproc_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, quad_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(screen_verts), &screen_verts, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(GLfloat)));
+        glBindVertexArray(0); 
+    }
+
+    shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
+    shader_load(&rend->shaders[1],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
+    shader_load(&rend->shaders[2],"../assets/shaders/postproc.vert","../assets/shaders/postproc.frag");
 }
 
 void
@@ -62,12 +88,21 @@ renderer_begin_frame(Renderer *rend)
 {
   rend->renderer_settings.render_dim = (ivec2){global_platform.window_width, global_platform.window_height};
 
+  fbo_resize(&rend->postproc_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
+  fbo_bind(&rend->postproc_fbo);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearColor(0,0,0,0);
+
+
   fbo_resize(&rend->main_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
   fbo_bind(&rend->main_fbo);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0.7,0.8,1,1);
 
   fbo_resize(&rend->ui_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
+  fbo_bind(&rend->main_fbo);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearColor(0,0,0,0);
   fbo_resize(&rend->shadowmap_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
   fbo_resize(&rend->depthpeel_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
   rend->current_fbo = &rend->main_fbo;
@@ -155,10 +190,27 @@ renderer_end_frame(Renderer *rend)
 
   //at the end we render the skybox
   skybox_render(&rend->skybox, rend->proj, rend->view);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, rend->postproc_fbo.fbo);
+  glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[0]);
+  //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  //glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y);
+
+    glEnable(GL_DEPTH_TEST);
+    use_shader(&rend->shaders[2]);
+    glBindVertexArray(rend->postproc_vao);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[0]);
+    shader_set_int(&rend->shaders[2],"screenTexture",0);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0,0,rend->renderer_settings.render_dim.x,rend->renderer_settings.render_dim.y);
 
-  fbo_copy_contents(rend->main_fbo.fbo,0);
+  //fbo_copy_contents(rend->main_fbo.fbo,0);
+  fbo_copy_contents(rend->postproc_fbo.fbo,0);
+  //fbo_copy_contents(rend->ui_fbo.fbo,0);
 }
 
 /*

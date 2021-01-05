@@ -41,12 +41,14 @@ typedef struct Renderer
   RendererSettings renderer_settings;
 
   OpenGLFBO *current_fbo;
+  OpenGLFBO postproc_fbo;
   OpenGLFBO main_fbo;
   OpenGLFBO ui_fbo;
   OpenGLFBO shadowmap_fbo;
   OpenGLFBO depthpeel_fbo;
   
 
+  GLuint postproc_vao;
   GLuint model_vao;
   RendererModelData model_instance_data[RENDERER_MAX_MODELS];
   u32 model_alloc_pos;
