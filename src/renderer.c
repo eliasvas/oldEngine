@@ -78,8 +78,8 @@ renderer_init(Renderer *rend)
         glBindVertexArray(0); 
     }
 
-    shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
-    shader_load(&rend->shaders[1],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
+    shader_load(&rend->shaders[1],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
+    shader_load(&rend->shaders[0],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
     shader_load(&rend->shaders[2],"../assets/shaders/postproc.vert","../assets/shaders/postproc.frag");
 }
 

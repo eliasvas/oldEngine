@@ -28,7 +28,7 @@ camera_init(Camera* cam)
     cam->up = v3(0.f,1.f,0.f);
     cam->yaw = -90.0f;
     
-    cam->camera_speed = 4.f;
+    cam->camera_speed = 10.f;
     cam->first_mouse = 0;
 }
 
