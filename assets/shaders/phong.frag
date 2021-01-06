@@ -42,7 +42,7 @@ uniform sampler2D shadow_map;
 
 float shadow_calc()
 {
-	float bias = max(0.05 * (1.0 - dot(f_normal, dirlight.direction)), 0.005);
+	float bias = 0.001;
 	// perform perspective divide
     vec3 proj_coords = f_frag_pos_ls.xyz / f_frag_pos_ls.w;
     // transform to [0,1] range
@@ -100,13 +100,13 @@ void main()
 		spec = pow(max(dot(view_dir, reflect_dir),0.0),256);
 		specular = point_lights[i].specular * spec * vec3(texture(material.specular,f_tex_coord));
 		
-		float distance = length(point_lights[i].position - f_frag_pos);
+		float distance = abs(length(point_lights[i].position - f_frag_pos));
 		//float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
 		float attenuation = 1.0/(distance);
 		ambient *= attenuation;
 		diffuse *= attenuation;
 		specular *= attenuation;
-		color += (shadow*(specular + diffuse) + ambient);
+		color += ((specular + diffuse)*10 + ambient);
 	}
 	FragColor = vec4(color,1.0);
 }

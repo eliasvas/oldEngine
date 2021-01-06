@@ -38,16 +38,16 @@ render(void)
     {
       for (i32 j = 0; j < 20;j+=2)
       {
-        debug_cube.position = v3(i + 0.001,sin(i * global_platform.current_time),-j);
+        debug_cube.position = v3(i + 0.001,sin(i * global_platform.current_time/10),-j);
         renderer_push_model(&rend, &debug_cube);
       }
     }
 
 
-    renderer_push_point_light(&rend,(PointLight){v3(10*cos(global_platform.current_time*4),10*sin(global_platform.current_time),sin(global_platform.current_time * 3.4f)),
-        1.f,0.09f,0.0032f,v3(0.8,0.8,0.8),v3(0.9,0.8,0.8),v3(1,0.9,0.8),256.f});
+    renderer_push_point_light(&rend,(PointLight){v3(10,40*sin(global_platform.current_time),-10),
+        1.f,0.09f,0.0032f,v3(0.5,0.5,0.5),v3(0.9,0.8,0.8),v3(1,0.9,0.8),256.f});
 
-    debug_cube.position = v3(10*cos(global_platform.current_time*4),10*sin(global_platform.current_time),sin(global_platform.current_time * 3.4f));
+    debug_cube.position = v3(10,40*sin(global_platform.current_time),-10);
     renderer_push_model(&rend, &debug_cube);
     renderer_end_frame(&rend);
 }
