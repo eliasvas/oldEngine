@@ -57,7 +57,7 @@ renderer_init(Renderer *rend)
 
     rend->default_material = material_default();
 
-    rend->directional_light = (DirLight){v3(-0.2,-1,-0.3),v3(0.5,0.4,0.4),v3(0.6,0.5,0.5),v3(1.f,0.9f,0.9f)};
+    rend->directional_light = (DirLight){v3(-0.2,-1,-0.3),v3(0.8,0.7,0.7),v3(0.8,0.7,0.7),v3(0.9f,0.9f,0.9f)};
     rend->point_light_count = 0;
 
     char **faces= cubemap_default();

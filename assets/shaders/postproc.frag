@@ -42,6 +42,15 @@ void main()
 	
 	FragColor = vec4(vec3(texture(screenTexture, TexCoords)), 1.0) * (1 - flag) + vec4(KernelColor,1.0) * (flag);
 	//FragColor = vec4(KernelColor,1.0);
-	float gamma = 1.0;
-    FragColor.rgb = pow(FragColor.rgb, vec3(gamma));
+	
+	float exposure = 1.0;
+	float gamma = 2.2;
+    //FragColor.rgb = pow(FragColor.rgb, vec3(gamma));
+	
+	// reinhard tone mapping
+    vec3 mapped = vec3(1.0) - exp(-FragColor.rgb * exposure);
+    // gamma correction 
+    mapped = pow(mapped, vec3(gamma));
+  
+    FragColor = vec4(mapped, 1.0);
 }
