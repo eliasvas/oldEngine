@@ -4,6 +4,7 @@ out vec4 FragColor;
 in vec2 f_tex_coord;
 in vec3 f_frag_pos;
 in vec3 f_normal;
+in vec4 f_frag_pos_ls;
 
 struct Material {
     sampler2D diffuse;
@@ -36,6 +37,25 @@ uniform Material material;
 uniform PointLight point_lights[MAX_POINT_LIGHTS];
 uniform DirLight dirlight;
 uniform int point_light_count;
+uniform sampler2D shadow_map;
+
+
+float shadow_calc()
+{
+	float bias = max(0.05 * (1.0 - dot(f_normal, dirlight.direction)), 0.005);
+	// perform perspective divide
+    vec3 proj_coords = f_frag_pos_ls.xyz / f_frag_pos_ls.w;
+    // transform to [0,1] range
+    proj_coords = proj_coords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closest_depth = texture(shadow_map, proj_coords.xy).r; 
+    // get depth of current fragment from light's perspective
+    float current_depth = proj_coords.z;
+    // check whether current frag pos is in shadow
+    float shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
+
+    return 1.0 - shadow;
+}
 
 
 void main()
@@ -54,13 +74,16 @@ void main()
 	float spec = pow(max(dot(view_dir, reflect_dir),0.0),4);
 	vec3 specular = dirlight.specular * spec * vec3(texture(material.specular,f_tex_coord));
 	
-	vec3 color = (ambient + diffuse + specular);
+	float shadow = shadow_calc();
+	
+	vec3 color = (shadow*(specular + diffuse) + ambient);
 
 	//maybe have them per-light but I dont see the reason tbh..
 	float constant = 1.f;
 	float linear = 0.09;
 	float quadratic = 0.032;
-
+	
+	
 	for(int i = 0; i < point_light_count;++i)
 	{
 		ambient = point_lights[i].ambient * vec3(texture(material.diffuse,f_tex_coord));	
@@ -83,7 +106,7 @@ void main()
 		ambient *= attenuation;
 		diffuse *= attenuation;
 		specular *= attenuation;
-		color += (ambient + diffuse + specular);
+		color += (shadow*(specular + diffuse) + ambient);
 	}
 	FragColor = vec4(color,1.0);
 }

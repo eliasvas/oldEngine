@@ -48,7 +48,7 @@ renderer_init(Renderer *rend)
     rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_DEPTH);
     rend->postproc_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_DEPTH);
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
-    rend->shadowmap_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_DEPTH);
+    rend->shadowmap_fbo = fbo_init(1024 * 2, 1024 * 2, FBO_DEPTH);
     rend->depthpeel_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_COLOR_0 | FBO_DEPTH);
     rend->current_fbo = &rend->main_fbo;
     
@@ -57,7 +57,7 @@ renderer_init(Renderer *rend)
 
     rend->default_material = material_default();
 
-    rend->directional_light = (DirLight){v3(-0.2,-1,-0.3),v3(0.7,0.6,0.6),v3(0.8,0.7,0.7),v3(0.9,0.8,0.8)};
+    rend->directional_light = (DirLight){v3(-0.2,-1,-0.3),v3(0.7,0.6,0.6),v3(0.8,0.7,0.7),v3(1.f,0.9f,0.9f)};
     rend->point_light_count = 0;
 
     char **faces= cubemap_default();
@@ -78,9 +78,10 @@ renderer_init(Renderer *rend)
         glBindVertexArray(0); 
     }
 
-    shader_load(&rend->shaders[1],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
-    shader_load(&rend->shaders[0],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
+    shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
+    shader_load(&rend->shaders[1],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
     shader_load(&rend->shaders[2],"../assets/shaders/postproc.vert","../assets/shaders/postproc.frag");
+    shader_load(&rend->shaders[3],"../assets/shaders/shadowmap.vert","../assets/shaders/shadowmap.frag");
 }
 
 void
@@ -93,6 +94,11 @@ renderer_begin_frame(Renderer *rend)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0,0,0,0);
 
+  fbo_bind(&rend->shadowmap_fbo);
+  glClear(GL_DEPTH_BUFFER_BIT);
+  //glClearColor(1,1,1,1);
+
+
 
   fbo_resize(&rend->main_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
   fbo_bind(&rend->main_fbo);
@@ -103,45 +109,57 @@ renderer_begin_frame(Renderer *rend)
   fbo_bind(&rend->main_fbo);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0,0,0,0);
-  fbo_resize(&rend->shadowmap_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
   fbo_resize(&rend->depthpeel_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
   rend->current_fbo = &rend->main_fbo;
   rend->model_alloc_pos = 0;
   rend->point_light_count = 0;
 }
 
-void
-renderer_end_frame(Renderer *rend)
+
+//here we put the draw calls for everything that needs shadowmapping!
+internal void
+renderer_render_scene3D(Renderer *rend,Shader *shader)
 {
-  fbo_bind(&rend->main_fbo);
   mat4 inv_view = mat4_inv(rend->view);
   vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
-
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];
+    mat4 ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, 0.01f, 50.f);
+    //mat4 light_space_matrix = mat4_mul(ortho_proj, mat4_mul(
+     //     mat4_translate(v3(rend->view.elements[3][0],rend->view.elements[3][1] + 10.f,rend->view.elements[3][2])), mat4_rotate(-90.f, v3(1.f,0.f,0.f))));
 
-    use_shader(&rend->shaders[0]);
+    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,20,0), v3(10,0,0), v3(0,1,0)));
+
+
+
+    use_shader(&shader[0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data.diff->id);
-    shader_set_int(&rend->shaders[0], "material.diffuse", 0);
+    shader_set_int(&shader[0], "material.diffuse", 0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, data.spec->id);
-    shader_set_int(&rend->shaders[0], "material.specular", 1);
+    shader_set_int(&shader[0], "material.specular", 1);
 
     //in case we need the skybox's texture for the rendering
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_CUBE_MAP, rend->skybox.tex_id);
     shader_set_int(&rend->skybox.shader, "skybox", 3);
 
-    shader_set_mat4fv(&rend->shaders[0], "model", (GLfloat*)data.model.elements);
-    shader_set_mat4fv(&rend->shaders[0], "view", (GLfloat*)rend->view.elements);
-    shader_set_mat4fv(&rend->shaders[0], "proj", (GLfloat*)rend->proj.elements);
-    shader_set_vec3(&rend->shaders[0], "view_pos", view_pos);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo.depth_attachment);
+    shader_set_int(&shader[0], "shadow_map", 4);
+
+
+    shader_set_mat4fv(&shader[0], "model", (GLfloat*)data.model.elements);
+    shader_set_mat4fv(&shader[0], "view", (GLfloat*)rend->view.elements);
+    shader_set_mat4fv(&shader[0], "proj", (GLfloat*)rend->proj.elements);
+    shader_set_mat4fv(&shader[0], "light_space_matrix", (GLfloat*)light_space_matrix.elements);
+    shader_set_vec3(&shader[0], "view_pos", view_pos);
     //set material properties
-    shader_set_float(&rend->shaders[0], "material.shininess", data.material->shininess);
+    shader_set_float(&shader[0], "material.shininess", data.material->shininess);
     //light properties
-    shader_set_int(&rend->shaders[0], "point_light_count", rend->point_light_count);
+    shader_set_int(&shader[0], "point_light_count", rend->point_light_count);
     for (i32 i = 0; i < rend->point_light_count;++i)
     {
       if (i < 10)
@@ -153,33 +171,33 @@ renderer_end_frame(Renderer *rend)
         point_attr[4][13] = '0'+i;
         point_attr[5][13] = '0'+i;
         point_attr[6][13] = '0'+i;
-        shader_set_vec3(&rend->shaders[0],point_attr[0], rend->point_lights[i].position);
-        shader_set_vec3(&rend->shaders[0],point_attr[1], rend->point_lights[i].ambient);
-        shader_set_vec3(&rend->shaders[0],point_attr[2], rend->point_lights[i].diffuse);
-        shader_set_vec3(&rend->shaders[0],point_attr[3], rend->point_lights[i].specular);
-        shader_set_float(&rend->shaders[0],point_attr[4], rend->point_lights[i].constant);
-        shader_set_float(&rend->shaders[0],point_attr[5], rend->point_lights[i].linear);
-        shader_set_float(&rend->shaders[0],point_attr[6], rend->point_lights[i].quadratic);
+        shader_set_vec3(&shader[0],point_attr[0], rend->point_lights[i].position);
+        shader_set_vec3(&shader[0],point_attr[1], rend->point_lights[i].ambient);
+        shader_set_vec3(&shader[0],point_attr[2], rend->point_lights[i].diffuse);
+        shader_set_vec3(&shader[0],point_attr[3], rend->point_lights[i].specular);
+        shader_set_float(&shader[0],point_attr[4], rend->point_lights[i].constant);
+        shader_set_float(&shader[0],point_attr[5], rend->point_lights[i].linear);
+        shader_set_float(&shader[0],point_attr[6], rend->point_lights[i].quadratic);
       }
       else
       {
 
         point_attr[0][13] = '0'+ (i / 10);
         point_attr[0][14] = '0'+ (i % 10);
-        shader_set_vec3(&rend->shaders[0],big_point_attr[0], rend->point_lights[i].position);
-        shader_set_vec3(&rend->shaders[0],big_point_attr[1], rend->point_lights[i].ambient);
-        shader_set_vec3(&rend->shaders[0],big_point_attr[2], rend->point_lights[i].diffuse);
-        shader_set_vec3(&rend->shaders[0],big_point_attr[3], rend->point_lights[i].specular);
-        shader_set_float(&rend->shaders[0],big_point_attr[4], rend->point_lights[i].constant);
-        shader_set_float(&rend->shaders[0],big_point_attr[5], rend->point_lights[i].linear);
-        shader_set_float(&rend->shaders[0],big_point_attr[6], rend->point_lights[i].quadratic);
+        shader_set_vec3(&shader[0],big_point_attr[0], rend->point_lights[i].position);
+        shader_set_vec3(&shader[0],big_point_attr[1], rend->point_lights[i].ambient);
+        shader_set_vec3(&shader[0],big_point_attr[2], rend->point_lights[i].diffuse);
+        shader_set_vec3(&shader[0],big_point_attr[3], rend->point_lights[i].specular);
+        shader_set_float(&shader[0],big_point_attr[4], rend->point_lights[i].constant);
+        shader_set_float(&shader[0],big_point_attr[5], rend->point_lights[i].linear);
+        shader_set_float(&shader[0],big_point_attr[6], rend->point_lights[i].quadratic);
       }
     }
     //directional light properties
-    shader_set_vec3(&rend->shaders[0], "dirlight.direction", rend->directional_light.direction);
-    shader_set_vec3(&rend->shaders[0], "dirlight.ambient", rend->directional_light.ambient);
-    shader_set_vec3(&rend->shaders[0], "dirlight.diffuse", rend->directional_light.diffuse);
-    shader_set_vec3(&rend->shaders[0], "dirlight.specular", rend->directional_light.specular);
+    shader_set_vec3(&shader[0], "dirlight.direction", rend->directional_light.direction);
+    shader_set_vec3(&shader[0], "dirlight.ambient", rend->directional_light.ambient);
+    shader_set_vec3(&shader[0], "dirlight.diffuse", rend->directional_light.diffuse);
+    shader_set_vec3(&shader[0], "dirlight.specular", rend->directional_light.specular);
 
 
 
@@ -187,6 +205,21 @@ renderer_end_frame(Renderer *rend)
     glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
     glBindVertexArray(0);
   }
+
+}
+
+void
+renderer_end_frame(Renderer *rend)
+{
+  mat4 inv_view = mat4_inv(rend->view);
+  vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
+
+  //first we render the scene to the depth map
+  fbo_bind(&rend->shadowmap_fbo);
+  renderer_render_scene3D(rend,&rend->shaders[3]);
+  //then we render to the main fbo
+  fbo_bind(&rend->main_fbo);
+  renderer_render_scene3D(rend,&rend->shaders[0]);
 
   //at the end we render the skybox
   skybox_render(&rend->skybox, rend->proj, rend->view);
