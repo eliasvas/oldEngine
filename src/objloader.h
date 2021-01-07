@@ -52,18 +52,18 @@ typedef struct MeshInfo
 
 
 static MeshInfo 
-load_obj(char *filename){
+obj_load(char *filename){
     MeshInfo res;
     res.vertices_count = count_vertices(filename); 
     Vertex *vertices = (Vertex*)arena_alloc(&global_platform.permanent_storage, sizeof(Vertex) * res.vertices_count);
     u32 vertex_index = 0;
 
     //at most they will have vertices_count vec3's 
-    vec3* positions = (vec3*)arena_alloc(&global_platform.frame_storage, sizeof(vec3) * res.vertices_count);
+    vec3 *positions = (vec3*)arena_alloc(&global_platform.frame_storage, sizeof(vec3) * res.vertices_count);
     u32 positions_count = 0;
-    vec3* normals = (vec3*)arena_alloc(&global_platform.frame_storage, sizeof(vec3) * res.vertices_count);
+    vec3 *normals = (vec3*)arena_alloc(&global_platform.frame_storage, sizeof(vec3) * res.vertices_count);
     u32 normals_count = 0;
-    vec2* tex_coords= (vec2*)arena_alloc(&global_platform.frame_storage, sizeof(vec2) * res.vertices_count);
+    vec2 *tex_coords= (vec2*)arena_alloc(&global_platform.frame_storage, sizeof(vec2) * res.vertices_count);
     u32  tex_coords_count = 0;
 
 	FILE *file = fopen(filename, "r");

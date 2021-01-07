@@ -125,11 +125,11 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];
-    mat4 ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, 0.01f, 50.f);
+    mat4 ortho_proj = orthographic_proj(-200.f, 200.f, -200.f, 200.f, 0.01f, 200.f);
     //mat4 light_space_matrix = mat4_mul(ortho_proj, mat4_mul(
      //     mat4_translate(v3(rend->view.elements[3][0],rend->view.elements[3][1] + 10.f,rend->view.elements[3][2])), mat4_rotate(-90.f, v3(1.f,0.f,0.f))));
 
-    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,20,0), v3(10,0,0), v3(0,1,0)));
+    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,100,0), v3(10,0,0), v3(0,1,0)));
 
 
 
@@ -202,7 +202,9 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
 
 
     glBindVertexArray(data.model_vao);
-    glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
+    //glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
+    //glDrawArrays(GL_TRIANGLES,0, 3000*fabs(sin(global_platform.current_time)));
+    glDrawArrays(GL_TRIANGLES,0, 3000);
     glBindVertexArray(0);
   }
 

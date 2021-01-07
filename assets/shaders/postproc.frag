@@ -43,7 +43,7 @@ void main()
 	FragColor = vec4(vec3(texture(screenTexture, TexCoords)), 1.0) * (1 - flag) + vec4(KernelColor,1.0) * (flag);
 	//FragColor = vec4(KernelColor,1.0);
 	
-	float exposure = 1.0;
+	float exposure = 2.0;
 	float gamma = 2.2;
     //FragColor.rgb = pow(FragColor.rgb, vec3(gamma));
 	
