@@ -91,7 +91,7 @@ void main()
 		n = normalize(f_normal);
 		light_dir = normalize(point_lights[i].position - f_frag_pos);
 		
-		diff = abs(dot(n,light_dir));
+		diff = abs(dot(n,-light_dir));
 		diffuse = point_lights[i].diffuse * diff * vec3(texture(material.diffuse,f_tex_coord));
 		
 		view_dir = normalize(view_pos - f_frag_pos);
@@ -100,9 +100,9 @@ void main()
 		spec = pow(max(dot(view_dir, reflect_dir),0.0),256);
 		specular = point_lights[i].specular * spec * vec3(texture(material.specular,f_tex_coord));
 		
-		float distance = length(point_lights[i].position - f_frag_pos);
+		float distance = abs(length(point_lights[i].position - f_frag_pos));
 		float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
-		attenuation = 10.0/(distance);
+		attenuation = 1.0/(distance);
 		ambient *= attenuation;
 		diffuse *= attenuation;
 		specular *= attenuation;

@@ -22,6 +22,6 @@ void main()
 	f_tex_coord = tex_coord;
 
 	f_normal = mat3(transpose(inverse(model))) * n;
-	vec3 f_frag_pos = vec3(model * vec4(vertex_pos,1.0));
+	f_frag_pos = vec3(model*vec4(vertex_pos,1.0));
 	f_frag_pos_ls = light_space_matrix * vec4(f_frag_pos, 1.0);
 }
