@@ -23,6 +23,15 @@ typedef struct Model
     vec3 position;
 }Model;
 
+typedef struct ModelInfo
+{
+    GLuint vao;
+    MeshInfo **mesh;
+    u32 mesh_count;
+    Shader s;
+    mat4 model;
+}ModelInfo;
+
 
 typedef struct Material
 {
@@ -236,6 +245,34 @@ material_default(void)
   material.diffuse = v3(0.5f,0.5f,0.5f);
   material.specular = v3(0.1f,0.1f,0.1f);
   material.shininess = 1.f;
+}
+
+
+internal ModelInfo 
+model_info_init(char *mtl_filepath)
+{
+  ModelInfo model_info = {0};
+  shader_load(&model_info.s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
+  //1. read all different materials
+  MeshMaterial *materials;  
+  u32 materials_count = mtl_count(mtl_filepath);
+  materials = ALLOC(sizeof(MeshMaterial) * materials_count);
+  mtl_read(mtl_filepath, materials);
+  //2. read all different meshes AND their materials and initialize the MeshInfo **mesh
+  char objpath[32];
+  u32 filepath_size = str_size(mtl_filepath);
+  memcpy(objpath, mtl_filepath, str_size(mtl_filepath));
+  objpath[filepath_size] = '\0';
+  objpath[filepath_size-3] = 'o';
+  objpath[filepath_size-2] = 'b';
+  objpath[filepath_size-1] = 'j';
+  model_info.mesh_count = obj_count_meshes(objpath);
+  model_info.mesh = obj_read(objpath, materials);
+  //3. read the vertices of all the different meshes
+
+  //4. generate vertex buffers for everything
+
+  return model_info;
 }
 
 

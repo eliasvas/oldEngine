@@ -91,7 +91,7 @@ void main()
 		n = normalize(f_normal);
 		light_dir = normalize(point_lights[i].position - f_frag_pos);
 		
-		diff = abs(dot(n,-light_dir));
+		diff = max(dot(n,-light_dir),0.0);
 		diffuse = point_lights[i].diffuse * diff * vec3(texture(material.diffuse,f_tex_coord));
 		
 		view_dir = normalize(view_pos - f_frag_pos);

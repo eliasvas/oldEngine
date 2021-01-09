@@ -166,6 +166,14 @@ str_size(char* str)
     return i;
 }
 
+internal u32 
+str_sizespace(char* str)
+{
+    u32 i = 0;
+    while (str[i] != 32 || str[i] != 0)++i;
+    return i;
+}
+
 internal u32
 find_char_in_string(char *string,i32 start_index, char tofind)
 {

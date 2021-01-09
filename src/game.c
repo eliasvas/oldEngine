@@ -12,6 +12,7 @@ global Camera cam;
 global Model debug_cube;
 global Model light_cube;
 global Model arena;
+global ModelInfo model;
 global Renderer rend;
 
 internal void 
@@ -23,6 +24,7 @@ init(void)
     model_init_cube(&light_cube);
     light_cube.diff = debug_cube.spec;
 
+    model_info_init("../assets/arena/arena.mtl");
 
     
     MeshInfo arena_mesh = obj_load("../assets/arena/arena.obj");
@@ -44,7 +46,18 @@ internal void
 render(void)
 {
     renderer_push_point_light(&rend,(PointLight){v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)),
-        1.f,0.09f,0.0032f,v3(0.6,0.5,0.7),v3(0.9,0.8,0.8),v3(0.9,0.8,0.8),256.f});
+        1.f,0.09f,0.0032f,v3(6,5,7),v3(9,8,8),v3(9,8,8),256.f});
+
+    /*
+    for (int i = 0; i < 10; ++i)
+    {
+      for(int j = 0; j < 10;++j)
+      {
+        debug_cube.position = v3(2*i,i*sin(global_platform.current_time),2*j);
+        renderer_push_model(&rend, &debug_cube);
+      }
+    }
+    */
 
     light_cube.position = v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time));
     renderer_push_model(&rend, &light_cube);

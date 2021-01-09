@@ -10,7 +10,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Kd main0.tga
+map_Kd main0.tga 
 
 newmtl main1
 Ns 10.083002
@@ -21,7 +21,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Kd main1.tga
+map_Kd main1.tga 
 
 newmtl main2
 Ns 10.083002
@@ -32,7 +32,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Kd main2.tga
+map_Kd main2.tga 
 
 newmtl main3
 Ns 10.083002
@@ -43,4 +43,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Kd main3.tga
+map_Kd main3.tga 
