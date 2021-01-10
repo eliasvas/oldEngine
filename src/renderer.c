@@ -248,20 +248,7 @@ renderer_end_frame(Renderer *rend)
   //fbo_copy_contents(rend->ui_fbo.fbo,0);
 }
 
-/*
-typedef struct RendererModelData
-{
-  mat4 model;
-  GLuint model_vao;
-  u32 model_vertex_count;
-  Material *material;
-  Texture *diff;
-  Texture *spec;
-}RendererModelData;
-*/
-
-
-void renderer_push_model(Renderer *rend, ModelInfo *m)
+void renderer_push_model(Renderer *rend, Model *m)
 {
   RendererModelData data = (RendererModelData){0};
   for (u32 i = 0; i < m->mesh_count; ++i)

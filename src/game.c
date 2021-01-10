@@ -9,9 +9,9 @@
 mat4 view,proj;
 
 global Camera cam;
-global ModelInfo debug_cube;
-global ModelInfo light_cube;
-global ModelInfo model;
+global Model debug_cube;
+global Model light_cube;
+global Model model;
 global Renderer rend;
 
 internal void 

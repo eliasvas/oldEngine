@@ -13,13 +13,13 @@ model.h is used in another translation unit
 */
 #include "platform.h"
 
-typedef struct ModelInfo
+typedef struct Model
 {
     MeshInfo *meshes;
     u32 mesh_count;
     Shader s;
     mat4 model;
-}ModelInfo;
+}Model;
 
 
 typedef struct Material
@@ -104,7 +104,7 @@ local_persist f32 cube_data[] = {
         -1.f,  1.f, -1.f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
 };
 static void 
-model_init_cube(ModelInfo* m)
+model_init_cube(Model* m)
 {
     m->meshes = ALLOC(sizeof(MeshInfo));
     m->mesh_count = 1;
@@ -141,10 +141,10 @@ material_default(void)
 }
 
 
-internal ModelInfo 
+internal Model 
 model_info_init(char *mtl_filepath)
 {
-  ModelInfo model_info = {0};
+  Model model_info = {0};
   shader_load(&model_info.s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
   //1. read all different materials
   MeshMaterial *materials;  
@@ -171,7 +171,7 @@ model_info_init(char *mtl_filepath)
 
 extern mat4 view, proj;
 internal void
-model_render(ModelInfo *m)
+model_render(Model *m)
 {
    use_shader(&m->s);
     
