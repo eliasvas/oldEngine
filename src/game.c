@@ -24,7 +24,7 @@ init(void)
     model_init_cube(&light_cube);
     light_cube.diff = debug_cube.spec;
 
-    model_info_init("../assets/arena/arena.mtl");
+    model = model_info_init("../assets/arena/arena.mtl");
 
     
     MeshInfo arena_mesh = obj_load("../assets/arena/arena.obj");
@@ -64,7 +64,8 @@ render(void)
 
 
 
-    renderer_push_model(&rend, &arena);
+    //renderer_push_model(&rend, &arena);
+    renderer_push_model2(&rend,&model);
     renderer_end_frame(&rend);
 }
 

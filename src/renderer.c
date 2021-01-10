@@ -274,6 +274,23 @@ void renderer_push_model(Renderer *rend, Model *m)
   rend->model_instance_data[rend->model_alloc_pos++] = data;
 
 }
+void renderer_push_model2(Renderer *rend, ModelInfo *m)
+{
+  RendererModelData data = (RendererModelData){0};
+  for (u32 i = 0; i < m->mesh_count; ++i)
+  {
+    data.model = m->model;
+    data.model_vao = m->meshes[i].vao;
+    data.model_vertex_count = m->meshes[i].vertices_count;
+    data.diff = &m->meshes[i].material.diff;
+    data.spec = &m->meshes[i].material.spec;
+    data.material = ALLOC(sizeof(Material));
+    *data.material = material_default();
+    rend->model_instance_data[rend->model_alloc_pos++] = data;
+  }
+
+}
+
 void renderer_push_point_light(Renderer *rend, PointLight l)
 {
   rend->point_lights[rend->point_light_count++] = l;

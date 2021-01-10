@@ -25,8 +25,7 @@ typedef struct Model
 
 typedef struct ModelInfo
 {
-    GLuint vao;
-    MeshInfo **mesh;
+    MeshInfo *meshes;
     u32 mesh_count;
     Shader s;
     mat4 model;
@@ -267,12 +266,41 @@ model_info_init(char *mtl_filepath)
   objpath[filepath_size-2] = 'b';
   objpath[filepath_size-1] = 'j';
   model_info.mesh_count = obj_count_meshes(objpath);
-  model_info.mesh = obj_read(objpath, materials);
+  model_info.meshes = obj_read(objpath, materials);
+  model_info.model = m4d(1.f);
   //3. read the vertices of all the different meshes
 
   //4. generate vertex buffers for everything
 
   return model_info;
+}
+
+extern mat4 view, proj;
+internal void
+render_model2(ModelInfo *m)
+{
+   use_shader(&m->s);
+    
+    shader_set_mat4fv(&m->s, "view", (GLfloat*)view.elements);
+    shader_set_mat4fv(&m->s, "proj", (GLfloat*)proj.elements);
+
+    for (u32 i = 0; i < m->mesh_count; ++i)
+    {
+   
+      shader_set_int(&m->s, "sampler", 0);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, m->meshes[i].material.diff.id);
+      shader_set_int(&m->s, "m.specular", 1);
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, m->meshes[i].material.spec.id);
+
+      glBindVertexArray(m->meshes[i].vao);
+      //glDrawArrays(GL_TRIANGLES,0, m->meshes[i].vertices_count);
+      glDrawArrays(GL_TRIANGLES,0, 10000);
+      shader_set_mat4fv(&m->s, "model", (GLfloat*)m->model.elements);
+    }
+    glBindVertexArray(0);
+
 }
 
 

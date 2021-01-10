@@ -1,5 +1,5 @@
-#ifndef OBJLOADER_H
-#define OBJLOADER_H
+#ifndef OBJ_LOADER_H
+#define OBJ_LOADER_H
 
 #include "stdlib.h"
 #include "stdio.h"
@@ -27,7 +27,7 @@ typedef struct MeshInfo
     u32 vertices_count;
     //Material m;
     MeshMaterial material;
-
+    GLuint vao;
 }MeshInfo;
 
 
@@ -157,7 +157,7 @@ internal u32 mtl_count(char *mtl_filepath)
   FILE* file = fopen(mtl_filepath, "r");
 	if (file == NULL)
 	{
-        memcpy(error_log, "Cant Find MTL!!", 17);
+        sprintf(error_log, "cant find mtl: %s", mtl_filepath);
         return 0;
 	}
 	
@@ -194,19 +194,34 @@ internal void mtl_read(char *mtl_filepath, MeshMaterial *materials)
       {
         fscanf(file, "%s", line);
         materials[material_offset].shininess = 256.f;
-        memcpy(&materials[material_offset].name, line, str_size(line));
-        material_offset++;
+        texture_load(&(materials[material_offset].spec),"../assets/white.tga");
+        //texture_load(&(materials[material_offset].diff),"../assets/arena/main3.tga");
+ 
+        memcpy(&materials[material_offset].name, line, str_size(line)+1);
         while (TRUE)
         {
           fscanf(file, "%s", line);
             if (strcmp(line, "map_Kd") == 0)
             {
               fscanf(file, "%s", line);
-              char diff[32];
-              memcpy(diff, line, str_size(line));
+              char diff[64];
+              u32 file_index = 0;
+              for (u32 i = str_size(mtl_filepath); i>=0;--i)
+              {
+                if (mtl_filepath[i] == '/')
+                {
+                  file_index = i; 
+                  break;
+                }
+              }
+              memcpy(diff, mtl_filepath,file_index+1);
+              memcpy(diff + file_index+1, line, str_size(line)+1);
+              texture_load(&(materials[material_offset].diff),diff);
+              //sprintf(error_log, "%s", diff);
               break;
             }
         }
+        material_offset++;
       }  
   }
 
@@ -230,15 +245,41 @@ internal u32 obj_count_meshes(char *objpath)
 	{
 		i32 res = fscanf(file, "%s", line);
 		if (res == EOF)break;
-	    if (strcmp(line, "usemtl") == 0)++meshes_count;
+    if (strcmp(line, "usemtl") == 0)++meshes_count;
   }
+  return meshes_count;
+}
+internal GLuint 
+mesh_gen_vao(u32 start,u32 end, Vertex *vertices)
+{
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao); 
+    GLuint VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * ((end - start)*3), &vertices[start*3], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 3));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 6));
+    glBindVertexArray(0);
+
+      
+    return vao;
 }
 
 
-internal MeshInfo ** obj_read(char *objpath, MeshMaterial *materials)
+
+internal MeshInfo *obj_read(char *objpath, MeshMaterial *materials)
 {
 
-  MeshInfo **meshes;
+  MeshInfo *meshes;
+
+  u32 different_meshes = count_different_materials(objpath);
+  meshes = ALLOC(sizeof(MeshInfo) * different_meshes);
   u32 vertices_count = count_vertices(objpath);
   Vertex *vertices = (Vertex*)arena_alloc(&global_platform.frame_storage, sizeof(Vertex) * vertices_count);
   u32 vertex_index = 0;
@@ -251,6 +292,10 @@ internal MeshInfo ** obj_read(char *objpath, MeshMaterial *materials)
   vec2 *tex_coords= (vec2*)arena_alloc(&global_platform.frame_storage, sizeof(vec2) * vertices_count);
   u32  tex_coords_count = 0;
 
+  u32 faces_count = 0;
+  u32 faces_start = 0;
+  i32 current_mesh = -1;
+
 	FILE *file = fopen(objpath, "r");
 	if (file == NULL)
 	{
@@ -262,6 +307,16 @@ internal MeshInfo ** obj_read(char *objpath, MeshMaterial *materials)
 	while(TRUE)
 	{
 		i32 res = fscanf(file, "%s", line);
+    //which means there is a mesh that has just finished giving its faces, we construct it
+		if (res == EOF && faces_count != faces_start)
+    {
+        meshes[current_mesh].vertices_count = (faces_count- faces_start) *3;
+        meshes[current_mesh].vertices = &vertices[faces_start];
+        meshes[current_mesh].vao = mesh_gen_vao(faces_start,faces_count, vertices);
+        faces_start = faces_count*3+1;
+        break;
+
+    }
 		if (res == EOF)break;
 		
 		if (strcmp(line, "v") == 0)
@@ -280,8 +335,9 @@ internal MeshInfo ** obj_read(char *objpath, MeshMaterial *materials)
 			fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z);
             normals[normals_count++] = normal;
 		}
-    if (strcmp(line, "f") == 0) //NOTE(ilias): maybe ditch NEWLINE?? <<
+    else if (strcmp(line, "f") == 0) //NOTE(ilias): maybe ditch NEWLINE?? <<
     {
+            ++faces_count;
             i32 positions_index[3],normals_index[3], uvs_index[3];
       fscanf(file, "%i/%i/%i %i/%i/%i %i/%i/%i\n", &positions_index[0],&uvs_index[0], &normals_index[0], 
                                                          &positions_index[1],&uvs_index[1], &normals_index[1], 
@@ -295,8 +351,33 @@ internal MeshInfo ** obj_read(char *objpath, MeshMaterial *materials)
             vertices[vertex_index++] = to_add;
             to_add = vert(positions[positions_index[2]-1], normals[normals_index[2]], tex_coords[uvs_index[2]-1]);
             vertices[vertex_index++] = to_add;
+    }else if (strcmp(line, "usemtl") == 0)
+    {
+      if (faces_count != 0)
+      {
+        meshes[current_mesh].vertices_count = (faces_count- faces_start) *3;
+        meshes[current_mesh].vertices = &vertices[faces_start*3];
+        meshes[current_mesh].vao = mesh_gen_vao(faces_start,faces_count, vertices);
+        faces_start = faces_count;
+      }
+      current_mesh++;
+      char mtl_name[32];
+      fscanf(file, "%s",mtl_name);
+      MeshMaterial found = {0};
+      for (u32 i = 0; i < 32;++i) //TODO this is BAAAD why 32
+       if (strcmp(materials[i].name, mtl_name) == 0)
+       {
+           found = materials[i]; 
+           break;
+       }
+      meshes[current_mesh].material = found;
+      //meshes[current_mesh].vertices_count = (faces_count- faces_start) *3;
+      //meshes[current_mesh].vertices = &vertices[faces_start];
+      //meshes[current_mesh].vao = mesh_gen_vao(faces_start,faces_count, vertices);
+
+    
     }
-    else if (strcmp(line, "f") == 0)break;
+
   }
 
 
