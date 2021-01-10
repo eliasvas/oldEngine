@@ -9,9 +9,8 @@
 mat4 view,proj;
 
 global Camera cam;
-global Model debug_cube;
-global Model light_cube;
-global Model arena;
+global ModelInfo debug_cube;
+global ModelInfo light_cube;
 global ModelInfo model;
 global Renderer rend;
 
@@ -22,13 +21,11 @@ init(void)
     model_init_cube(&debug_cube);
     renderer_init(&rend);
     model_init_cube(&light_cube);
-    light_cube.diff = debug_cube.spec;
+    light_cube.meshes[0].material.diff = debug_cube.meshes[0].material.spec;
 
     model = model_info_init("../assets/arena/arena.mtl");
 
     
-    MeshInfo arena_mesh = obj_load("../assets/arena/arena.obj");
-    model_init(&arena, &arena_mesh);
 }
 
 
@@ -59,13 +56,12 @@ render(void)
     }
     */
 
-    light_cube.position = v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time));
+    light_cube.model = mat4_translate(v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)));
     renderer_push_model(&rend, &light_cube);
 
 
 
-    //renderer_push_model(&rend, &arena);
-    renderer_push_model2(&rend,&model);
+    renderer_push_model(&rend,&model);
     renderer_end_frame(&rend);
 }
 

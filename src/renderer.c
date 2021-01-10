@@ -261,20 +261,7 @@ typedef struct RendererModelData
 */
 
 
-void renderer_push_model(Renderer *rend, Model *m)
-{
-  RendererModelData data = (RendererModelData){0};
-  data.model = mat4_translate(m->position);
-  data.model_vao = m->vao;
-  data.model_vertex_count = m->mesh->vertices_count;
-  data.diff = &m->diff;
-  data.spec = &m->spec;
-  data.material = ALLOC(sizeof(Material));
-  *data.material = material_default();
-  rend->model_instance_data[rend->model_alloc_pos++] = data;
-
-}
-void renderer_push_model2(Renderer *rend, ModelInfo *m)
+void renderer_push_model(Renderer *rend, ModelInfo *m)
 {
   RendererModelData data = (RendererModelData){0};
   for (u32 i = 0; i < m->mesh_count; ++i)
