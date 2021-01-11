@@ -27,6 +27,7 @@ init(void)
     light_cube.meshes[0].material.diff = debug_cube.meshes[0].material.spec;
 
     model = model_info_init("../assets/arena/arena.mtl");
+    model.model = mat4_scale(v3(0.2f,0.2f,0.2f));
     animator = animator_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
         str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
 }
