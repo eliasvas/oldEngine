@@ -48,7 +48,7 @@ renderer_init(Renderer *rend)
     rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_DEPTH);
     rend->postproc_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_DEPTH);
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
-    rend->shadowmap_fbo = fbo_init(1024 * 2, 1024 * 2, FBO_DEPTH);
+    rend->shadowmap_fbo = fbo_init(1024, 1024, FBO_DEPTH);
     rend->depthpeel_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_COLOR_0 | FBO_DEPTH);
     rend->current_fbo = &rend->main_fbo;
     
@@ -82,6 +82,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[1],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
     shader_load(&rend->shaders[2],"../assets/shaders/postproc.vert","../assets/shaders/postproc.frag");
     shader_load(&rend->shaders[3],"../assets/shaders/shadowmap.vert","../assets/shaders/shadowmap.frag");
+    shader_load(&rend->shaders[4],"../assets/shaders/animated3d.vert","../assets/shaders/animated3d.frag");
 }
 
 void
@@ -112,6 +113,7 @@ renderer_begin_frame(Renderer *rend)
   fbo_resize(&rend->depthpeel_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
   rend->current_fbo = &rend->main_fbo;
   rend->model_alloc_pos = 0;
+  rend->animated_model_alloc_pos = 0;
   rend->point_light_count = 0;
 }
 
@@ -183,7 +185,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
       {
 
         point_attr[0][13] = '0'+ (i / 10);
-        point_attr[0][14] = '0'+ (i % 10);
+       point_attr[0][14] = '0'+ (i % 10);
         shader_set_vec3(&shader[0],big_point_attr[0], rend->point_lights[i].position);
         shader_set_vec3(&shader[0],big_point_attr[1], rend->point_lights[i].ambient);
         shader_set_vec3(&shader[0],big_point_attr[2], rend->point_lights[i].diffuse);
@@ -202,11 +204,20 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
 
 
     glBindVertexArray(data.model_vao);
-    //glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
+    glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
     //glDrawArrays(GL_TRIANGLES,0, 3000*fabs(sin(global_platform.current_time)));
-    glDrawArrays(GL_TRIANGLES,0, 3000);
     glBindVertexArray(0);
   }
+
+}
+
+internal void renderer_check_gl_errors()
+{
+    GLenum err;
+    while((err = glGetError()) != GL_NO_ERROR)
+    {
+       sprintf(error_log, "GL error: %i", err);
+    }
 
 }
 
@@ -215,12 +226,54 @@ renderer_end_frame(Renderer *rend)
 {
   mat4 inv_view = mat4_inv(rend->view);
   vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
+  //renderer_check_gl_errors();
 
   //first we render the scene to the depth map
   fbo_bind(&rend->shadowmap_fbo);
   renderer_render_scene3D(rend,&rend->shaders[3]);
   //then we render to the main fbo
   fbo_bind(&rend->main_fbo);
+  for (u32 i = 0; i < rend->animated_model_alloc_pos; ++i)
+  {
+      use_shader(&rend->shaders[4]);
+    
+    shader_set_mat4fv(&rend->shaders[4], "proj", (GLfloat*)rend->proj.elements);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, rend->animated_model_instance_data[i].diff.id);
+    shader_set_int(&rend->shaders[4], "diffuse_map", 0); //we should really make the texture manager global or something(per Scene?)... sigh
+    if (0){
+        mat4 identity = m4d(1.f);
+        shader_set_mat4fv(&rend->shaders[4], "joint_transforms[0]", (GLfloat*)identity.elements);
+        shader_set_mat4fv(&rend->shaders[4], "joint_transforms[1]", (GLfloat*)identity.elements);
+        shader_set_mat4fv(&rend->shaders[4], "joint_transforms[2]", (GLfloat*)identity.elements);
+        shader_set_mat4fv(&rend->shaders[4], "joint_transforms[3]", (GLfloat*)identity.elements);
+        shader_set_mat4fv(&rend->shaders[4], "joint_transforms[4]", (GLfloat*)identity.elements);
+        shader_set_mat4fv(&rend->shaders[4], "joint_transforms[5]", (GLfloat*)identity.elements);
+        shader_set_mat4fv(&rend->shaders[4], "joint_transforms[6]", (GLfloat*)identity.elements);
+        shader_set_mat4fv(&rend->shaders[4], "joint_transforms[7]", (GLfloat*)identity.elements);
+        shader_set_mat4fv(&rend->shaders[4], "joint_transforms[8]", (GLfloat*)identity.elements);
+        shader_set_mat4fv(&rend->shaders[4], "joint_transforms[9]", (GLfloat*)identity.elements);
+        //@memleak
+        char str[32] = "joint_transforms[xx]";
+
+        for (i32 i = 10; i < rend->animated_model_instance_data[i].joint_count; ++i)
+        {
+            str[17] = '0' + (i/10);
+            str[18] = '0' + (i -(((int)(i/10)) * 10));
+            shader_set_mat4fv(&rend->shaders[4], str, (GLfloat*)identity.elements);
+        }
+    }
+    for (u32 j = 0; j < rend->animated_model_instance_data[i].joint_count; ++j)
+        set_joint_transform_uniforms(&rend->shaders[4], &rend->animated_model_instance_data[i].joints[j]);
+    shader_set_mat4fv(&rend->shaders[4], "view", (GLfloat*)rend->view.elements);
+    shader_set_mat4fv(&rend->shaders[4], "model", (GLfloat*)rend->animated_model_instance_data[i].model.elements);
+    shader_set_vec3(&rend->shaders[4], "lightdir", rend->directional_light.direction); 
+
+    glBindVertexArray(rend->animated_model_instance_data[i].vao);
+    glDrawArrays(GL_TRIANGLES,0, rend->animated_model_instance_data[i].vertices_count);
+    //glDrawArrays(GL_LINES,0, 20000);
+    glBindVertexArray(0);
+  }
   renderer_render_scene3D(rend,&rend->shaders[0]);
 
   //at the end we render the skybox
@@ -264,10 +317,34 @@ void renderer_push_model(Renderer *rend, Model *m)
   }
 
 }
+/*
+typedef struct RendererAnimatedModelData
+{
+    GLuint vao;
+    Texture diff_tex;
+    Texture spec_tex;
+    
+    u32 joint_count;
+    Joint *joints;
+    u32 vertices_count;
+}RendererAnimatedModelData;
+*/
+
+void renderer_push_animated_model(Renderer *rend, AnimatedModel *m)
+{
+  RendererAnimatedModelData data = {0};
+  data.vao = m->vao;
+  data.diff = *m->diff_tex;
+  data.spec = *m->diff_tex; //declare a white texture for such cases (in renderer)
+  data.joint_count = m->joint_count;
+  data.joints = m->joints;
+  data.vertices_count = m->vertices_count; 
+  data.model = mat4_translate(v3(0,2,0));
+  rend->animated_model_instance_data[rend->animated_model_alloc_pos++] = data;
+}
 
 void renderer_push_point_light(Renderer *rend, PointLight l)
 {
   rend->point_lights[rend->point_light_count++] = l;
 }
-
 

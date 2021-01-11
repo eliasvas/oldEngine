@@ -227,7 +227,6 @@ WinMain(HINSTANCE Instance,
 
         i64 frame_count = ft.QuadPart - st.QuadPart;
         i64 desired_frame_count = (f32)fr.QuadPart / global_platform.target_fps;
-        /*
         if (desired_frame_count > frame_count ){
             //NOTE(ilias): wait remaining time --this is wrong
             i64 counts_to_wait = desired_frame_count - frame_count;
@@ -246,7 +245,6 @@ WinMain(HINSTANCE Instance,
             global_platform.dt = frame_dt + wait_dt;
             global_platform.current_time += global_platform.dt;//dt;
         }
-        */
            global_platform.dt = frame_count / (f32)fr.QuadPart;
             global_platform.current_time += global_platform.dt;//dt;
 

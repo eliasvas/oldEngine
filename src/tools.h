@@ -1512,11 +1512,11 @@ INLINE Quaternion quat_from_angle(vec3 axis, f32 angle)
     return res;
 }
 
-INLINE Quaternion normalize_quat(Quaternion l)
+INLINE Quaternion quat_normalize(Quaternion l)
 {
     Quaternion res;
 
-    f32 len = sqrtf(dot_quat(l,l)) ;
+    f32 len = sqrtf(quat_dot(l,l));
     res = quat_divf(l,len);
 
     return res;
@@ -1532,7 +1532,7 @@ INLINE Quaternion nlerp(Quaternion l, Quaternion r, f32 time)
     res.z = lerp(l.z, r.z, time);
     res.w = lerp(l.w, r.w, time);
 
-    res = normalize_quat(res);
+    res = quat_normalize(res);
     
     return res;
 }
@@ -1542,7 +1542,7 @@ INLINE mat4 quat_to_mat4(Quaternion l)
 {
     mat4 res;
 
-    Quaternion norm_quat = normalize_quat(l);
+    Quaternion norm_quat = quat_normalize(l);
 
     f32 XX, YY, ZZ, XY, XZ, YZ, WX, WY, WZ;
 
@@ -1706,7 +1706,6 @@ internal void tga_load_image_data(FILE *file, TGAInfo *info) {
 			info->image_data[i] = info->image_data[i+2];
 			info->image_data[i+2] = aux;
 		}
-  /*
     //flip the image
     u8* pixels_new = (u8*)ALLOC(sizeof(u8) * info->width * info->height * (info->bits_per_pixel / 8));
     i32 new_i = 0;
@@ -1741,7 +1740,6 @@ internal void tga_load_image_data(FILE *file, TGAInfo *info) {
       }
     info->image_data = pixels_new;
     }
-    */
 }
 
 internal TGAInfo* 

@@ -305,7 +305,6 @@ internal MeshInfo *obj_read(char *objpath, MeshMaterial *materials)
        }
       meshes[current_mesh].material = found;
     }
-
   }
 
 

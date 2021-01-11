@@ -6,6 +6,8 @@
 #include "quad.h" 
 #include "fbo.h"
 #include "renderer.h"
+#include "collada_parser.h"
+#include "animation.h"
 mat4 view,proj;
 
 global Camera cam;
@@ -13,6 +15,7 @@ global Model debug_cube;
 global Model light_cube;
 global Model model;
 global Renderer rend;
+global Animator animator;
 
 internal void 
 init(void)
@@ -24,8 +27,8 @@ init(void)
     light_cube.meshes[0].material.diff = debug_cube.meshes[0].material.spec;
 
     model = model_info_init("../assets/arena/arena.mtl");
-
-    
+    animator = animator_init(str(&global_platform.frame_storage,"../assets/man/man.tga"), 
+        str(&global_platform.frame_storage,"../assets/man/left.dae"), str(&global_platform.frame_storage,"../assets/man/left.dae"));  
 }
 
 
@@ -50,7 +53,7 @@ render(void)
     {
       for(int j = 0; j < 10;++j)
       {
-        debug_cube.position = v3(2*i,i*sin(global_platform.current_time),2*j);
+        debug_cube.model = mat4_translate(v3(2*i,i*sin(global_platform.current_time),2*j));
         renderer_push_model(&rend, &debug_cube);
       }
     }
@@ -60,8 +63,9 @@ render(void)
     renderer_push_model(&rend, &light_cube);
 
 
-
+    update_animator(&animator);
     renderer_push_model(&rend,&model);
+    renderer_push_animated_model(&rend, &animator.model);
     renderer_end_frame(&rend);
 }
 

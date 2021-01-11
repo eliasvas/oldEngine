@@ -6,6 +6,7 @@
 #include "skybox.h"
 #include "model.h"
 #include "fbo.h"
+#include "animation.h"
 
 typedef struct RendererSettings
 {
@@ -26,10 +27,24 @@ typedef struct RendererModelData
   Texture *spec;
 }RendererModelData;
 
+typedef struct RendererAnimatedModelData
+{
+    GLuint vao;
+    Texture diff;
+    Texture spec;
+    
+    u32 joint_count;
+    Joint *joints;
+    u32 vertices_count;
+    mat4 model;
+}RendererAnimatedModelData;
+
+
 #define RENDERER_MAX_SHADERS 256
 #define RENDERER_MAX_POINT_LIGHTS 256
 #define RENDERER_BYTES_PER_MODEL sizeof(RendererModelData)
 #define RENDERER_MAX_MODELS 256
+#define RENDERER_MAX_ANIMATED_MODELS 64
 
 typedef struct Renderer
 {
@@ -52,6 +67,10 @@ typedef struct Renderer
   GLuint model_vao;
   RendererModelData model_instance_data[RENDERER_MAX_MODELS];
   u32 model_alloc_pos;
+
+
+  RendererAnimatedModelData animated_model_instance_data[RENDERER_MAX_ANIMATED_MODELS];
+  u32 animated_model_alloc_pos;
 
   Shader shaders[RENDERER_MAX_SHADERS];
   u32 shaders_count;
