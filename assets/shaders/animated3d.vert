@@ -1,6 +1,6 @@
 #version 330 core
 
-const int MAX_JOINTS = 44; //max joints in skeleton
+const int MAX_JOINTS = 55; //max joints in skeleton
 const int MAX_BONES = 3; //max bones for each vertex
 
 layout(location = 0) in vec3 position;

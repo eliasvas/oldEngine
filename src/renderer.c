@@ -271,7 +271,7 @@ renderer_end_frame(Renderer *rend)
 
     glBindVertexArray(rend->animated_model_instance_data[i].vao);
     glDrawArrays(GL_TRIANGLES,0, rend->animated_model_instance_data[i].vertices_count);
-    //glDrawArrays(GL_LINES,0, 20000);
+    //glDrawArrays(GL_LINES,0, 40000);
     glBindVertexArray(0);
   }
   renderer_render_scene3D(rend,&rend->shaders[0]);

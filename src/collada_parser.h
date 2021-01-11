@@ -146,10 +146,11 @@ read_collada_maya(String filepath)
             i32 vec[3];
             for (i32 i = 0; i < data.vertex_count; ++i)
             {
-                fscanf(file, "%i %i %i", &vec[0], &vec[1], &vec[2]);
-                triangles[i] = (ivec3){vec[0], vec[1], vec[2]}; 
-                //if there is an extra component (color)
-                //fscanf(file, "%i", garbage);
+                fscanf(file, "%i %i", &vec[0], &vec[1]);
+                triangles[i] = (ivec3){vec[0], 0,vec[1]}; 
+
+                //fscanf(file, "%i %i %i", &vec[0], &vec[1], &vec[2]);
+                //triangles[i] = (ivec3){vec[0], vec[1], vec[2]}; 
             }
             break;
         }
