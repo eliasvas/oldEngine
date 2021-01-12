@@ -9,8 +9,8 @@ internal char **cubemap_default()
   char *res[6] = {
         "../assets/vrb/vrbft.tga",
                 "../assets/vrb/vrbbk.tga",
-        "../assets/vrb/vrbup.tga", //up
-        "../assets/vrb/vrbdn.tga", //dn
+        "../assets/vrb/vrbdn.tga", //up
+        "../assets/vrb/vrbup.tga", //dn
 "../assets/vrb/vrbrt.tga",
         "../assets/vrb/vrblf.tga",
 

@@ -158,7 +158,7 @@ read_collada_maya(String filepath)
 
     for (u32 i = 0; i < data.vertex_count; ++i)
     {
-        data.verts[i] = vert(data.positions[triangles[i].x], data.normals[triangles[i].y], data.tex_coords[triangles[i].z]);
+        data.verts[i] = vert(data.positions[triangles[i].x], vec3_normalize(data.normals[triangles[i].x]), data.tex_coords[triangles[i].z]);
         skinning_index[i] = triangles[i].x;
     }
     rewind(file);
