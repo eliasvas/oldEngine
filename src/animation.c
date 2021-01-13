@@ -62,7 +62,7 @@ interpolate_joint_transforms(JointTransform l, JointTransform r, f32 time)
 increase_animation_time(Animator* animator)
 {
     assert(animator);
-    animator->animation_time += global_platform.dt * animator->anim->playback_rate * 1.5f; //this should be the Δt from global platform but its bugged rn
+    animator->animation_time += global_platform.dt * animator->anim->playback_rate; //this should be the Δt from global platform but its bugged rn
     //animator->animation_time += 3.f/60; //this should be the Δt from global platform but its bugged rn
     if (animator->animation_time > animator->anim->length)
         animator->animation_time -= animator->anim->length;
