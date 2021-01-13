@@ -9,14 +9,16 @@ layout(location = 2) in vec2 tex_coords;
 layout(location = 3) in ivec3 joint_ids;
 layout(location = 4) in vec3 weights;
 
-out vec2 f_tex_coords;
+out vec2 f_tex_coord;
 out vec3 f_normal;
+out vec4 f_frag_pos_ls;
+out vec3 f_frag_pos;
 
-out vec4 color_vert;
 uniform mat4 joint_transforms[MAX_JOINTS];
 uniform mat4 view;
 uniform mat4 proj;
 uniform mat4 model;
+uniform mat4 light_space_matrix;
 
 void main(){
 	vec4 total_local_pos = vec4(0.0);
@@ -37,6 +39,9 @@ void main(){
 	//total_normal = vec4(normal,1.0);
 	gl_Position = proj * view * model * total_local_pos;
 	f_normal = normalize(total_normal.xyz);
-	f_tex_coords = tex_coords;
+	f_tex_coord = tex_coords;
+	f_frag_pos = vec3(model * total_local_pos);
+	f_frag_pos_ls = light_space_matrix * vec4(f_frag_pos, 1.0);
+
 }
 

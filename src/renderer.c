@@ -82,7 +82,11 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[1],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
     shader_load(&rend->shaders[2],"../assets/shaders/postproc.vert","../assets/shaders/postproc.frag");
     shader_load(&rend->shaders[3],"../assets/shaders/shadowmap.vert","../assets/shaders/shadowmap.frag");
-    shader_load(&rend->shaders[4],"../assets/shaders/animated3d.vert","../assets/shaders/animated3d.frag");
+    shader_load(&rend->shaders[4],"../assets/shaders/animated3d.vert","../assets/shaders/phong.frag");
+
+
+    //misc
+    texture_load(&rend->white_texture,"../assets/white.tga");
 }
 
 void
@@ -117,6 +121,52 @@ renderer_begin_frame(Renderer *rend)
   rend->point_light_count = 0;
 }
 
+internal void
+renderer_set_light_uniforms(Renderer *rend, Shader *s)
+{
+    shader_set_int(s, "point_light_count", rend->point_light_count);
+    for (i32 i = 0; i < rend->point_light_count;++i)
+    {
+      if (i < 10)
+      {
+        point_attr[0][13] = '0'+i;
+        point_attr[1][13] = '0'+i;
+        point_attr[2][13] = '0'+i;
+        point_attr[3][13] = '0'+i;
+        point_attr[4][13] = '0'+i;
+        point_attr[5][13] = '0'+i;
+        point_attr[6][13] = '0'+i;
+        shader_set_vec3(s,point_attr[0], rend->point_lights[i].position);
+        shader_set_vec3(s,point_attr[1], rend->point_lights[i].ambient);
+        shader_set_vec3(s,point_attr[2], rend->point_lights[i].diffuse);
+        shader_set_vec3(s,point_attr[3], rend->point_lights[i].specular);
+        shader_set_float(s,point_attr[4], rend->point_lights[i].constant);
+        shader_set_float(s,point_attr[5], rend->point_lights[i].linear);
+        shader_set_float(s,point_attr[6], rend->point_lights[i].quadratic);
+      }
+      else
+      {
+
+        point_attr[0][13] = '0'+ (i / 10);
+       point_attr[0][14] = '0'+ (i % 10);
+        shader_set_vec3(s,big_point_attr[0], rend->point_lights[i].position);
+        shader_set_vec3(s,big_point_attr[1], rend->point_lights[i].ambient);
+        shader_set_vec3(s,big_point_attr[2], rend->point_lights[i].diffuse);
+        shader_set_vec3(s,big_point_attr[3], rend->point_lights[i].specular);
+        shader_set_float(s,big_point_attr[4], rend->point_lights[i].constant);
+        shader_set_float(s,big_point_attr[5], rend->point_lights[i].linear);
+        shader_set_float(s,big_point_attr[6], rend->point_lights[i].quadratic);
+      }
+    }
+    //directional light properties
+    shader_set_vec3(s, "dirlight.direction", rend->directional_light.direction);
+    shader_set_vec3(s, "dirlight.ambient", rend->directional_light.ambient);
+    shader_set_vec3(s, "dirlight.diffuse", rend->directional_light.diffuse);
+    shader_set_vec3(s, "dirlight.specular", rend->directional_light.specular);
+
+
+
+}
 
 //here we put the draw calls for everything that needs shadowmapping!
 internal void
@@ -159,49 +209,9 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     shader_set_mat4fv(&shader[0], "light_space_matrix", (GLfloat*)light_space_matrix.elements);
     shader_set_vec3(&shader[0], "view_pos", view_pos);
     //set material properties
-    shader_set_float(&shader[0], "material.shininess", data.material->shininess);
+    shader_set_float(&shader[0], "material.shininess", data.material.shininess);
     //light properties
-    shader_set_int(&shader[0], "point_light_count", rend->point_light_count);
-    for (i32 i = 0; i < rend->point_light_count;++i)
-    {
-      if (i < 10)
-      {
-        point_attr[0][13] = '0'+i;
-        point_attr[1][13] = '0'+i;
-        point_attr[2][13] = '0'+i;
-        point_attr[3][13] = '0'+i;
-        point_attr[4][13] = '0'+i;
-        point_attr[5][13] = '0'+i;
-        point_attr[6][13] = '0'+i;
-        shader_set_vec3(&shader[0],point_attr[0], rend->point_lights[i].position);
-        shader_set_vec3(&shader[0],point_attr[1], rend->point_lights[i].ambient);
-        shader_set_vec3(&shader[0],point_attr[2], rend->point_lights[i].diffuse);
-        shader_set_vec3(&shader[0],point_attr[3], rend->point_lights[i].specular);
-        shader_set_float(&shader[0],point_attr[4], rend->point_lights[i].constant);
-        shader_set_float(&shader[0],point_attr[5], rend->point_lights[i].linear);
-        shader_set_float(&shader[0],point_attr[6], rend->point_lights[i].quadratic);
-      }
-      else
-      {
-
-        point_attr[0][13] = '0'+ (i / 10);
-       point_attr[0][14] = '0'+ (i % 10);
-        shader_set_vec3(&shader[0],big_point_attr[0], rend->point_lights[i].position);
-        shader_set_vec3(&shader[0],big_point_attr[1], rend->point_lights[i].ambient);
-        shader_set_vec3(&shader[0],big_point_attr[2], rend->point_lights[i].diffuse);
-        shader_set_vec3(&shader[0],big_point_attr[3], rend->point_lights[i].specular);
-        shader_set_float(&shader[0],big_point_attr[4], rend->point_lights[i].constant);
-        shader_set_float(&shader[0],big_point_attr[5], rend->point_lights[i].linear);
-        shader_set_float(&shader[0],big_point_attr[6], rend->point_lights[i].quadratic);
-      }
-    }
-    //directional light properties
-    shader_set_vec3(&shader[0], "dirlight.direction", rend->directional_light.direction);
-    shader_set_vec3(&shader[0], "dirlight.ambient", rend->directional_light.ambient);
-    shader_set_vec3(&shader[0], "dirlight.diffuse", rend->directional_light.diffuse);
-    shader_set_vec3(&shader[0], "dirlight.specular", rend->directional_light.specular);
-
-
+    renderer_set_light_uniforms(rend, shader);
 
     glBindVertexArray(data.model_vao);
     glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
@@ -240,7 +250,14 @@ renderer_end_frame(Renderer *rend)
     shader_set_mat4fv(&rend->shaders[4], "proj", (GLfloat*)rend->proj.elements);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, rend->animated_model_instance_data[i].diff.id);
-    shader_set_int(&rend->shaders[4], "diffuse_map", 0); //we should really make the texture manager global or something(per Scene?)... sigh
+    shader_set_int(&rend->shaders[4], "material.diffuse", 0); //we should really make the texture manager global or something(per Scene?)... sigh
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, rend->animated_model_instance_data[i].spec.id);
+    shader_set_int(&rend->shaders[4], "material.specular", 1);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo.depth_attachment);
+    shader_set_int(&rend->shaders[4], "shadow_map", 4);
+
     if (0){
         mat4 identity = m4d(1.f);
         shader_set_mat4fv(&rend->shaders[4], "joint_transforms[0]", (GLfloat*)identity.elements);
@@ -268,6 +285,16 @@ renderer_end_frame(Renderer *rend)
     shader_set_mat4fv(&rend->shaders[4], "view", (GLfloat*)rend->view.elements);
     shader_set_mat4fv(&rend->shaders[4], "model", (GLfloat*)rend->animated_model_instance_data[i].model.elements);
     shader_set_vec3(&rend->shaders[4], "lightdir", rend->directional_light.direction); 
+    renderer_set_light_uniforms(rend, &rend->shaders[4]);
+    mat4 inv_view = mat4_inv(rend->view);
+    vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
+    shader_set_vec3(&rend->shaders[4], "view_pos", view_pos); 
+    mat4 ortho_proj = orthographic_proj(-200.f, 200.f, -200.f, 200.f, 0.01f, 200.f);
+    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,100,0), v3(10,0,0), v3(0,1,0)));
+    shader_set_mat4fv(&rend->shaders[4], "light_space_matrix", (GLfloat*)light_space_matrix.elements);
+
+
+
 
     glBindVertexArray(rend->animated_model_instance_data[i].vao);
     glDrawArrays(GL_TRIANGLES,0, rend->animated_model_instance_data[i].vertices_count);
@@ -311,8 +338,7 @@ void renderer_push_model(Renderer *rend, Model *m)
     data.model_vertex_count = m->meshes[i].vertices_count;
     data.diff = &m->meshes[i].material.diff;
     data.spec = &m->meshes[i].material.spec;
-    data.material = ALLOC(sizeof(Material));
-    *data.material = material_default();
+    data.material = material_default();
     rend->model_instance_data[rend->model_alloc_pos++] = data;
   }
 
@@ -335,7 +361,7 @@ void renderer_push_animated_model(Renderer *rend, AnimatedModel *m)
   RendererAnimatedModelData data = {0};
   data.vao = m->vao;
   data.diff = *m->diff_tex;
-  data.spec = *m->diff_tex; //declare a white texture for such cases (in renderer)
+  data.spec = rend->white_texture; //declare a white texture for such cases (in renderer)
   data.joint_count = m->joint_count;
   data.joints = m->joints;
   data.vertices_count = m->vertices_count; 

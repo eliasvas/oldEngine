@@ -22,7 +22,7 @@ typedef struct RendererModelData
   mat4 model;
   GLuint model_vao;
   u32 model_vertex_count;
-  Material *material;
+  Material material;
   Texture *diff;
   Texture *spec;
 }RendererModelData;
@@ -79,6 +79,7 @@ typedef struct Renderer
   DirLight directional_light;
   Material default_material;
   Skybox skybox;
+  Texture white_texture;
   mat4 view;
   mat4 proj;
 }Renderer;

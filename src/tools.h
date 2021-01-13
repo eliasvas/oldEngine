@@ -1738,6 +1738,7 @@ internal void tga_load_image_data(FILE *file, TGAInfo *info) {
               pixels_new[new_i++]= (u8)(info->image_data[index+3]);
         }
       }
+     free(info->image_data);
     info->image_data = pixels_new;
     }
 }
