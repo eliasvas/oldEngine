@@ -2043,6 +2043,122 @@ internal void *buf__grow(const void *buf, u32 new_len, u32 element_size)
 */
 
 
+//A LINKED-LIST INT-TO-INT HASHMAP IMPLEMENTATION
+
+typedef struct IntPair
+{
+   i32 key;
+   i32 value;
+   struct IntPair *next;
+}IntPair;
+
+typedef struct IntHashMap
+{
+    IntPair **data;
+    u32 size;
+}IntHashMap;
+
+internal IntHashMap 
+hashmap_create(u32 size)
+{
+    IntHashMap res;
+    res.size = size;
+    //res.data = (IntPair**)arena_alloc(&global_platform.permanent_storage, sizeof(IntPair*) * size);
+    res.data = (IntPair**)ALLOC(sizeof(IntPair*) * size);
+    i32 i;
+    for (i = 0; i < size; ++i)
+        res.data[i] = NULL;
+    return res;
+}
+internal i32
+hash_code(IntHashMap* table, i32 key)
+{
+    return abs((i32)(key % table->size));
+}
+
+internal void
+hashmap_insert(IntHashMap* table, i32 key, i32 val)
+{
+   i32 pos = hash_code(table, key);
+   IntPair *list_to_insert_pair = table->data[pos];
+   IntPair *new_pair = (IntPair*)ALLOC(sizeof(IntPair));
+   IntPair *iter = &list_to_insert_pair[0];
+   while (iter)
+   {
+        if (iter->key == key)
+        {
+            iter->value = val;
+            return;
+        }
+        iter = iter->next;
+   }
+   new_pair->key = key;
+   new_pair->value = val;
+   new_pair->next = &list_to_insert_pair[0];
+   table->data[pos] = new_pair;
+}
+
+internal i32 
+hashmap_lookup(IntHashMap* table, u32 key)
+{
+    u32 pos = hash_code(table, key);
+    IntPair* list_to_search = table->data[pos];
+    IntPair* iter = list_to_search;
+    while (iter)
+    {
+       if (iter->key == key)
+       {
+            return iter->value;
+       }
+       iter = iter->next;
+    }
+    return -1;
+}
+
+static u32 
+hashmap_remove(IntHashMap *table, u32 key)
+{
+    u32 pos = hash_code(table, key);
+    IntPair *list_to_search = table->data[pos];
+    IntPair *iter = list_to_search;
+    IntPair *prev = NULL;
+    while (iter)
+    {
+       if (iter->key == key)
+       {
+          if (prev == NULL)
+          {
+              table->data[pos] = iter->next;
+              free(iter);
+              return 1;
+          }else
+          {
+            prev->next = iter->next;
+            free(iter);
+            return 1;
+          }
+       }
+       prev = iter;
+       iter = iter->next;
+    }
+    return 0;
+}
+
+internal void *free_next(IntPair *p)
+{
+    free_next(p->next);
+    free(p);
+}
+
+internal void hashmap_destroy(IntHashMap *table)
+{
+    for (u32 i = 0; i < table->size; ++i)
+    {
+        IntPair *next = table->data[i];
+        free_next(next);
+    }
+}
+
 
 
 

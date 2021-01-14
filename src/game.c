@@ -8,6 +8,7 @@
 #include "renderer.h"
 #include "collada_parser.h"
 #include "animation.h"
+#include "entity.h"
 mat4 view,proj;
 
 global Camera cam;

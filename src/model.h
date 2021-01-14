@@ -126,7 +126,7 @@ model_init_cube(Model* m)
 
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
-    texture_load(&(m->meshes[0].material.diff),"../assets/texture.tga");
+    texture_load(&(m->meshes[0].material.diff),"../assets/sprite.tga");
     texture_load(&(m->meshes[0].material.spec),"../assets/texture_spec.tga");
       
 }
