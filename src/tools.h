@@ -1512,6 +1512,19 @@ INLINE Quaternion quat_from_angle(vec3 axis, f32 angle)
     return res;
 }
 
+INLINE vec3 quat_to_angle(Quaternion quat)
+{
+    f32 theta = acos(quat.w) *2.f;
+
+    float ax = quat.x / sin(acos(theta));
+    float ay = quat.y / sin(acos(theta));
+    float az = quat.z / sin(acos(theta));
+
+    return v3(ax,ay,az);
+}
+
+
+
 INLINE Quaternion quat_normalize(Quaternion l)
 {
     Quaternion res;

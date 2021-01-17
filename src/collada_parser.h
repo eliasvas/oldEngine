@@ -683,7 +683,8 @@ read_collada_animation(String filepath) {
                        fscanf(file, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f", &mat.raw[0],&mat.raw[1],&mat.raw[2],&mat.raw[3],&mat.raw[4],&mat.raw[5],&mat.raw[6],&mat.raw[7],&mat.raw[8],&mat.raw[9],&mat.raw[10],&mat.raw[11],&mat.raw[12],&mat.raw[13],&mat.raw[14],&mat.raw[15]);
                        mat = mat4_transpose(mat);
                        //JointTransform t = {v3(mat.elements[3][0],mat.elements[3][1],mat.elements[3][2]), mat4_to_quat(mat)};
-                       JointTransform t = {v3(mat.elements[3][0],mat.elements[3][1],mat.elements[3][2]), mat4_to_quat(mat), mat};
+                       //JointTransform t = {v3(mat.elements[3][0],mat.elements[3][1],mat.elements[3][2]), quat_normalize(mat4_to_quat(mat)), mat};
+                       JointTransform t = {v3(mat.elements[3][0],mat.elements[3][1],mat.elements[3][2]),mat4_to_quat(mat), mat};
                        anim.joint_animations[current_joint_animation].keyframes[i].transform = t;
                        anim.joint_animations[current_joint_animation].keyframes[i].joint_index = joint_index;
                        anim.length = max(anim.length, anim.joint_animations[current_joint_animation].keyframes[keyframe_count - 1].timestamp);

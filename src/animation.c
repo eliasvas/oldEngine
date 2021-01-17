@@ -125,7 +125,7 @@ get_previous_and_next_keyframes(Animator* animator, i32 joint_animation_index)
     for (i32 i = 1; i < animator->anim->joint_animations[joint_animation_index].keyframe_count; ++i)
     {
         next = all_frames[i];
-        if (next.timestamp > animator->animation_time)
+        if (next.timestamp >= animator->animation_time)
             break;
         prev = all_frames[i];
     }
@@ -138,16 +138,17 @@ get_previous_and_next_keyframes(Animator* animator, i32 joint_animation_index)
 {
     f32 total_time = next.timestamp - prev.timestamp;
     f32 current_time = animator->animation_time - prev.timestamp;
-    if (current_time/total_time < 0.04)return 0;
+    //if (current_time/total_time < 0.4)return 0;
     return current_time / total_time;
 }
 
 JointKeyFrame interpolate_poses(JointKeyFrame prev, JointKeyFrame next, f32 x)
 {
     JointKeyFrame res;
+    //if (x > 1 || x < 0)sprintf(error_log, "x: ", x);
     
     res.transform.position = vec3_lerp(prev.transform.position, next.transform.position, x);
-    res.transform.rotation = nlerp(prev.transform.rotation, next.transform.rotation, x);
+    res.transform.rotation = nlerp(quat_normalize(prev.transform.rotation), quat_normalize(next.transform.rotation), x);
     res.joint_index = prev.joint_index;
     
     return res;
