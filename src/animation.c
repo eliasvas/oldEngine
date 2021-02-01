@@ -183,6 +183,7 @@ update_animator(Animator* animator)
         if (animator->blend_percentage < 0.001f)
         {
           animator->prev_pose[current_pose.joint_index] = (JointKeyFrame){0};
+          //this might be the error
           animator->prev_pose[current_pose.joint_index].transform.rotation = (Quaternion){0};//quat_from_angle(v3(0,1,0),0);
         }
     }

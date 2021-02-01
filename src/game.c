@@ -63,6 +63,8 @@ render(void)
 
     light_cube.model = mat4_translate(v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)));
     renderer_push_model(&rend, &light_cube);
+    renderer_push_filled_rect(&rend, v2(-1,-1),v4(0.8f,0.2f,0.2f,1.f));
+    //renderer_push_filled_rect(&rend, v2(0.8f,0), v4(0.8f,0.2f,0.2f,1.f));
 
 
     update_animator(&animator);

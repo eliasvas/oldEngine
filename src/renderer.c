@@ -33,6 +33,8 @@ local_persist f32 screen_verts[] = {
          1.0f,  1.0f,  1.0f, 1.0f,
 };
 
+local_persist f32 filled_quad_verts[] = { 0.f,0.f, 0.f,1.f, 1.f,0.f, 1.f,1.f };
+
 void
 renderer_init(Renderer *rend)
 {
@@ -78,11 +80,34 @@ renderer_init(Renderer *rend)
         glBindVertexArray(0); 
     }
 
+    //initialize filled rect vao
+    {
+        GLuint vbo;
+        glGenVertexArrays(1, &rend->filled_rect_vao);
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &rend->filled_rect_instance_vbo);
+        glBindVertexArray(rend->filled_rect_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(filled_quad_verts), &filled_quad_verts[0], GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0,2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        //this buffer should be update with the contents of filled rect instance data before rendering
+        glBindBuffer(GL_ARRAY_BUFFER, rend->filled_rect_instance_vbo);
+        glVertexAttribPointer(1,2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(0 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2,4, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(2 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glVertexAttribDivisor(1,1);
+        glVertexAttribDivisor(2,1);
+    }
+
     shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
     shader_load(&rend->shaders[1],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
     shader_load(&rend->shaders[2],"../assets/shaders/postproc.vert","../assets/shaders/postproc.frag");
     shader_load(&rend->shaders[3],"../assets/shaders/shadowmap.vert","../assets/shaders/shadowmap.frag");
     shader_load(&rend->shaders[4],"../assets/shaders/animated3d.vert","../assets/shaders/phong.frag");
+    shader_load(&rend->shaders[5],"../assets/shaders/filled_rect.vert","../assets/shaders/filled_rect.frag");
 
 
     //misc
@@ -118,6 +143,7 @@ renderer_begin_frame(Renderer *rend)
   rend->current_fbo = &rend->main_fbo;
   rend->model_alloc_pos = 0;
   rend->animated_model_alloc_pos = 0;
+  rend->filled_rect_alloc_pos = 0;
   rend->point_light_count = 0;
 }
 
@@ -238,6 +264,10 @@ renderer_end_frame(Renderer *rend)
   vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
   //renderer_check_gl_errors();
 
+  //update instance data for filled rect
+  glBindBuffer(GL_ARRAY_BUFFER, rend->filled_rect_instance_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(RendererFilledRect) * rend->filled_rect_alloc_pos, &rend->filled_rect_instance_data[0], GL_DYNAMIC_DRAW);
+
   //first we render the scene to the depth map
   fbo_bind(&rend->shadowmap_fbo);
   renderer_render_scene3D(rend,&rend->shaders[3]);
@@ -302,6 +332,11 @@ renderer_end_frame(Renderer *rend)
     glBindVertexArray(0);
   }
   renderer_render_scene3D(rend,&rend->shaders[0]);
+
+  //render filled rects
+  use_shader(&rend->shaders[5]);
+  glBindVertexArray(rend->filled_rect_vao);
+  glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, rend->filled_rect_alloc_pos);
 
   //at the end we render the skybox
   skybox_render(&rend->skybox, rend->proj, rend->view);
@@ -368,6 +403,12 @@ void renderer_push_animated_model(Renderer *rend, AnimatedModel *m)
   //data.model = mat4_translate(v3(0,2,0));
   data.model = mat4_translate(v3(0,0.5f,0));
   rend->animated_model_instance_data[rend->animated_model_alloc_pos++] = data;
+}
+
+void renderer_push_filled_rect(Renderer *rend, vec2 pos, vec4 color)
+{
+    RendererFilledRect rect = (RendererFilledRect){pos, color};
+    rend->filled_rect_instance_data[rend->filled_rect_alloc_pos++] = rect;
 }
 
 void renderer_push_point_light(Renderer *rend, PointLight l)

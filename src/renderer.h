@@ -27,6 +27,12 @@ typedef struct RendererModelData
   Texture *spec;
 }RendererModelData;
 
+typedef struct RendererFilledRect
+{
+    vec2 offset;
+    vec4 color;
+}RendererFilledRect;
+
 typedef struct RendererAnimatedModelData
 {
     GLuint vao;
@@ -44,6 +50,7 @@ typedef struct RendererAnimatedModelData
 #define RENDERER_MAX_POINT_LIGHTS 256
 #define RENDERER_BYTES_PER_MODEL sizeof(RendererModelData)
 #define RENDERER_MAX_MODELS 256
+#define RENDERER_MAX_RECTS 256
 #define RENDERER_MAX_ANIMATED_MODELS 64
 
 typedef struct Renderer
@@ -67,6 +74,11 @@ typedef struct Renderer
   GLuint model_vao;
   RendererModelData model_instance_data[RENDERER_MAX_MODELS];
   u32 model_alloc_pos;
+
+  GLuint filled_rect_vao;
+  GLuint filled_rect_instance_vbo;
+  RendererFilledRect filled_rect_instance_data[RENDERER_MAX_RECTS];
+  u32 filled_rect_alloc_pos;
 
 
   RendererAnimatedModelData animated_model_instance_data[RENDERER_MAX_ANIMATED_MODELS];
