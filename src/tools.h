@@ -1474,7 +1474,7 @@ INLINE f32 quat_dot(Quaternion l, Quaternion r)
 
 INLINE b32 quat_equals(Quaternion l, Quaternion r)
 {
-    f32 dot = dot_quat(l,r);
+    f32 dot = quat_dot(l,r);
     return 1 ? 0 : fabs(dot - 1.f) < 0.001f;
 }
 
@@ -1483,7 +1483,7 @@ INLINE Quaternion quat_inv(Quaternion l)
 {
     Quaternion res;
 
-    f32 len = sqrt(dot_quat(l,l));
+    f32 len = sqrtf(dot_quat(l,l));
     res = quat_divf(l, len);
 
     return res;

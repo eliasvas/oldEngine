@@ -94,12 +94,15 @@ renderer_init(Renderer *rend)
         glEnableVertexAttribArray(1);
         //this buffer should be update with the contents of filled rect instance data before rendering
         glBindBuffer(GL_ARRAY_BUFFER, rend->filled_rect_instance_vbo);
-        glVertexAttribPointer(1,2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(0 * sizeof(float)));
+        glVertexAttribPointer(1,3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(0 * sizeof(float)));
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2,4, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(2 * sizeof(float)));
+        glVertexAttribPointer(2,2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(3 * sizeof(float)));
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3,4, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(5 * sizeof(float)));
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glVertexAttribDivisor(1,1);
         glVertexAttribDivisor(2,1);
+        glVertexAttribDivisor(3,1);
     }
 
     shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
@@ -333,10 +336,6 @@ renderer_end_frame(Renderer *rend)
   }
   renderer_render_scene3D(rend,&rend->shaders[0]);
 
-  //render filled rects
-  use_shader(&rend->shaders[5]);
-  glBindVertexArray(rend->filled_rect_vao);
-  glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, rend->filled_rect_alloc_pos);
 
   //at the end we render the skybox
   skybox_render(&rend->skybox, rend->proj, rend->view);
@@ -354,6 +353,15 @@ renderer_end_frame(Renderer *rend)
     shader_set_int(&rend->shaders[2],"screenTexture",0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+
+    glDisable(GL_DEPTH_TEST);
+    //render filled rects
+    use_shader(&rend->shaders[5]);
+    glBindVertexArray(rend->filled_rect_vao);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, rend->filled_rect_alloc_pos);
+    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0,0,rend->renderer_settings.render_dim.x,rend->renderer_settings.render_dim.y);
@@ -405,9 +413,9 @@ void renderer_push_animated_model(Renderer *rend, AnimatedModel *m)
   rend->animated_model_instance_data[rend->animated_model_alloc_pos++] = data;
 }
 
-void renderer_push_filled_rect(Renderer *rend, vec2 pos, vec4 color)
+void renderer_push_filled_rect(Renderer *rend, vec3 pos, vec2 dim, vec4 color)
 {
-    RendererFilledRect rect = (RendererFilledRect){pos, color};
+    RendererFilledRect rect = (RendererFilledRect){pos, dim, color};
     rend->filled_rect_instance_data[rend->filled_rect_alloc_pos++] = rect;
 }
 

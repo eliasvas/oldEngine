@@ -29,9 +29,18 @@ typedef struct RendererModelData
 
 typedef struct RendererFilledRect
 {
-    vec2 offset;
+    vec3 offset;
+    vec2 dim; //width and height of rect
     vec4 color;
 }RendererFilledRect;
+
+typedef struct RendererLine
+{
+    vec3 start;
+    vec3 end;
+    vec4 color;
+}RendererLine;
+
 
 typedef struct RendererAnimatedModelData
 {
@@ -79,7 +88,11 @@ typedef struct Renderer
   GLuint filled_rect_instance_vbo;
   RendererFilledRect filled_rect_instance_data[RENDERER_MAX_RECTS];
   u32 filled_rect_alloc_pos;
-
+  
+  GLuint line_vao;
+  GLuint line_instance_vbo;
+  RendererFilledRect line_instance_data[RENDERER_MAX_RECTS];
+  u32 line_alloc_pos;
 
   RendererAnimatedModelData animated_model_instance_data[RENDERER_MAX_ANIMATED_MODELS];
   u32 animated_model_alloc_pos;
