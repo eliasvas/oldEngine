@@ -104,6 +104,26 @@ renderer_init(Renderer *rend)
         glVertexAttribDivisor(2,1);
         glVertexAttribDivisor(3,1);
     }
+    //initialize line vao 
+    {
+        GLuint vbo;
+        glGenVertexArrays(1, &rend->line_vao);
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &rend->line_instance_vbo);
+        glBindVertexArray(rend->line_vao);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, rend->line_instance_vbo);
+        glVertexAttribPointer(0,3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void *)(0 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1,3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void *)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2,4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void *)(6 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glVertexAttribDivisor(0,1);
+        glVertexAttribDivisor(1,1);
+        glVertexAttribDivisor(2,1);
+    }
+
 
     shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
     shader_load(&rend->shaders[1],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
@@ -111,6 +131,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[3],"../assets/shaders/shadowmap.vert","../assets/shaders/shadowmap.frag");
     shader_load(&rend->shaders[4],"../assets/shaders/animated3d.vert","../assets/shaders/phong.frag");
     shader_load(&rend->shaders[5],"../assets/shaders/filled_rect.vert","../assets/shaders/filled_rect.frag");
+    shader_load(&rend->shaders[6],"../assets/shaders/line.vert","../assets/shaders/line.frag");
 
 
     //misc
@@ -147,6 +168,7 @@ renderer_begin_frame(Renderer *rend)
   rend->model_alloc_pos = 0;
   rend->animated_model_alloc_pos = 0;
   rend->filled_rect_alloc_pos = 0;
+  rend->line_alloc_pos = 0;
   rend->point_light_count = 0;
 }
 
@@ -270,6 +292,10 @@ renderer_end_frame(Renderer *rend)
   //update instance data for filled rect
   glBindBuffer(GL_ARRAY_BUFFER, rend->filled_rect_instance_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererFilledRect) * rend->filled_rect_alloc_pos, &rend->filled_rect_instance_data[0], GL_DYNAMIC_DRAW);
+  //update instance data for line 
+  glBindBuffer(GL_ARRAY_BUFFER, rend->line_instance_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(RendererLine) * rend->line_alloc_pos, &rend->line_instance_data[0], GL_DYNAMIC_DRAW);
+
 
   //first we render the scene to the depth map
   fbo_bind(&rend->shadowmap_fbo);
@@ -335,10 +361,27 @@ renderer_end_frame(Renderer *rend)
     glBindVertexArray(0);
   }
   renderer_render_scene3D(rend,&rend->shaders[0]);
+    //render filled rects
+    use_shader(&rend->shaders[5]);
+    shader_set_mat4fv(&rend->shaders[5], "view", (GLfloat*)rend->view.elements);
+    glBindVertexArray(rend->filled_rect_vao);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, rend->filled_rect_alloc_pos);
+    glBindVertexArray(0);
+
 
 
   //at the end we render the skybox
   skybox_render(&rend->skybox, rend->proj, rend->view);
+    //render lines
+    glDisable(GL_DEPTH_TEST);
+    glLineWidth(2);
+    use_shader(&rend->shaders[6]);
+    shader_set_mat4fv(&rend->shaders[6], "view", (GLfloat*)rend->view.elements);
+    glBindVertexArray(rend->line_vao);
+    glDrawArraysInstanced(GL_LINES, 0, 2, rend->line_alloc_pos);
+    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+
 
   glBindFramebuffer(GL_FRAMEBUFFER, rend->postproc_fbo.fbo);
   glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[0]);
@@ -353,14 +396,6 @@ renderer_end_frame(Renderer *rend)
     shader_set_int(&rend->shaders[2],"screenTexture",0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
-
-    glDisable(GL_DEPTH_TEST);
-    //render filled rects
-    use_shader(&rend->shaders[5]);
-    glBindVertexArray(rend->filled_rect_vao);
-    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, rend->filled_rect_alloc_pos);
-    glBindVertexArray(0);
-    glEnable(GL_DEPTH_TEST);
 
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -418,6 +453,13 @@ void renderer_push_filled_rect(Renderer *rend, vec3 pos, vec2 dim, vec4 color)
     RendererFilledRect rect = (RendererFilledRect){pos, dim, color};
     rend->filled_rect_instance_data[rend->filled_rect_alloc_pos++] = rect;
 }
+
+void renderer_push_line(Renderer *rend, vec3 start, vec3 end, vec4 color)
+{
+    RendererLine line = (RendererLine){start,end,color};
+    rend->line_instance_data[rend->line_alloc_pos++] = line;
+}
+
 
 void renderer_push_point_light(Renderer *rend, PointLight l)
 {

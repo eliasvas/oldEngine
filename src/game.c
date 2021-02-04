@@ -66,7 +66,11 @@ render(void)
 
     if (global_platform.key_down[KEY_TAB])
     {
-        renderer_push_filled_rect(&rend, v3(0.f,0.5f, 0.f), v2(0.5f,0.5f),v4(0.2f,0.5f,0.4f,0.9f));
+        renderer_push_filled_rect(&rend, v3(0.05f,0.5f, 0.f), v2(0.5f,0.5f),v4(0.2f,0.2f,0.2f,0.9f));
+        renderer_push_line(&rend, v3(0.05f,1.f,0.f), v3(0.05f,0.5f,0.0), v4(0.1f,0.8f,0.3f,1.f));
+        renderer_push_line(&rend, v3(0.05f,1.f,0.f), v3(0.30f,1.f,0.0), v4(0.1f,0.8f,0.3f,1.f));
+        renderer_push_line(&rend, v3(0.30f,1.f,0.f), v3(0.30f,0.5f,0.0), v4(0.1f,0.8f,0.3f,1.f));
+        renderer_push_line(&rend, v3(0.05f,0.5f,0.f), v3(0.30f,0.5f,0.0), v4(0.1f,0.8f,0.3f,1.f));
     }
 
     update_animator(&animator);

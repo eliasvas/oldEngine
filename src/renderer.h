@@ -91,7 +91,7 @@ typedef struct Renderer
   
   GLuint line_vao;
   GLuint line_instance_vbo;
-  RendererFilledRect line_instance_data[RENDERER_MAX_RECTS];
+  RendererLine line_instance_data[RENDERER_MAX_RECTS];
   u32 line_alloc_pos;
 
   RendererAnimatedModelData animated_model_instance_data[RENDERER_MAX_ANIMATED_MODELS];
