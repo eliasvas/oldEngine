@@ -17,7 +17,6 @@ global LARGE_INTEGER fr,st,ft;
 
 
 internal LRESULT Win32WindowProc(HWND hWnd, UINT message, WPARAM w_param, LPARAM l_param) {
-
     LRESULT result = {0};
     if (message == WM_SIZE)
         {
@@ -30,8 +29,8 @@ internal LRESULT Win32WindowProc(HWND hWnd, UINT message, WPARAM w_param, LPARAM
         global_platform.exit = 1;
     }else if (message == WM_SYSKEYDOWN || message == WM_SYSKEYUP || message == WM_KEYDOWN || message == WM_KEYUP){
         u64 vkey_code = w_param;
-        i8 was_down = !!(l_param & (1 << 30));
-        i8 is_down = !(l_param & (1 << 31));
+        i8 was_down = ((l_param & (1 << 30)) != 0);
+        i8 is_down = ((l_param & (1UL << 31)) == 0);
 
         u64 key_input =0;
 
@@ -65,7 +64,7 @@ internal LRESULT Win32WindowProc(HWND hWnd, UINT message, WPARAM w_param, LPARAM
             {
                 key_input = KEY_DOWN;
             }
-             else if (vkey_code == VK_CONTROL)
+            else if (vkey_code == VK_CONTROL)
             {
                 key_input = KEY_CTRL;
             }
@@ -73,16 +72,16 @@ internal LRESULT Win32WindowProc(HWND hWnd, UINT message, WPARAM w_param, LPARAM
            //handle more keys
         }
         if (is_down){
-           if (!global_platform.key_down[key_input])
+           if (global_platform.key_down[key_input] == 0)
            {
-               ++global_platform.key_pressed[key_input];
+               global_platform.key_pressed[key_input] = 1;
            }
-           ++global_platform.key_down[key_input];
+           global_platform.key_down[key_input] = 1;
            global_platform.last_key = (i32)key_input;
            if(global_platform.key_down[KEY_ALT] && key_input == KEY_F4)
-            {
-                global_platform.exit = 1;
-            }
+           {
+               global_platform.exit = 1;
+           }
         }else 
         {
             global_platform.key_down[key_input] = 0;
@@ -195,7 +194,11 @@ WinMain(HINSTANCE Instance,
 
 
     init();
+
     while (!global_platform.exit){
+        //zero out previous key presses
+        for (u32 key = 0; key < (int)KEY_MAX; ++key)
+            global_platform.key_pressed[key] = 0;
         QueryPerformanceCounter(&st);
         while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)){
             TranslateMessage(&msg);

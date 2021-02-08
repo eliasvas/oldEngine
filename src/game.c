@@ -18,6 +18,8 @@ global Model model;
 global Renderer rend;
 global Animator animator;
 
+global b32 UI_OPEN;
+
 internal void 
 init(void)
 {
@@ -40,7 +42,7 @@ update(void)
 {
   renderer_begin_frame(&rend);
   camera_update(&cam);
-  rend.proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,300.f); 
+  rend.proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,80.f); 
   rend.view = get_view_mat(&cam);
 }
 
@@ -64,7 +66,9 @@ render(void)
     light_cube.model = mat4_translate(v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)));
     renderer_push_model(&rend, &light_cube);
 
-    if (global_platform.key_down[KEY_TAB])
+    if (global_platform.key_pressed[KEY_TAB])
+        UI_OPEN = !UI_OPEN;
+    if (UI_OPEN)
     {
         renderer_push_filled_rect(&rend, v3(0.05f,0.5f, 0.f), v2(0.5f,0.5f),v4(0.2f,0.2f,0.2f,0.9f));
         renderer_push_line(&rend, v3(0.05f,1.f,0.f), v3(0.05f,0.5f,0.0), v4(0.1f,0.8f,0.3f,1.f));

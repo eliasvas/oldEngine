@@ -4,10 +4,17 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
+uniform sampler2D depthTexture;
+
 uniform float flag;
 float offset = 1.0 / 300.0; //tweak this
 
-
+float zNear = 0.1;
+float zFar = 80.f;
+float linearize_depth(float d,float zNear,float zFar)
+{
+    return zNear * zFar / (zFar + d * (zNear - zFar));
+}
 
 void main()
 {
@@ -51,6 +58,6 @@ void main()
     vec3 mapped = vec3(1.0) - exp(-FragColor.rgb * exposure);
     // gamma correction 
     mapped = pow(mapped, vec3(gamma));
-  
+	
     FragColor = vec4(mapped, 1.0);
 }

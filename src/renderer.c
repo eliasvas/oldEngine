@@ -369,9 +369,9 @@ renderer_end_frame(Renderer *rend)
     glBindVertexArray(0);
 
 
+  skybox_render(&rend->skybox, rend->proj, rend->view);
 
   //at the end we render the skybox
-  skybox_render(&rend->skybox, rend->proj, rend->view);
     //render lines
     glDisable(GL_DEPTH_TEST);
     glLineWidth(2);
@@ -391,9 +391,12 @@ renderer_end_frame(Renderer *rend)
     glEnable(GL_DEPTH_TEST);
     use_shader(&rend->shaders[2]);
     glBindVertexArray(rend->postproc_vao);
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[0]);
-    shader_set_int(&rend->shaders[2],"screenTexture",0);
+    shader_set_int(&rend->shaders[2],"screenTexture",1);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
+    shader_set_int(&rend->shaders[2],"depthTexture",0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
@@ -403,7 +406,6 @@ renderer_end_frame(Renderer *rend)
 
   //fbo_copy_contents(rend->main_fbo.fbo,0);
   fbo_copy_contents(rend->postproc_fbo.fbo,0);
-  //fbo_copy_contents(rend->ui_fbo.fbo,0);
 }
 
 void renderer_push_model(Renderer *rend, Model *m)
