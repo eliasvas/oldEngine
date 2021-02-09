@@ -19,6 +19,7 @@ global Renderer rend;
 global Animator animator;
 
 global b32 UI_OPEN;
+global f32 trans = 0.f;
 
 internal void 
 init(void)
@@ -66,15 +67,19 @@ render(void)
     light_cube.model = mat4_translate(v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)));
     renderer_push_model(&rend, &light_cube);
 
-    if (global_platform.key_pressed[KEY_TAB])
-        UI_OPEN = !UI_OPEN;
-    if (UI_OPEN)
+    //UI bullshit..
     {
-        renderer_push_filled_rect(&rend, v3(0.05f,0.5f, 0.f), v2(0.5f,0.5f),v4(0.2f,0.2f,0.2f,0.9f));
-        renderer_push_line(&rend, v3(0.05f,1.f,0.f), v3(0.05f,0.5f,0.0), v4(0.1f,0.8f,0.3f,1.f));
-        renderer_push_line(&rend, v3(0.05f,1.f,0.f), v3(0.30f,1.f,0.0), v4(0.1f,0.8f,0.3f,1.f));
-        renderer_push_line(&rend, v3(0.30f,1.f,0.f), v3(0.30f,0.5f,0.0), v4(0.1f,0.8f,0.3f,1.f));
-        renderer_push_line(&rend, v3(0.05f,0.5f,0.f), v3(0.30f,0.5f,0.0), v4(0.1f,0.8f,0.3f,1.f));
+        if (global_platform.key_pressed[KEY_TAB])
+            UI_OPEN = !UI_OPEN;
+        if (UI_OPEN)
+        {
+            f32 x_off = 0.05f;
+            renderer_push_filled_rect(&rend, v3(0.f + x_off,0.5f, 0.f), v2(0.25f,0.25f),v4(0.2f,0.2f,0.2f,0.9f));
+            renderer_push_line(&rend, v3(0.f + x_off,0.5f,0.f), v3(0.25f + x_off,0.5f,0.0), v4(0.1f,0.8f,0.3f,0.9f));
+            renderer_push_line(&rend, v3(0.f + x_off,0.5f,0.f), v3(0.f + x_off,1.f,0.0), v4(0.1f,0.8f,0.3f,0.9f));
+            renderer_push_line(&rend, v3(0.f + x_off,1.f,0.f), v3(0.25f + x_off,1.f,0.0), v4(0.1f,0.8f,0.3f,0.9f));
+            renderer_push_line(&rend, v3(0.25f + x_off,0.5f,0.f), v3(0.25f + x_off,1.f,0.0), v4(0.1f,0.8f,0.3f,0.9f));
+        }
     }
 
     update_animator(&animator);
