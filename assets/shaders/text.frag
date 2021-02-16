@@ -1,9 +1,12 @@
 #version 330 core
 out vec4 FragColor;
   
-in vec2 f_tex_coords;;
+in vec2 f_tex_coords;
+uniform sampler2D bmf_sampler;
 
 void main()
 {
-	FragColor = vec4(1.0,0.0,0.0,1.0);
+	FragColor = texture(bmf_sampler, f_tex_coords);
+	FragColor.w = 1.0;
+	if (FragColor.x < 0.1)discard;
 } 

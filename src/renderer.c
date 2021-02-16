@@ -160,7 +160,7 @@ renderer_init(Renderer *rend)
 
     //misc
     texture_load(&rend->white_texture,"../assets/white.tga");
-    //texture_load(&rend->bmf,"../assets/.tga");
+    texture_load(&rend->bmf,"../assets/bmf.tga");
 }
 
 void
@@ -416,6 +416,9 @@ renderer_end_frame(Renderer *rend)
     glDisable(GL_DEPTH_TEST);
     use_shader(&rend->shaders[7]);
     shader_set_mat4fv(&rend->shaders[7], "view", (GLfloat*)rend->view.elements);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, rend->bmf.id);
+    shader_set_int(&rend->shaders[7], "bmf_sampler",0);
     glBindVertexArray(rend->text_vao);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4,rend->text_alloc_pos);
     glBindVertexArray(0);

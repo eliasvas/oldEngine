@@ -10,7 +10,7 @@ uniform mat4 MVP;
 
 void main()
 {
-	f_tex_coords = uv;
+	f_tex_coords = position / 16;
 	
 	vec2 pos = position * dim;
 	pos += vec2(offset);
