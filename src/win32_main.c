@@ -249,7 +249,7 @@ WinMain(HINSTANCE Instance,
             global_platform.current_time += global_platform.dt;//dt;
         }
            global_platform.dt = frame_count / (f32)fr.QuadPart;
-            global_platform.current_time += global_platform.dt;//dt;
+           global_platform.current_time += global_platform.dt;//dt;
 
         if (strlen(error_log) != 0){
             MessageBox(WND, error_log, "FATAL ERROR", MB_OK);

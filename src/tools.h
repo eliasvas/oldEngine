@@ -541,7 +541,7 @@ INLINE vec2 vec2_rotate(vec2 v, f32 a) {
 
 INLINE f32 vec2_length(vec2 v)
 {
-    f32 res = sqrt(dot_vec2(v,v)); // (x^2 + y^2)^(1/2)
+    f32 res = sqrtf(dot_vec2(v,v)); // (x^2 + y^2)^(1/2)
     return res;
 }
 
@@ -625,7 +625,7 @@ INLINE f32 vec3_dot(vec3 l, vec3 r)
 
 INLINE f32 vec3_length(vec3 v)
 {
-    f32 res = sqrt(vec3_dot(v,v)); // (x^2 + y^2)^(1/2)
+    f32 res = sqrtf(vec3_dot(v,v)); // (x^2 + y^2)^(1/2)
     return res;
 }
 
@@ -1638,7 +1638,7 @@ mat4_to_quat(mat4 m)
         }
     }
 
-    Q = quat_mulf(Q, 0.5f / sqrt(T));
+    Q = quat_mulf(Q, 0.5f / sqrtf(T));
 
     return Q;
 }

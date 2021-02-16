@@ -54,6 +54,13 @@ typedef struct RendererAnimatedModelData
     mat4 model;
 }RendererAnimatedModelData;
 
+typedef struct RendererChar
+{
+    vec3 offset;
+    vec2 dim;
+    vec2 uv; //where in the bitmap font the character is 
+}RendererChar;
+
 
 #define RENDERER_MAX_SHADERS 256
 #define RENDERER_MAX_POINT_LIGHTS 256
@@ -61,6 +68,7 @@ typedef struct RendererAnimatedModelData
 #define RENDERER_MAX_MODELS 256
 #define RENDERER_MAX_RECTS 256
 #define RENDERER_MAX_ANIMATED_MODELS 64
+#define RENDERER_MAX_TEXT 1024
 
 typedef struct Renderer
 {
@@ -93,6 +101,11 @@ typedef struct Renderer
   GLuint line_instance_vbo;
   RendererLine line_instance_data[RENDERER_MAX_RECTS];
   u32 line_alloc_pos;
+
+  GLuint text_vao;
+  GLuint text_instance_vbo;
+  RendererChar text_instance_data[RENDERER_MAX_TEXT];
+  u32 text_alloc_pos;
 
   RendererAnimatedModelData animated_model_instance_data[RENDERER_MAX_ANIMATED_MODELS];
   u32 animated_model_alloc_pos;

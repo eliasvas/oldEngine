@@ -51,7 +51,7 @@ void main()
 	//FragColor = vec4(KernelColor,1.0);
 	
 	float exposure = 2.0;
-	float gamma = 2.2;
+	float gamma = 2.0;
     //FragColor.rgb = pow(FragColor.rgb, vec3(gamma));
 	
 	// reinhard tone mapping

@@ -106,7 +106,7 @@ renderer_init(Renderer *rend)
     }
     //initialize line vao 
     {
-        GLuint vbo; //this shouldnt be here????
+        GLuint vbo;
         glGenVertexArrays(1, &rend->line_vao);
         glGenBuffers(1, &vbo);
         glGenBuffers(1, &rend->line_instance_vbo);
@@ -123,7 +123,7 @@ renderer_init(Renderer *rend)
         glVertexAttribDivisor(1,1);
         glVertexAttribDivisor(2,1);
     }
-    //initialize text vao
+    //initialize filled rect vao
     {
         GLuint vbo;
         glGenVertexArrays(1, &rend->text_vao);
@@ -155,12 +155,11 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[4],"../assets/shaders/animated3d.vert","../assets/shaders/phong.frag");
     shader_load(&rend->shaders[5],"../assets/shaders/filled_rect.vert","../assets/shaders/filled_rect.frag");
     shader_load(&rend->shaders[6],"../assets/shaders/line.vert","../assets/shaders/line.frag");
-    shader_load(&rend->shaders[7],"../assets/shaders/text.vert","../assets/shaders/text.frag");
+    shader_load(&rend->shaders[6],"../assets/shaders/text.vert","../assets/shaders/text.frag");
 
 
     //misc
     texture_load(&rend->white_texture,"../assets/white.tga");
-    //texture_load(&rend->bmf,"../assets/.tga");
 }
 
 void
@@ -195,7 +194,6 @@ renderer_begin_frame(Renderer *rend)
   rend->filled_rect_alloc_pos = 0;
   rend->line_alloc_pos = 0;
   rend->point_light_count = 0;
-  rend->text_alloc_pos = 0;
 }
 
 internal void
@@ -321,11 +319,6 @@ renderer_end_frame(Renderer *rend)
   //update instance data for line 
   glBindBuffer(GL_ARRAY_BUFFER, rend->line_instance_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererLine) * rend->line_alloc_pos, &rend->line_instance_data[0], GL_DYNAMIC_DRAW);
-  //update instance data for text 
-  glBindBuffer(GL_ARRAY_BUFFER, rend->text_instance_vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(RendererChar) * rend->text_alloc_pos, &rend->text_instance_data[0], GL_DYNAMIC_DRAW);
-
-
 
 
   //first we render the scene to the depth map
@@ -405,22 +398,13 @@ renderer_end_frame(Renderer *rend)
   //at the end we render the skybox
     //render lines
     glDisable(GL_DEPTH_TEST);
-    glLineWidth(3);
+    glLineWidth(2);
     use_shader(&rend->shaders[6]);
     shader_set_mat4fv(&rend->shaders[6], "view", (GLfloat*)rend->view.elements);
     glBindVertexArray(rend->line_vao);
     glDrawArraysInstanced(GL_LINES, 0, 2, rend->line_alloc_pos);
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
-
-    glDisable(GL_DEPTH_TEST);
-    use_shader(&rend->shaders[7]);
-    shader_set_mat4fv(&rend->shaders[7], "view", (GLfloat*)rend->view.elements);
-    glBindVertexArray(rend->text_vao);
-    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4,rend->text_alloc_pos);
-    glBindVertexArray(0);
-    glEnable(GL_DEPTH_TEST);
-
 
 
   glBindFramebuffer(GL_FRAMEBUFFER, rend->postproc_fbo.fbo);
@@ -496,11 +480,10 @@ void renderer_push_filled_rect(Renderer *rend, vec3 pos, vec2 dim, vec4 color)
     rend->filled_rect_instance_data[rend->filled_rect_alloc_pos++] = rect;
 }
 
-void renderer_push_text(Renderer *rend, vec3 pos, vec2 dim, char *str)
+void renderer_push_filled_rect(Renderer *rend, vec3 pos, vec2 dim, vec4 color)
 {
-    //for each char in string .. put 'em in the instance data
-    RendererChar c = (RendererChar){pos, dim, v2(0,0)}; //@Fix
-    rend->text_instance_data[rend->text_alloc_pos++] = c;
+    RendererFilledRect rect = (RendererFilledRect){pos, dim, color};
+    rend->filled_rect_instance_data[rend->filled_rect_alloc_pos++] = rect;
 }
 
 

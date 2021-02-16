@@ -85,6 +85,7 @@ render(void)
     update_animator(&animator);
     renderer_push_model(&rend,&model);
     renderer_push_animated_model(&rend, &animator.model);
+    renderer_push_text(&rend, v3(0.5,0.5,0.0), v2(0.2,0.2), "hm");
     renderer_end_frame(&rend);
 }
 
