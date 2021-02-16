@@ -501,6 +501,22 @@ void renderer_push_filled_rect(Renderer *rend, vec3 pos, vec2 dim, vec4 color)
 
 void renderer_push_text(Renderer *rend, vec3 pos, vec2 dim, char *str)
 {
+    u32 str_len = str_size(str);
+    for (u32 ch = 0; ch < str_len;++ch)
+    {
+        char letter = str[ch];
+        f32 uv_x = (letter % 16) / 16.f;
+        f32 uv_y = 1 - (letter / 16) /16.f - 1.f/16.f;
+        vec2 uv_down_left = v2(uv_x, uv_y);
+        //for each char in string .. put 'em in the instance data
+        pos.x += dim.x;
+        RendererChar c = (RendererChar){pos, dim, uv_down_left}; //@Fix
+        rend->text_instance_data[rend->text_alloc_pos++] = c;
+    }
+}
+
+void renderer_push_char(Renderer *rend, vec3 pos, vec2 dim, char ch)
+{
     //for each char in string .. put 'em in the instance data
     RendererChar c = (RendererChar){pos, dim, v2(0,0)}; //@Fix
     rend->text_instance_data[rend->text_alloc_pos++] = c;
