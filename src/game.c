@@ -75,17 +75,19 @@ render(void)
         {
             f32 x_off = 0.05f;
             renderer_push_filled_rect(&rend, v3(0.f + x_off,0.5f, 0.f), v2(0.25f,0.25f),v4(0.2f,0.2f,0.2f,0.9f));
-            renderer_push_line(&rend, v3(0.f + x_off,0.5f,0.f), v3(0.25f + x_off,0.5f,0.0), v4(0.1f,0.8f,0.3f,0.9f));
-            renderer_push_line(&rend, v3(0.f + x_off,0.5f,0.f), v3(0.f + x_off,1.f,0.0), v4(0.1f,0.8f,0.3f,0.9f));
-            renderer_push_line(&rend, v3(0.f + x_off,1.f,0.f), v3(0.25f + x_off,1.f,0.0), v4(0.1f,0.8f,0.3f,0.9f));
-            renderer_push_line(&rend, v3(0.25f + x_off,0.5f,0.f), v3(0.25f + x_off,1.f,0.0), v4(0.1f,0.8f,0.3f,0.9f));
+            renderer_push_line(&rend, v3(0.f + x_off,0.5f,0.f), v3(0.25f + x_off,0.5f,0.0), v4(1.f, 0.5f,0.5f,0.9f));
+            renderer_push_line(&rend, v3(0.f + x_off,0.5f,0.f), v3(0.f + x_off,1.f,0.0), v4(1.f, 0.5f,0.5f,0.9f));
+            renderer_push_line(&rend, v3(0.f + x_off,1.f,0.f), v3(0.25f + x_off,1.f,0.0), v4(1.f, 0.5f,0.5f,0.9f));
+            renderer_push_line(&rend, v3(0.25f + x_off,0.5f,0.f), v3(0.25f + x_off,1.f,0.0), v4(1.f, 0.5f,0.5f,0.9f));
+            renderer_push_text(&rend, v3(0.05,0.70,0.0), v2(0.02,0.02), "screenshot");
+            renderer_push_text(&rend, v3(0.05,0.65,0.0), v2(0.015,0.015), "-format");
+            renderer_push_text(&rend, v3(0.05,0.60,0.0), v2(0.015,0.015), "-padding");
         }
     }
 
     update_animator(&animator);
     renderer_push_model(&rend,&model);
     renderer_push_animated_model(&rend, &animator.model);
-    renderer_push_text(&rend, v3(0.1,0.9,0.0), v2(0.05,0.05), "general kenobi");
     renderer_end_frame(&rend);
 }
 

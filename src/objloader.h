@@ -312,5 +312,6 @@ internal MeshInfo *obj_read(char *objpath, MeshMaterial *materials)
 }
 
 
+internal MeshInfo *gen_uv_sphere(void);
 
 #endif
