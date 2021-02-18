@@ -9,10 +9,13 @@ uniform sampler2D depthTexture;
 uniform float flag;
 float offset = 1.0 / 300.0; //tweak this
 
-float zNear = 0.1;
-float zFar = 80.0;
-float linearize_depth(float d,float zNear,float zFar)
+uniform mat4 proj;
+float linearize_depth(float d)
 {
+	float A = proj[2].z;
+    float B = proj[3].z;
+    float zNear = - B / (1.0 - A);
+    float zFar  =   B / (1.0 + A);
 	return (2.0 * zNear) / (zFar + zNear - d * (zFar - zNear));	 
 }
 //return zNear * zFar / (zFar + d * (zNear - zFar));
@@ -62,5 +65,5 @@ void main()
     mapped = pow(mapped, vec3(gamma));
 	
     FragColor = vec4(mapped, 1.0);
-	gl_FragDepth = linearize_depth(max(0.05,texture(depthTexture, TexCoords).x), zNear,zFar);
+	gl_FragDepth = linearize_depth(max(0.05,texture(depthTexture, TexCoords).x));
 }

@@ -51,7 +51,7 @@ renderer_init(Renderer *rend)
     rend->postproc_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_DEPTH);
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
     rend->shadowmap_fbo = fbo_init(1024, 1024, FBO_DEPTH);
-    rend->depthpeel_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_COLOR_0 | FBO_DEPTH);
+    //rend->depthpeel_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_COLOR_0 | FBO_DEPTH);
     rend->current_fbo = &rend->main_fbo;
     
 
@@ -64,6 +64,7 @@ renderer_init(Renderer *rend)
 
     char **faces= cubemap_default();
     skybox_init(&rend->skybox, faces);
+    rend->proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,80.f); 
 
     //initialize postproc VAO
     {
@@ -184,11 +185,11 @@ renderer_begin_frame(Renderer *rend)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0.7,0.8,1,1);
 
-  fbo_resize(&rend->ui_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
+  //fbo_resize(&rend->ui_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
   fbo_bind(&rend->main_fbo);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0,0,0,0);
-  fbo_resize(&rend->depthpeel_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
+  //fbo_resize(&rend->depthpeel_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
   rend->current_fbo = &rend->main_fbo;
   rend->model_alloc_pos = 0;
   rend->animated_model_alloc_pos = 0;
@@ -440,6 +441,7 @@ renderer_end_frame(Renderer *rend)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
     shader_set_int(&rend->shaders[2],"depthTexture",0);
+    shader_set_mat4fv(&rend->shaders[2], "proj", (GLfloat*)rend->proj.elements);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 

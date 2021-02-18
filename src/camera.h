@@ -29,7 +29,7 @@ camera_init(Camera* cam)
     cam->yaw = -90.0f;
     
     //cam->camera_speed = 100.f;
-    cam->camera_speed = 50.f;
+    cam->camera_speed = 20.f;
     cam->first_mouse = 0;
 }
 

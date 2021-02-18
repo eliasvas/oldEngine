@@ -43,7 +43,6 @@ update(void)
 {
   renderer_begin_frame(&rend);
   camera_update(&cam);
-  rend.proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,80.f); 
   rend.view = get_view_mat(&cam);
 }
 
@@ -82,6 +81,10 @@ render(void)
             renderer_push_text(&rend, v3(0.05,0.70,0.0), v2(0.02,0.02), "screenshot");
             renderer_push_text(&rend, v3(0.05,0.65,0.0), v2(0.015,0.015), "-format");
             renderer_push_text(&rend, v3(0.05,0.60,0.0), v2(0.015,0.015), "-padding");
+
+            char ms[32];
+            sprintf(ms, "%.4f ms", global_platform.dt);
+            renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
         }
     }
 
