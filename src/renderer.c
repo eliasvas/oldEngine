@@ -169,7 +169,11 @@ renderer_begin_frame(Renderer *rend)
 {
   rend->renderer_settings.render_dim = (ivec2){global_platform.window_width, global_platform.window_height};
 
-  fbo_resize(&rend->postproc_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
+  if (global_platform.window_resized)
+  {
+      fbo_resize(&rend->postproc_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
+      fbo_resize(&rend->main_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
+  }
   fbo_bind(&rend->postproc_fbo);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0,0,0,0);
@@ -180,15 +184,10 @@ renderer_begin_frame(Renderer *rend)
 
 
 
-  fbo_resize(&rend->main_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
   fbo_bind(&rend->main_fbo);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0.7,0.8,1,1);
 
-  //fbo_resize(&rend->ui_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
-  fbo_bind(&rend->main_fbo);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glClearColor(0,0,0,0);
   //fbo_resize(&rend->depthpeel_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
   rend->current_fbo = &rend->main_fbo;
   rend->model_alloc_pos = 0;

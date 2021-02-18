@@ -122,6 +122,7 @@ typedef struct Platform
 {
     i32 window_width; //width of window (width border)
     i32 window_height; //height of window (with border)
+    b32 window_resized;
     b32 exit; //whether we should exit
     b32 vsync; //whether the app has vsync (capped FPS.. kinda)
     b32 fullscreen; //whether the app is in fullscreen

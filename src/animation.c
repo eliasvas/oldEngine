@@ -159,8 +159,6 @@ JointKeyFrame interpolate_poses(JointKeyFrame prev, JointKeyFrame next, f32 x)
 {
     JointKeyFrame* frames = get_previous_and_next_keyframes(animator, joint_animation_index);
     f32 x = calc_progress(animator, frames[0],frames[1]);
-    if (x > 1.f || x < 0.f)
-        snprintf(error_log, sizeof(error_log), "tis a fuck up, x = %f", x);
     //if (joint_animation_index == 28 && global_platform.current_time >=1.f)snprintf(error_log, sizeof(error_log), "%f", x);
     return interpolate_poses(frames[0],frames[1], x);
 }

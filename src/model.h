@@ -1,6 +1,5 @@
 #ifndef MODEL_H
 #define MODEL_H
-
 #include "objloader.h"
 #include "tools.h"
 #include "platform.h"
@@ -103,7 +102,7 @@ local_persist f32 cube_data[] = {
         -1.f,  1.f,  1.f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
         -1.f,  1.f, -1.f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
 };
-static void 
+internal void 
 model_init_cube(Model* m)
 {
     m->meshes = ALLOC(sizeof(MeshInfo));
@@ -116,6 +115,35 @@ model_init_cube(Model* m)
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * m->meshes[0].vertices_count, &cube_data, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 3));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 6));
+    glBindVertexArray(0);
+
+
+    shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
+    texture_load(&(m->meshes[0].material.diff),"../assets/sprite.tga");
+    texture_load(&(m->meshes[0].material.spec),"../assets/texture_spec.tga");
+      
+}
+
+internal void 
+model_init_sphere(Model* m)
+{
+    m->meshes = ALLOC(sizeof(MeshInfo));
+    m->mesh_count = 1;
+    m->meshes[0].vertices_count = 36;
+    m->model = mat4_translate(v3(0,0,0));
+    glGenVertexArrays(1, &m->meshes[0].vao);
+    glBindVertexArray(m->meshes[0].vao); 
+    GLuint VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    //u32 sphere_vertices_count = gen_vertex_sphere();
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * m->meshes[0].sphere_vertices_count, &sphere_data, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)0);
     glEnableVertexAttribArray(1);
