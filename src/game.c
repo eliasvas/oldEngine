@@ -14,6 +14,7 @@ mat4 view,proj;
 global Camera cam;
 global Model debug_cube;
 global Model light_cube;
+global Model sphere;
 global Model model;
 global Renderer rend;
 global Animator animator;
@@ -29,6 +30,7 @@ init(void)
     renderer_init(&rend);
     model_init_cube(&light_cube);
     light_cube.meshes[0].material.diff = debug_cube.meshes[0].material.spec;
+    model_init_sphere(&sphere);
 
     model = model_info_init("../assets/arena/arena.mtl");
     model.model = mat4_scale(v3(0.2f,0.2f,0.2f));
@@ -65,6 +67,8 @@ render(void)
 
     light_cube.model = mat4_translate(v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)));
     renderer_push_model(&rend, &light_cube);
+    sphere.model = mat4_mul(mat4_translate(v3(0,5,0)),mat4_scale(v3(0.2f,0.2f,0.2f)));
+    renderer_push_model(&rend, &sphere);
 
     //UI bullshit..
     {

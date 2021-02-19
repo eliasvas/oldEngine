@@ -25,6 +25,7 @@ typedef struct MeshInfo
 {
     Vertex *vertices;
     u32 vertices_count;
+    b32 indexed;
     //Material m;
     MeshMaterial material;
     GLuint vao;
