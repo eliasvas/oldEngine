@@ -30,7 +30,7 @@ init(void)
     renderer_init(&rend);
     model_init_cube(&light_cube);
     light_cube.meshes[0].material.diff = debug_cube.meshes[0].material.spec;
-    model_init_sphere(&sphere);
+    model_init_sphere(&sphere, 2.f, 20,20);
 
     model = model_info_init("../assets/arena/arena.mtl");
     model.model = mat4_scale(v3(0.2f,0.2f,0.2f));

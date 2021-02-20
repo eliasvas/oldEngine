@@ -137,8 +137,7 @@ gen_sphere_data(f32 radius, u32 sector_count, u32 stack_count)
 {
     //Vertex *res = malloc(sizeof(Vertex) * sectors * stacks * 3);
     u32 vertices_count = sector_count * stack_count * 3 * 2;
-    //Vertex *res = (Vertex*)arena_alloc(&global_platform.frame_storage, sizeof(Vertex) * 1000);
-    Vertex *res = (Vertex*)malloc(sizeof(Vertex) * 1000);
+    Vertex *res = (Vertex*)arena_alloc(&global_platform.frame_storage, sizeof(Vertex) * vertices_count);
     u32 vertex_count = 0;
 
     vec3 pos;
@@ -226,15 +225,15 @@ gen_sphere_data(f32 radius, u32 sector_count, u32 stack_count)
 }
 
 internal void 
-model_init_sphere(Model* m)
+model_init_sphere(Model* m, f32 radius, u32 sectors, u32 stacks)
 {
-    f32 radius = 2.f;
-    u32 sectors = 10;
-    u32 stacks = 10;
+    //f32 radius = 2.f;
+    //u32 sectors = 20;
+    //u32 stacks = 10;
     Vertex *sphere_data = gen_sphere_data(radius, sectors, stacks);
     m->meshes = ALLOC(sizeof(MeshInfo));
     m->mesh_count = 1;
-    m->meshes[0].vertices_count = 1000;
+    m->meshes[0].vertices_count = 6 * sectors * stacks;
     m->model = mat4_translate(v3(0,0,0));
     glGenVertexArrays(1, &m->meshes[0].vao);
     glBindVertexArray(m->meshes[0].vao); 
