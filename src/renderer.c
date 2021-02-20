@@ -50,7 +50,7 @@ renderer_init(Renderer *rend)
     rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_DEPTH);
     rend->postproc_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_DEPTH);
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
-    rend->shadowmap_fbo = fbo_init(1024, 1024, FBO_DEPTH);
+    rend->shadowmap_fbo = fbo_init(2048, 2048, FBO_DEPTH);
     //rend->depthpeel_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_COLOR_0 | FBO_DEPTH);
     rend->current_fbo = &rend->main_fbo;
     
@@ -254,11 +254,11 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];
-    mat4 ortho_proj = orthographic_proj(-200.f, 200.f, -200.f, 200.f, 0.01f, 200.f);
+    mat4 ortho_proj = orthographic_proj(-100.f, 100.f, -100.f, 100.f, 0.01f, 100.f);
     //mat4 light_space_matrix = mat4_mul(ortho_proj, mat4_mul(
      //     mat4_translate(v3(rend->view.elements[3][0],rend->view.elements[3][1] + 10.f,rend->view.elements[3][2])), mat4_rotate(-90.f, v3(1.f,0.f,0.f))));
 
-    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,100,0), v3(10,0,0), v3(0,1,0)));
+    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,100,0), v3(-10,0,0), v3(0,1,0)));
 
 
 

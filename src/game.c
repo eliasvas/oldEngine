@@ -82,9 +82,9 @@ render(void)
             renderer_push_line(&rend, v3(0.f + x_off,0.5f,0.f), v3(0.f + x_off,1.f,0.0), v4(1.f, 0.5f,0.5f,0.9f));
             renderer_push_line(&rend, v3(0.f + x_off,1.f,0.f), v3(0.25f + x_off,1.f,0.0), v4(1.f, 0.5f,0.5f,0.9f));
             renderer_push_line(&rend, v3(0.25f + x_off,0.5f,0.f), v3(0.25f + x_off,1.f,0.0), v4(1.f, 0.5f,0.5f,0.9f));
-            renderer_push_text(&rend, v3(0.05,0.70,0.0), v2(0.02,0.02), "screenshot");
-            renderer_push_text(&rend, v3(0.05,0.65,0.0), v2(0.015,0.015), "-format");
-            renderer_push_text(&rend, v3(0.05,0.60,0.0), v2(0.015,0.015), "-padding");
+            renderer_push_text(&rend, v3(0.05,0.70,0.0), v2(0.02,0.025), "screenshot");
+            renderer_push_text(&rend, v3(0.05,0.65,0.0), v2(0.015,0.020), "-format");
+            renderer_push_text(&rend, v3(0.05,0.60,0.0), v2(0.015,0.020), "-padding");
 
             char ms[32];
             sprintf(ms, "%.4f ms", global_platform.dt);

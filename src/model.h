@@ -146,11 +146,11 @@ gen_sphere_data(f32 radius, u32 sector_count, u32 stack_count)
     vec2 texcoords;
     f32 length_inv = 1.f/radius;
 
-    vec3 *positions = (vec3*)malloc(sizeof(vec3) * 1000);
+    vec3 *positions = (vec3*)arena_alloc(&global_platform.frame_storage, sizeof(vec3) * sector_count * stack_count*10);
     u32 positions_count = 0;
-    vec3 *normals = (vec3*)malloc(sizeof(vec3) * 1000);
+    vec3 *normals = (vec3*)arena_alloc(&global_platform.frame_storage, sizeof(vec3) * sector_count * stack_count*10);
     u32 normals_count = 0;
-    vec2 *tex_coords= (vec2*)malloc(sizeof(vec2) * 1000);
+    vec2 *tex_coords= (vec2*)arena_alloc(&global_platform.frame_storage, sizeof(vec2) * sector_count * stack_count*10);
     u32 tex_count = 0;
 
 
@@ -228,7 +228,7 @@ gen_sphere_data(f32 radius, u32 sector_count, u32 stack_count)
 internal void 
 model_init_sphere(Model* m)
 {
-    f32 radius = 1.f;
+    f32 radius = 2.f;
     u32 sectors = 10;
     u32 stacks = 10;
     Vertex *sphere_data = gen_sphere_data(radius, sectors, stacks);
@@ -252,7 +252,7 @@ model_init_sphere(Model* m)
 
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
-    texture_load(&(m->meshes[0].material.diff),"../assets/sprite.tga");
+    texture_load(&(m->meshes[0].material.diff),"../assets/mars.tga");
     texture_load(&(m->meshes[0].material.spec),"../assets/texture_spec.tga");
       
 }
