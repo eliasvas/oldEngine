@@ -145,6 +145,7 @@ typedef struct Platform
     Arena frame_storage; //an arena to store frame data, flushed EVERY frame
 }Platform;
 
+#define GLFunc(type, name) PFNGL##type##PROC name;
 //this global_platform variable is the platform of the engine
 //whatever you want to query or change, the global platform is the guy you need
 extern Platform global_platform;
@@ -202,6 +203,14 @@ extern PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer;
 extern PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
 extern PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate;
 extern PFNGLBLITFRAMEBUFFERPROC glBlitFramebuffer;
+extern GLFunc( BINDBUFFERBASE, glBindBufferBase);
+extern GLFunc( UNMAPBUFFER, glUnmapBuffer);
+extern GLFunc( GETBUFFERSUBDATA, glGetBufferSubData);
+extern GLFunc( CLEARBUFFERDATA, glClearBufferData);
+extern GLFunc( TEXSTORAGE2D, glTexStorage2D);
+extern GLFunc( BUFFERSUBDATA, glBufferSubData);
+extern GLFunc( CLEARTEXIMAGE, glClearTexImage);
+
 
 
 

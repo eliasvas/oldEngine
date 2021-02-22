@@ -86,6 +86,15 @@ GLFunc( BLENDFUNCSEPARATE, glBlendFuncSeparate);
 GLFunc( DELETEFRAMEBUFFERS, glDeleteFramebuffers);
 GLFunc( BLITFRAMEBUFFER, glBlitFramebuffer);
 
+GLFunc( BINDBUFFERBASE, glBindBufferBase);
+GLFunc( UNMAPBUFFER, glUnmapBuffer);
+GLFunc( GETBUFFERSUBDATA, glGetBufferSubData);
+GLFunc( CLEARBUFFERDATA, glClearBufferData);
+GLFunc( TEXSTORAGE2D, glTexStorage2D);
+GLFunc( BUFFERSUBDATA, glBufferSubData);
+GLFunc( CLEARTEXIMAGE, glClearTexImage);
+
+
 
 static void *GetGLFuncAddress(const char *name)
 {
@@ -157,6 +166,10 @@ LoadAllOpenGLProcedures()
 
    glDeleteFramebuffers =  (PFNGLDELETEFRAMEBUFFERSPROC)GetGLFuncAddress("glDeleteFramebuffers");
    glBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)GetGLFuncAddress("glBlitFramebuffer");
+glBindBufferBase = (PFNGLBINDBUFFERBASEPROC)GetGLFuncAddress("glBindBufferBase");
+   glUnmapBuffer = (PFNGLUNMAPBUFFERPROC)GetGLFuncAddress("glUnmapBuffer");
+   glGetBufferSubData = (PFNGLGETBUFFERSUBDATAPROC)GetGLFuncAddress("glGetBufferSubData");
+   glBufferSubData = (PFNGLBUFFERSUBDATAPROC)GetGLFuncAddress("glBufferSubData");
 
    //and on and on and on......
 }
