@@ -9,6 +9,7 @@
 #include "collada_parser.h"
 #include "animation.h"
 #include "entity.h"
+#include "dev_ui.h"
 mat4 view,proj;
 
 global Camera cam;
@@ -16,7 +17,7 @@ global Model debug_cube;
 global Model light_cube;
 global Model sphere;
 global Model model;
-global Renderer rend;
+Renderer rend;
 global Animator animator;
 
 global b32 UI_OPEN;
