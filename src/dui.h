@@ -4,6 +4,7 @@
 
 //this is heavily influenced by microui
 #define dui_stack(T, n) struct {f32 idx; T items[n];} 
+#define GEN_ID (__LINE__)
 typedef struct dui_Rect
 {
     f32 x,y,w,h;
@@ -36,6 +37,7 @@ void dui_draw_char(f32 x, f32 y, f32 w, f32 h, char ch);
 //------------------------------------------------------
 
 b32 do_button(DUIID id, dui_Rect rect);
+b32 do_slider(DUIID id, f32 x, f32 y, f32 max, i32 *value);
 void dui_default(void);
 
 void dui_frame_begin(void);

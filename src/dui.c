@@ -10,7 +10,6 @@ void dui_draw_rect(f32 x, f32 y, f32 w, f32 h, vec4 color)
 {
     renderer_push_filled_rect(&rend, v3((f32)x/global_platform.window_width,(f32)y/global_platform.window_height,0), 
             v2((f32)w/global_platform.window_width,(f32)h/global_platform.window_height), color);
-    //sprintf(error_log, "%f %f %f %f",(f32)x/global_platform.window_width,(f32)y/global_platform.window_height,(f32)w/global_platform.window_width,(f32)h/global_platform.window_height);
 }
 void dui_draw_char(f32 x, f32 y, f32 w, f32 h, char ch)
 {
@@ -44,20 +43,18 @@ void dui_frame_end(void)
 b32 do_button(DUIID id, dui_Rect rect)
 {
 
-    //renderer_push_filled_rect(&rend, v3(0,0,0), v2(0.2,0.2), v4(1,1,1,1)); 
     if (dui_rect_hit(rect))
     {
         ui.hot = id;
         if (ui.active == 0 && ui.mouse_down)
             ui.active = id;
     }
-    //renderer_push_filled_rect(&rend,v3(0.10,0.10,0), v2(0.3,0.3), v4(1.f,1.f,0,1.f));
     if (ui.hot == id)
     {
         if (ui.active ==id)
-            dui_draw_rect(rect.x, rect.y, rect.w, rect.h, layout.bg_lite);
-        else 
             dui_draw_rect(rect.x, rect.y, rect.w, rect.h, layout.fg);
+        else 
+            dui_draw_rect(rect.x, rect.y, rect.w, rect.h, layout.bg_lite);
     }
     else 
         dui_draw_rect(rect.x, rect.y, rect.w, rect.h, layout.bg);
@@ -68,6 +65,34 @@ b32 do_button(DUIID id, dui_Rect rect)
     return 0;
 }
 
+b32 do_slider(DUIID id, f32 x, f32 y, f32 max, i32 *value)
+{
+    i32 xpos = ((256 - 16) * (*value)) / max;
+
+    if (dui_rect_hit((dui_Rect){x +8,y+8, 255,16}))
+    {
+        ui.hot = id;
+        if (ui.active == 0 && ui.mouse_down)
+            ui.active = id;
+    }
+    //render slider
+    dui_draw_rect(x + 8, y + 8, 255, 16, layout.bg);
+
+    if (ui.active ==id || ui.hot == id)
+        dui_draw_rect(x + 8 + xpos, y + 8, 16, 16, layout.fg);
+    else
+        dui_draw_rect(x + 8 + xpos, y + 8, 16, 16, layout.bg_lite);
+    //update slider value
+    if (ui.active == id)
+    {
+        i32 mouse_pos = ui.mouse_pos.x - (x+8);
+        if (mouse_pos < 0)mouse_pos = 0;
+        if (mouse_pos > 255)mouse_pos = 255;
+        i32 v = (mouse_pos * max) / 255;
+        if (v!=*value){*value = v;return 1;}
+    }
+    return 0;
+}
 void dui_default(void)
 {
     layout.fg = v4(0.8,0.2,0.2,0.9f);

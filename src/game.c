@@ -23,6 +23,8 @@ global Animator animator;
 global b32 UI_OPEN;
 global f32 trans = 0.f;
 
+i32 slider_val = 5;
+
 internal void 
 init(void)
 {
@@ -48,6 +50,7 @@ update(void)
   renderer_begin_frame(&rend);
   camera_update(&cam);
   rend.view = get_view_mat(&cam);
+  cam.can_rotate = !UI_OPEN;
 }
 
 internal void 
@@ -72,6 +75,7 @@ render(void)
     sphere.model = mat4_mul(mat4_translate(v3(0,5,0)),mat4_scale(v3(0.2f,0.2f,0.2f)));
     renderer_push_model(&rend, &sphere);
 
+    dui_frame_begin();
     //UI bullshit..
     {
         if (global_platform.key_pressed[KEY_TAB])
@@ -91,11 +95,11 @@ render(void)
             char ms[32];
             sprintf(ms, "%.4f ms", global_platform.dt);
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
+            do_slider(GEN_ID, global_platform.window_width *0.05f , global_platform.window_width / 3.5f, 10.f, &slider_val);
         }
     }
-    dui_frame_begin();
-    if (do_button(1, (dui_Rect){100,100,100,100}))
-        UI_OPEN = !UI_OPEN;
+        if (do_button(GEN_ID, (dui_Rect){100,100,100,100}))
+            UI_OPEN = !UI_OPEN;
     dui_frame_end();
 
     update_animator(&animator);
