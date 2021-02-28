@@ -9,7 +9,7 @@
 #include "collada_parser.h"
 #include "animation.h"
 #include "entity.h"
-#include "dev_ui.h"
+#include "dui.h"
 mat4 view,proj;
 
 global Camera cam;
@@ -37,6 +37,7 @@ init(void)
     model.model = mat4_scale(v3(0.2f,0.2f,0.2f));
     animator = animator_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
         str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
+    dui_default();
 }
 
 
@@ -92,6 +93,10 @@ render(void)
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
         }
     }
+    dui_frame_begin();
+    if (do_button(1, (dui_Rect){100,100,100,100}))
+        UI_OPEN = !UI_OPEN;
+    dui_frame_end();
 
     update_animator(&animator);
     renderer_push_model(&rend,&model);

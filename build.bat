@@ -14,5 +14,5 @@ REM The fully code is compatible with C++, to compile just remove /Tc from the c
 
 if not exist build mkdir build
 pushd build
-start /b /wait "" "cl.exe" %compile_flags% %build_options%  /Tc ..\src\win32_main.c /Tc ..\src\animation.c /Tc ..\src\renderer.c /Tc ..\src\dev_ui.c -I../src/ /link %link_flags% /out:%application_name%
+start /b /wait "" "cl.exe" %compile_flags% %build_options%  /Tc ..\src\win32_main.c /Tc ..\src\animation.c /Tc ..\src\renderer.c /Tc ..\src\dui.c -I../src/ /link %link_flags% /out:%application_name%
 popd
