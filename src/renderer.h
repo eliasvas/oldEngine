@@ -5,6 +5,7 @@
 #include "texture.h"
 #include "skybox.h"
 #include "model.h"
+#include "camera.h"
 #include "fbo.h"
 #include "animation.h"
 
@@ -111,6 +112,7 @@ typedef struct Renderer
   u32 animated_model_alloc_pos;
 
   Shader shaders[RENDERER_MAX_SHADERS];
+  Camera cam;
   u32 shaders_count;
   PointLight point_lights[RENDERER_MAX_POINT_LIGHTS];
   u32 point_light_count;

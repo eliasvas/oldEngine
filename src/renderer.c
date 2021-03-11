@@ -38,6 +38,7 @@ local_persist f32 filled_quad_verts[] = { 0.f,0.f, 0.f,1.f, 1.f,0.f, 1.f,1.f };
 void
 renderer_init(Renderer *rend)
 {
+    camera_init(&rend->cam);
     rend->multisampling = FALSE;
     rend->multisamping_count = 4;
     rend->depthpeeling = FALSE;
@@ -392,6 +393,15 @@ renderer_end_frame(Renderer *rend)
     glBindVertexArray(0);
   }
   renderer_render_scene3D(rend,&rend->shaders[0]);
+    //render lines
+    glLineWidth(5);
+    use_shader(&rend->shaders[6]);
+    mat4 mvp = mat4_mul(rend->proj, rend->view);
+    shader_set_mat4fv(&rend->shaders[6], "MVP", (GLfloat*)mvp.elements);
+    glBindVertexArray(rend->line_vao);
+    glDrawArraysInstanced(GL_LINES, 0, 2, rend->line_alloc_pos);
+    glBindVertexArray(0);
+
 
   skybox_render(&rend->skybox, rend->proj, rend->view);
 
@@ -431,14 +441,6 @@ renderer_end_frame(Renderer *rend)
 
 
   //at the end we render the skybox
-    //render lines
-    glLineWidth(3);
-    use_shader(&rend->shaders[6]);
-    shader_set_mat4fv(&rend->shaders[6], "view", (GLfloat*)rend->view.elements);
-    glBindVertexArray(rend->line_vao);
-    glDrawArraysInstanced(GL_LINES, 0, 2, rend->line_alloc_pos);
-    glBindVertexArray(0);
-
     use_shader(&rend->shaders[7]);
     shader_set_mat4fv(&rend->shaders[7], "view", (GLfloat*)rend->view.elements);
     glActiveTexture(GL_TEXTURE0);
@@ -517,8 +519,13 @@ void renderer_push_text(Renderer *rend, vec3 pos, vec2 dim, char *str)
 
 void renderer_push_char(Renderer *rend, vec3 pos, vec2 dim, char ch)
 {
+    char letter = ch;
+    f32 uv_x = (letter % 16) / 16.f;
+    f32 uv_y = 1 - (letter / 16) /16.f - 1.f/16.f;
+    vec2 uv_down_left = v2(uv_x, uv_y);
     //for each char in string .. put 'em in the instance data
-    RendererChar c = (RendererChar){pos, dim, v2(0,0)}; //@Fix
+    pos.x += dim.x;
+    RendererChar c = (RendererChar){pos, dim, uv_down_left}; //@Fix
     rend->text_instance_data[rend->text_alloc_pos++] = c;
 }
 
@@ -534,4 +541,9 @@ void renderer_push_point_light(Renderer *rend, PointLight l)
 {
   rend->point_lights[rend->point_light_count++] = l;
 }
-
+void renderer_push_compass(Renderer *rend, vec3 position)
+{
+    renderer_push_line(rend, position, vec3_add(position, v3(0,2,0)), v4(0.2,0.2,0.9, 1.0));
+    renderer_push_line(rend, position, vec3_add(position, v3(2,0,0)), v4(0.9,0.2,0.2, 1.0));
+    renderer_push_line(rend, position, vec3_add(position, v3(0,0,-2)), v4(0.2,0.9,0.2, 1.0));
+}

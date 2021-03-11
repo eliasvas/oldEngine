@@ -7,8 +7,7 @@ uniform sampler2D bmf_sampler;
 void main()
 {
 	FragColor = texture(bmf_sampler, f_tex_coords);
-	FragColor.y/=2.f;
-	FragColor.z/=2.f;
+	FragColor.xyz = vec3(0.9,0.3,0.3);
 	//FragColor.w = 1.0;
 	if (FragColor.x < 0.1)discard;
 } 

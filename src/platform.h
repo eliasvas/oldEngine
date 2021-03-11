@@ -132,6 +132,7 @@ typedef struct Platform
 
     f32 mouse_x; //mouse x pos wrt top left corner
     f32 mouse_y; //mouse y coordinate wrt top left corner
+    vec2 mouse_dt;
     b8 left_mouse_down; //whether LMB is down 
     b8 right_mouse_down; //whether RMB is down
     b8 key_down[KEY_MAX]; //whether a key is down

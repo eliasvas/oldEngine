@@ -210,6 +210,7 @@ WinMain(HINSTANCE Instance,
             POINT mouse;
             GetCursorPos(&mouse);
             ScreenToClient(WND, &mouse);
+            global_platform.mouse_dt = v2(global_platform.mouse_x - mouse.x, global_platform.mouse_y - mouse.y);
             global_platform.mouse_x = (f32)(mouse.x);
             global_platform.mouse_y = (f32)(mouse.y);
         }

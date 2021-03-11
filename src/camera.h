@@ -90,7 +90,7 @@ camera_update(Camera* cam)
     cam->front = vec3_normalize(direction);
 }
 
-mat4 get_view_mat(Camera* cam)
+internal mat4 get_view_mat(Camera* cam)
 {
     mat4 camera = look_at(cam->pos,vec3_add(cam->pos, cam->front),cam->up);
     return camera;

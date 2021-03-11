@@ -16,6 +16,7 @@ typedef struct dui_State
 {
     DUIID hot;
     DUIID active;
+    DUIID last_widget;
     DUIID hot_to_be; //set next frame!
 
     vec2 mouse_pos;
@@ -33,10 +34,11 @@ typedef struct dui_Layout
 
 //------these functions are application dependent-------
 void dui_draw_rect(f32 x, f32 y, f32 w, f32 h, color4 color);
-void dui_draw_char(f32 x, f32 y, f32 w, f32 h, char ch);
+void dui_draw_char(f32 x, f32 y, char ch);
 //------------------------------------------------------
 
 b32 do_button(DUIID id, dui_Rect rect);
+b32 do_switch(DUIID id, dui_Rect rect, b32 *value);
 b32 do_slider(DUIID id, f32 x, f32 y, f32 max, i32 *value);
 void dui_default(void);
 

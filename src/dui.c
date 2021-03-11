@@ -11,10 +11,16 @@ void dui_draw_rect(f32 x, f32 y, f32 w, f32 h, vec4 color)
     renderer_push_filled_rect(&rend, v3((f32)x/global_platform.window_width,(f32)y/global_platform.window_height,0), 
             v2((f32)w/global_platform.window_width,(f32)h/global_platform.window_height), color);
 }
-void dui_draw_char(f32 x, f32 y, f32 w, f32 h, char ch)
+void dui_draw_char(f32 x, f32 y, char ch)
 {
-    renderer_push_char(&rend, v3(x/(f32)global_platform.window_width,y/(f32)global_platform.window_height,0), v2(w/(f32)global_platform.window_width,h/(f32)global_platform.window_height), ch);
+    renderer_push_char(&rend, v3((f32)x/global_platform.window_width,(f32)y/global_platform.window_height,0),v2((f32)12/global_platform.window_width,(f32)12/global_platform.window_height), ch);
 }
+void dui_draw_char2(f32 x, f32 y,f32 w, f32 h, char ch)
+{
+    renderer_push_char(&rend, v3((f32)x/global_platform.window_width,(f32)y/global_platform.window_height,0),v2((f32)w/global_platform.window_width,(f32)h/global_platform.window_height), ch);
+}
+
+
 #endif
 
 b32 dui_rect_hit(dui_Rect rect)
@@ -65,6 +71,31 @@ b32 do_button(DUIID id, dui_Rect rect)
     return 0;
 }
 
+b32 do_switch(DUIID id, dui_Rect rect, b32 *value)
+{
+    if (dui_rect_hit(rect))
+    {
+        ui.hot = id;
+        if (ui.active == 0 && ui.mouse_down)
+            ui.active = id;
+    }
+    if (*value)
+        dui_draw_rect(rect.x, rect.y, rect.w, rect.h, layout.fg);
+    else 
+        dui_draw_rect(rect.x, rect.y, rect.w, rect.h, layout.bg_lite);
+
+    //user just clicked!
+    if (ui.mouse_down == 0 && ui.hot == id && ui.active == id)
+    {
+        *value = !*value;
+        return 1;
+    }
+
+    //#not
+    return 0;
+
+}
+
 b32 do_slider(DUIID id, f32 x, f32 y, f32 max, i32 *value)
 {
     i32 xpos = ((256 - 16) * (*value)) / max;
@@ -92,6 +123,15 @@ b32 do_slider(DUIID id, f32 x, f32 y, f32 max, i32 *value)
         if (v!=*value){*value = v;return 1;}
     }
     return 0;
+}
+void dui_draw_string(i32 x, i32 y, char *string)
+{
+    while(*string)
+    {
+        dui_draw_char(x, y, *string);
+        x+=12;
+        ++string;
+    }
 }
 void dui_default(void)
 {
