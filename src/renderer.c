@@ -259,7 +259,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     //mat4 light_space_matrix = mat4_mul(ortho_proj, mat4_mul(
      //     mat4_translate(v3(rend->view.elements[3][0],rend->view.elements[3][1] + 10.f,rend->view.elements[3][2])), mat4_rotate(-90.f, v3(1.f,0.f,0.f))));
 
-    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,100,0), v3(-10,0,0), v3(0,1,0)));
+    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,10,0), v3(-10,0,0), v3(0,1,0)));
 
 
 
@@ -547,3 +547,23 @@ void renderer_push_compass(Renderer *rend, vec3 position)
     renderer_push_line(rend, position, vec3_add(position, v3(2,0,0)), v4(0.9,0.2,0.2, 1.0));
     renderer_push_line(rend, position, vec3_add(position, v3(0,0,-2)), v4(0.2,0.9,0.2, 1.0));
 }
+
+void renderer_push_cube_wireframe(Renderer *rend, vec3 min, vec3 max)
+{
+    renderer_push_line(rend, min, v3(max.x,min.y,min.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, min, v3(min.x,max.y,min.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, min, v3(min.x,min.y,max.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, max, v3(min.x,max.y,max.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, max, v3(max.x,min.y,max.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, max, v3(max.x,max.y,min.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, v3(min.x,min.y,max.z), v3(max.x,min.y,max.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, v3(min.x,min.y,max.z), v3(min.x,max.y,max.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, v3(min.x, max.y,min.z), v3(min.x,max.y,max.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, v3(min.x,max.y,min.z), v3(max.x,max.y,min.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, v3(max.x,max.y,min.z), v3(max.x,min.y,min.z), v4(0.9,0.2,0.2,1.f));
+    renderer_push_line(rend, v3(max.x,min.y,min.z),v3(max.x,min.y,max.z), v4(0.9,0.2,0.2,1.f));
+}
+
+
+
+

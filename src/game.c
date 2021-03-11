@@ -1,6 +1,7 @@
 #include "platform.h"
 #include "tools.h"
 #include "objloader.h"
+#include "physics.h"
 #include "camera.h"
 #include "model.h"
 #include "quad.h" 
@@ -94,11 +95,11 @@ render(void)
             if (do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &RGBA))RGB = 0;
             if (do_switch(GEN_ID, (dui_Rect){220,240,20,20}, &RGB))RGBA = 0;
             do_button(GEN_ID, (dui_Rect){260,200,150,30});
-            dui_draw_string(260, 370, "screenshot");
-            dui_draw_string(190, 330, "resolution");
-            dui_draw_string(215, 275, "padding");
-            dui_draw_string(230, 240, "RGB/RGBA");
-            dui_draw_string(280, 210, "CAPTURE");
+            dui_draw_string(260, 370, "options");
+            dui_draw_string(190, 330, "defocus blur");
+            dui_draw_string(215, 275, "antialiasing");
+            dui_draw_string(230, 240, "inverted cam");
+            dui_draw_string(280, 210, " PAUSE");
             char ms[64];
             sprintf(ms, "%.4f ms", global_platform.dt);
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
@@ -108,7 +109,7 @@ render(void)
     dui_frame_end();
 
     update_animator(&animator);
-    //renderer_push_model(&rend,&model);
+    renderer_push_cube_wireframe(&rend, v3(2,1,0), v3(3,2,1));
     renderer_push_animated_model(&rend, &animator.model);
     entity_manager_render(&entity_manager, &rend);
     renderer_end_frame(&rend);

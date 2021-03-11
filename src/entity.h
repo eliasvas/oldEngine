@@ -1,7 +1,9 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 #include "tools.h"
+#include "physics.h"
 #include "platform.h"
+
 
 #define MAX_ENTITY 1024
 #define MAX_COMPONENTS 1024
@@ -204,7 +206,7 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
 internal void 
 entity_manager_render(EntityManager *manager, Renderer *rend)
 {
-    if (last_entity_pressed > 0)
+    if (last_entity_pressed >= 0)
     {
         mat4 model = manager->model_manager.models[last_entity_pressed].model;
         vec3 pos = v3(model.elements[3][0], model.elements[3][1], model.elements[3][2]);
