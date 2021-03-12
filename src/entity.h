@@ -177,6 +177,41 @@ internal i32 last_entity_pressed = -1;
 internal void 
 entity_manager_update(EntityManager *manager, Renderer *rend)
 {
+
+    Manifold m;
+    for (u32 i = 0; i < manager->model_manager.next_index; ++i)
+    {
+        mat4 model = manager->model_manager.models[i].model;
+        manager->model_manager.models[i].physics_body.transform = mat4_translate(v3(model.elements[3][0], model.elements[3][1], model.elements[3][2]));
+        vec3 offset = vec3_sub(manager->model_manager.models[i].physics_body.collider.box.max, manager->model_manager.models[i].physics_body.collider.box.min);
+        manager->model_manager.models[i].physics_body.collider.box.min = v3(model.elements[3][0] - offset.x/2, model.elements[3][1] - offset.y/2, model.elements[3][2] - offset.z/2);
+        manager->model_manager.models[i].physics_body.collider.box.max = vec3_add(manager->model_manager.models[i].physics_body.collider.box.min , offset);
+        for (u32 j = 0; j < manager->model_manager.next_index; ++j)
+        {
+            if (j >= i)continue;
+            //test_collision(&manager->model_manager.models[i].physics_body.collider, &manager->model_manager.models[j].physics_body.collider);
+            m.A = &manager->model_manager.models[i].physics_body;
+            m.B = &manager->model_manager.models[j].physics_body;
+            if (test_aabb_aabb_manifold(&m))
+                resolve_collision(&m);
+        }
+        //every frame some velociy is lost
+        manager->model_manager.models[i].physics_body.velocity.y -= manager->model_manager.models[i].physics_body.gravity_scale 
+            * manager->model_manager.models[i].physics_body.mass_data.inv_mass/ 2000.f;
+    }
+    for (u32 i = 0; i < manager->model_manager.next_index; ++i)
+    {
+        SimplePhysicsBody *current = &manager->model_manager.models[i].physics_body;
+        current->transform.elements[3][0] += current->velocity.x;
+        current->transform.elements[3][1] += current->velocity.y;
+        current->transform.elements[3][2] += current->velocity.z;
+        //update the _model's_ position
+        manager->model_manager.models[i].model.elements[3][0] = current->transform.elements[3][0];
+        manager->model_manager.models[i].model.elements[3][1] = current->transform.elements[3][1];
+        manager->model_manager.models[i].model.elements[3][2] = current->transform.elements[3][2];
+
+    }
+
     Ray r =  (Ray){rend->cam.pos, 1, v3(0,0,0)};
     r.d = get_ray_dir(v2(global_platform.mouse_x, global_platform.mouse_y),global_platform.window_width, global_platform.window_height, rend->view, rend->proj);//(Ray){v3(0,0,0), 1, v3(0,0,-1)};
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
@@ -202,18 +237,6 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
             last_entity_pressed = -1;
     }
 
-    for (u32 i = 0; i < manager->model_manager.next_index; ++i)
-    {
-        mat4 model = manager->model_manager.models[i].model;
-        vec3 offset = vec3_sub(manager->model_manager.models[i].collider.box.max, manager->model_manager.models[i].collider.box.min);
-        manager->model_manager.models[i].collider.box.min = v3(model.elements[3][0] - offset.x/2, model.elements[3][1] - offset.y/2, model.elements[3][2] - offset.z/2);
-        manager->model_manager.models[i].collider.box.max = vec3_add(manager->model_manager.models[i].collider.box.min , offset);
-        for (u32 j = 0; j < manager->model_manager.next_index; ++j)
-        {
-            if (i == j)continue;
-            test_collision(&manager->model_manager.models[i].collider, &manager->model_manager.models[j].collider);
-        }
-    }
 }
 internal void 
 entity_manager_render(EntityManager *manager, Renderer *rend)
@@ -227,7 +250,7 @@ entity_manager_render(EntityManager *manager, Renderer *rend)
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
     {
         renderer_push_model(rend, manager->model_manager.models[i]);
-        renderer_push_cube_wireframe(rend, manager->model_manager.models[i].collider.box.min,manager->model_manager.models[i].collider.box.max);
+        renderer_push_cube_wireframe(rend, manager->model_manager.models[i].physics_body.collider.box.min,manager->model_manager.models[i].physics_body.collider.box.max);
     }
 }
 
@@ -253,14 +276,20 @@ void scene_init(char *filepath, EntityManager * manager)
             m = entity_add_model(&manager->model_manager,entity_create(manager));
             model_init_cube(m);
             m->model = mat4_mul(mat4_translate(pos), mat4_mul(mat4_rotate(0.0, v3(1,1,0)), mat4_scale(scale)));
-            m->collider = simple_collider_init(pos,scale);
+            m->physics_body = simple_physics_body_default();
+            m->physics_body.collider = simple_collider_init(pos,scale);
+            //if volume big -> its static object :P
+            if (scale.x * scale.y * scale.z > 5.f)
+                m->physics_body.mass_data = mass_data_init(0.f);
         }
         else if (strcmp("SPHERE", str) == 0)
         {
             m = entity_add_model(&manager->model_manager,entity_create(manager));
             model_init_sphere(m, 1, 20, 20);
             m->model = mat4_mul(mat4_translate(pos), mat4_scale(scale));
-            m->collider = simple_collider_default();
+            m->physics_body = simple_physics_body_default();
+            m->physics_body.collider = simple_collider_default();
+            m->physics_body.gravity_scale = 0.f;
             //sprintf(error_log, "sphere done");
         }
         else
@@ -270,7 +299,8 @@ void scene_init(char *filepath, EntityManager * manager)
             m = entity_add_model(&manager->model_manager,entity_create(manager));
             (*m) = model_info_init(str);
             (*m).model = mat4_mul(mat4_translate(pos),mat4_mul(mat4_rotate(angle, axis), mat4_scale(scale)));
-            m->collider = simple_collider_default();
+            m->physics_body = simple_physics_body_default();
+            m->physics_body.collider = simple_collider_default();
         }
 
     }

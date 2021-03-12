@@ -14,7 +14,7 @@ test_aabb_aabb(AABB a, AABB b)
     if (a.max.x < b.min.x || a.min.x > b.max.x) return FALSE;
     if (a.max.y < b.min.y || a.min.y > b.max.y) return FALSE;
     if (a.max.z < b.min.z || a.min.z > b.max.z) return FALSE;
-    sprintf(error_log, "collision");
+    //sprintf(error_log, "collision");
     return TRUE;
 }
 internal AABB aabb_init(vec3 min, vec3 max)
@@ -89,11 +89,15 @@ typedef struct MassData
     f32 mass;
     f32 inv_mass;
 }MassData;
+
 internal MassData mass_data_init(f32 mass)
 {
     MassData data;
     data.mass = mass;
-    data. inv_mass = 1.f / mass;
+    if (equalf(mass, 0.f,0.001))
+        data.inv_mass = 0.f;
+    else
+        data.inv_mass = 1.f / mass;
     return data;
 }
 typedef struct PhysicsMaterial
@@ -111,13 +115,92 @@ internal PhysicsMaterial physics_material_init(f32 d, f32 r)
 }
 typedef struct SimplePhysicsBody
 {
-    SimpleCollider *collider;
+    SimpleCollider collider; //TODO: this better be a pointer
     mat4 transform;
     MassData mass_data;
     PhysicsMaterial mat;
     vec3 velocity;
     vec3 force;
+    f32 gravity_scale;
 }SimplePhysicsBody;
+
+internal void simple_physics_body_update(void)
+{
+}
+
+internal SimplePhysicsBody simple_physics_body_default(void)
+{
+    SimplePhysicsBody b;
+    b.transform = m4d(1.f); //from this we use only the translation??? i think so 
+    b.velocity = v3(0,0,0);
+    b.gravity_scale = 1.f;
+    b.force = v3(0,0,0);
+    b.mass_data = mass_data_init(1.f);
+    b.mat = physics_material_init(0.1f, 0.4f); //@check
+    b.collider = simple_collider_default();
+    return b;
+}
+
+typedef struct Manifold
+{
+    SimplePhysicsBody *A;
+    SimplePhysicsBody *B;
+    f32 penetration;
+    vec3 normal;
+}Manifold;
+
+internal b32 test_aabb_aabb_manifold(Manifold *m)
+{
+  // Setup a couple pointers to each object
+  SimplePhysicsBody *A = m->A;
+  SimplePhysicsBody *B = m->B;
+  if (A == B)return;
+  
+  // Vector from A to B
+  vec3 a_pos = v3(A->transform.elements[3][0], A->transform.elements[3][1], A->transform.elements[3][2]);
+  vec3 b_pos = v3(B->transform.elements[3][0], B->transform.elements[3][1], B->transform.elements[3][2]);
+  //vec3 n = vec3_sub(b_pos,a_pos);
+  vec3 n = v3(0,1,0);
+  {
+      m->normal = n;
+      m->penetration =1.f;
+
+    if (test_aabb_aabb(A->collider.box, B->collider.box))
+    {
+        //sprintf(error_log, "we got a collision");
+        return TRUE;
+    }
+    else 
+        return FALSE;
+  }
+}
+internal void resolve_collision(Manifold *m)
+{
+  SimplePhysicsBody *A = m->A;
+  SimplePhysicsBody *B = m->B;
+ 
+  // Calculate relative velocity
+  vec3 rv = vec3_sub(B->velocity, A->velocity);
+ 
+  // Calculate relative velocity in terms of the normal direction
+  f32 velAlongNormal = vec3_dot( rv, m->normal );
+ 
+  // Do not resolve if velocities are separating
+  if(velAlongNormal > 0.f)
+    return;
+ 
+  // Calculate restitution
+  f32 e = minimum( A->mat.restitution, B->mat.restitution);
+ 
+  // Calculate impulse scalar
+  f32 j = -(1.f + e) * velAlongNormal;
+  j /= A->mass_data.inv_mass + B->mass_data.inv_mass;
+ 
+  // Apply impulse
+  vec3 impulse = vec3_mulf(m->normal,j);
+  A->velocity = vec3_sub(A->velocity, vec3_mulf(impulse,A->mass_data.inv_mass));
+  B->velocity = vec3_add(B->velocity,vec3_mulf(impulse,B->mass_data.inv_mass));
+}
 
 typedef struct Ray
 {

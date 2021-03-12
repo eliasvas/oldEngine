@@ -19,7 +19,7 @@ typedef struct Model
     u32 mesh_count;
     Shader s;
     mat4 model;
-    SimpleCollider collider;
+    SimplePhysicsBody physics_body; //TODO: this should become a pointer!
 }Model;
 
 
