@@ -14,6 +14,8 @@ typedef struct RendererSettings
   ivec2 render_dim;
   b32 lighting_disabled;
   b32 no_mips;
+  b32 motion_blur;
+  b32 z_prepass;
   //multisampling settings
   //depth peeling settings
 }RendererSettings;
@@ -75,7 +77,7 @@ typedef struct Renderer
 {
 
   b32 multisampling;
-  u32 multisamping_count;
+  u32 multisampling_count;
   b32 depthpeeling;
   u32 depthpeel_count;
   RendererSettings renderer_settings;

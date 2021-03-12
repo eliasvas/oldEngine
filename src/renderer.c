@@ -40,7 +40,7 @@ renderer_init(Renderer *rend)
 {
     camera_init(&rend->cam);
     rend->multisampling = FALSE;
-    rend->multisamping_count = 4;
+    rend->multisampling_count = 2;
     rend->depthpeeling = FALSE;
     rend->depthpeel_count = 1;
     rend->renderer_settings.render_dim = (ivec2){global_platform.window_width, global_platform.window_height};

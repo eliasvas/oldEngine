@@ -202,6 +202,18 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
             last_entity_pressed = -1;
     }
 
+    for (u32 i = 0; i < manager->model_manager.next_index; ++i)
+    {
+        mat4 model = manager->model_manager.models[i].model;
+        vec3 offset = vec3_sub(manager->model_manager.models[i].collider.box.max, manager->model_manager.models[i].collider.box.min);
+        manager->model_manager.models[i].collider.box.min = v3(model.elements[3][0], model.elements[3][1], model.elements[3][2]);
+        manager->model_manager.models[i].collider.box.max = vec3_add(manager->model_manager.models[i].collider.box.min , offset);
+        for (u32 j = 0; j < manager->model_manager.next_index; ++j)
+        {
+            if (i == j)continue;
+            test_collision(&manager->model_manager.models[i].collider, &manager->model_manager.models[j].collider);
+        }
+    }
 }
 internal void 
 entity_manager_render(EntityManager *manager, Renderer *rend)
@@ -239,13 +251,15 @@ void scene_init(char *filepath, EntityManager * manager)
         {
             m = entity_add_model(&manager->model_manager,entity_create(manager));
             model_init_cube(m);
-            m->model = mat4_mul(mat4_translate(pos), mat4_mul(mat4_rotate(40, v3(1,1,0)), mat4_scale(scale)));
+            m->model = mat4_mul(mat4_translate(pos), mat4_mul(mat4_rotate(0.0, v3(1,1,0)), mat4_scale(scale)));
+            m->collider = simple_collider_default();
         }
         else if (strcmp("SPHERE", str) == 0)
         {
             m = entity_add_model(&manager->model_manager,entity_create(manager));
             model_init_sphere(m, 1, 20, 20);
             m->model = mat4_mul(mat4_translate(pos), mat4_scale(scale));
+            m->collider = simple_collider_default();
             //sprintf(error_log, "sphere done");
         }
         else
@@ -255,6 +269,7 @@ void scene_init(char *filepath, EntityManager * manager)
             m = entity_add_model(&manager->model_manager,entity_create(manager));
             (*m) = model_info_init(str);
             (*m).model = mat4_mul(mat4_translate(pos),mat4_mul(mat4_rotate(angle, axis), mat4_scale(scale)));
+            m->collider = simple_collider_default();
         }
 
     }

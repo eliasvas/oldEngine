@@ -3,6 +3,7 @@
 #include "objloader.h"
 #include "tools.h"
 #include "platform.h"
+#include "physics.h"
 #include "shader.h"
 #include "texture.h"
 
@@ -18,6 +19,7 @@ typedef struct Model
     u32 mesh_count;
     Shader s;
     mat4 model;
+    SimpleCollider collider;
 }Model;
 
 
@@ -127,7 +129,7 @@ model_init_cube(Model* m)
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
     texture_load(&(m->meshes[0].material.diff),"../assets/texture.tga");
-    texture_load(&(m->meshes[0].material.spec),"../assets/texture_spec.tga");
+    texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
       
 }
 
@@ -252,8 +254,7 @@ model_init_sphere(Model* m, f32 radius, u32 sectors, u32 stacks)
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
     texture_load(&(m->meshes[0].material.diff),"../assets/mars.tga");
-    texture_load(&(m->meshes[0].material.spec),"../assets/texture_spec.tga");
-      
+    texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
 }
 internal Material 
 material_default(void)

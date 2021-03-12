@@ -21,12 +21,6 @@ Renderer rend;
 global Animator animator;
 
 global b32 UI_OPEN;
-global f32 trans = 0.f;
-
-i32 RES = 1000;
-b32 RGBA = 1;
-b32 RGB = 0;
-b32 PAD = 0;
 
 global EntityManager entity_manager;
 internal void 
@@ -90,15 +84,15 @@ render(void)
         if (UI_OPEN)
         {
             dui_draw_rect(200, 200, 270, 200, v4(0.1,0.1,0.1,0.9));
-            do_slider(GEN_ID, 200 ,300, 4000.f, &RES);
-            do_switch(GEN_ID, (dui_Rect){200,270,20,20}, &PAD);
-            if (do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &RGBA))RGB = 0;
-            if (do_switch(GEN_ID, (dui_Rect){220,240,20,20}, &RGB))RGBA = 0;
+            do_slider(GEN_ID, 200 ,300, 4, &rend.multisampling_count);
+            do_switch(GEN_ID, (dui_Rect){200,270,20,20}, &rend.renderer_settings.motion_blur);
+            if (do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.z_prepass))rend.renderer_settings.z_prepass = 0;
+            if (do_switch(GEN_ID, (dui_Rect){220,240,20,20}, &rend.renderer_settings.z_prepass))rend.renderer_settings.z_prepass = 1;
             do_button(GEN_ID, (dui_Rect){260,200,150,30});
             dui_draw_string(260, 370, "options");
-            dui_draw_string(190, 330, "defocus blur");
+            dui_draw_string(190, 330, "multisampling");
             dui_draw_string(215, 275, "antialiasing");
-            dui_draw_string(230, 240, "inverted cam");
+            dui_draw_string(230, 240, "Z-Prepass");
             dui_draw_string(280, 210, " PAUSE");
             char ms[64];
             sprintf(ms, "%.4f ms", global_platform.dt);

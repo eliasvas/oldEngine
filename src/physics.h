@@ -14,6 +14,7 @@ test_aabb_aabb(AABB a, AABB b)
     if (a.max.x < b.min.x || a.min.x > b.max.x) return FALSE;
     if (a.max.y < b.min.y || a.min.y > b.max.y) return FALSE;
     if (a.max.z < b.min.z || a.min.z > b.max.z) return FALSE;
+    sprintf(error_log, "collision");
     return TRUE;
 }
 internal AABB aabb_init(vec3 min, vec3 max)
@@ -40,6 +41,38 @@ internal Sphere sphere_init(vec3 pos, f32 rad)
     return (Sphere){pos, rad};
 }
 
+
+typedef enum ColliderType
+{
+   BOX = 1,
+   SPHERE = 2,
+   TRIANGLE = 3,
+   MAX_COLLIDER_TYPES, 
+}ColliderType;
+typedef struct SimpleCollider
+{
+    union 
+    {
+        AABB box;
+        Sphere s;
+    };
+    ColliderType type;
+}SimpleCollider;
+
+internal SimpleCollider simple_collider_default(void)
+{
+    SimpleCollider sc;
+    sc.box = aabb_init(v3(0,0,0), v3(1,1,1));
+    sc.type = BOX;
+    return sc;
+}
+
+internal i32 test_collision(SimpleCollider *c1, SimpleCollider *c2)
+{
+    if (c1->type == BOX && c2->type == BOX)
+        return test_aabb_aabb(c1->box, c2->box);
+
+}
 
 typedef struct Ray
 {
