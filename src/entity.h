@@ -197,18 +197,8 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
         }
         //every frame some velociy is lost
         manager->model_manager.models[i].physics_body.velocity.y -= manager->model_manager.models[i].physics_body.gravity_scale 
-            * manager->model_manager.models[i].physics_body.mass_data.inv_mass/ 2000.f;
-    }
-    for (u32 i = 0; i < manager->model_manager.next_index; ++i)
-    {
-        SimplePhysicsBody *current = &manager->model_manager.models[i].physics_body;
-        current->transform.elements[3][0] += current->velocity.x;
-        current->transform.elements[3][1] += current->velocity.y;
-        current->transform.elements[3][2] += current->velocity.z;
-        //update the _model's_ position
-        manager->model_manager.models[i].model.elements[3][0] = current->transform.elements[3][0];
-        manager->model_manager.models[i].model.elements[3][1] = current->transform.elements[3][1];
-        manager->model_manager.models[i].model.elements[3][2] = current->transform.elements[3][2];
+            * manager->model_manager.models[i].physics_body.mass_data.inv_mass * global_platform.dt;
+        manager->model_manager.models[i].physics_body.velocity = vec3_divf(manager->model_manager.models[i].physics_body.velocity , 1.003f);
 
     }
 
@@ -225,8 +215,8 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
             last_entity_pressed = i;
             vec3 right = vec3_normalize(vec3_cross(rend->cam.front, rend->cam.up));
             vec3 up = vec3_normalize(rend->cam.up);
-            manager->model_manager.models[i].model.elements[3][0] += vec3_mulf(right, (-20.f *(f32)global_platform.mouse_dt.x / global_platform.window_width)).x;
-            manager->model_manager.models[i].model.elements[3][1] += vec3_mulf(up,((f32)20.f * global_platform.mouse_dt.y / global_platform.window_height)).y;
+            manager->model_manager.models[i].physics_body.velocity.x += vec3_mulf(right, ((-1.f)*(f32)global_platform.mouse_dt.x / global_platform.window_width)).x;
+            manager->model_manager.models[i].physics_body.velocity.y += vec3_mulf(up,((f32)1.f * global_platform.mouse_dt.y / global_platform.window_height)).y;
             //sprintf(error_log, "collision detected!!");
         }
         else if (global_platform.right_mouse_down && last_entity_pressed == i) {
@@ -237,6 +227,19 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
             last_entity_pressed = -1;
     }
 
+
+    for (u32 i = 0; i < manager->model_manager.next_index; ++i)
+    {
+        SimplePhysicsBody *current = &manager->model_manager.models[i].physics_body;
+        current->transform.elements[3][0] += current->velocity.x;
+        current->transform.elements[3][1] += current->velocity.y;
+        current->transform.elements[3][2] += current->velocity.z;
+        //update the _model's_ position
+        manager->model_manager.models[i].model.elements[3][0] = current->transform.elements[3][0];
+        manager->model_manager.models[i].model.elements[3][1] = current->transform.elements[3][1];
+        manager->model_manager.models[i].model.elements[3][2] = current->transform.elements[3][2];
+
+    }
 }
 internal void 
 entity_manager_render(EntityManager *manager, Renderer *rend)
