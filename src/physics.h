@@ -67,12 +67,57 @@ internal SimpleCollider simple_collider_default(void)
     return sc;
 }
 
+internal SimpleCollider simple_collider_init(vec3 position, vec3 scale)
+{
+    SimpleCollider sc;
+    vec3 min = vec3_sub(position, scale); 
+    vec3 max = vec3_add(position, scale); 
+    sc.box = aabb_init(min, max);
+    sc.type = BOX;
+    return sc;
+}
+
 internal i32 test_collision(SimpleCollider *c1, SimpleCollider *c2)
 {
     if (c1->type == BOX && c2->type == BOX)
         return test_aabb_aabb(c1->box, c2->box);
 
 }
+
+typedef struct MassData
+{
+    f32 mass;
+    f32 inv_mass;
+}MassData;
+internal MassData mass_data_init(f32 mass)
+{
+    MassData data;
+    data.mass = mass;
+    data. inv_mass = 1.f / mass;
+    return data;
+}
+typedef struct PhysicsMaterial
+{
+    f32 density;
+    f32 restitution;
+}PhysicsMaterial;
+
+internal PhysicsMaterial physics_material_init(f32 d, f32 r)
+{
+    PhysicsMaterial mat;
+    mat.density = d;
+    mat.restitution = r;
+    return mat;
+}
+typedef struct SimplePhysicsBody
+{
+    SimpleCollider *collider;
+    mat4 transform;
+    MassData mass_data;
+    PhysicsMaterial mat;
+    vec3 velocity;
+    vec3 force;
+}SimplePhysicsBody;
 
 typedef struct Ray
 {

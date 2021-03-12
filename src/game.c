@@ -103,7 +103,6 @@ render(void)
     dui_frame_end();
 
     update_animator(&animator);
-    renderer_push_cube_wireframe(&rend, v3(2,1,0), v3(3,2,1));
     renderer_push_animated_model(&rend, &animator.model);
     entity_manager_render(&entity_manager, &rend);
     renderer_end_frame(&rend);
