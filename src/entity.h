@@ -150,11 +150,18 @@ model_manager_init(ModelManager *manager)
     manager->next_index = 0;
 }
 
+typedef struct SimplePhysicsBodyPair
+{
+    SimplePhysicsBody *A;
+    SimplePhysicsBody *B;
+}SimplePhysicsBodyPair;
 typedef struct EntityManager
 {
     Entity next_entity;
     PositionManager position_manager;
     ModelManager model_manager;
+    SimplePhysicsBodyPair pairs[1000];
+    u32 pairs_count;
 }EntityManager;
 
 
@@ -188,7 +195,7 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
         manager->model_manager.models[i].physics_body.collider.box.max = vec3_add(manager->model_manager.models[i].physics_body.collider.box.min , offset);
         for (u32 j = 0; j < manager->model_manager.next_index; ++j)
         {
-            if (j >= i)continue;
+            if (i == j)continue;
             //test_collision(&manager->model_manager.models[i].physics_body.collider, &manager->model_manager.models[j].physics_body.collider);
             m.A = &manager->model_manager.models[i].physics_body;
             m.B = &manager->model_manager.models[j].physics_body;

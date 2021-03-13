@@ -154,25 +154,76 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
   // Setup a couple pointers to each object
   SimplePhysicsBody *A = m->A;
   SimplePhysicsBody *B = m->B;
+  //default collision values
+  m->normal = v3(0,1,0);
+  m->penetration = 1.f;
+
   if (A == B)return;
   
   // Vector from A to B
   vec3 a_pos = v3(A->transform.elements[3][0], A->transform.elements[3][1], A->transform.elements[3][2]);
   vec3 b_pos = v3(B->transform.elements[3][0], B->transform.elements[3][1], B->transform.elements[3][2]);
-  //vec3 n = vec3_sub(b_pos,a_pos);
-  vec3 n = v3(0,1,0);
-  {
-      m->normal = n;
-      m->penetration =1.f;
+  vec3 n = vec3_sub(b_pos,a_pos);
 
-    if (test_aabb_aabb(A->collider.box, B->collider.box))
-    {
-        //sprintf(error_log, "we got a collision");
-        return TRUE;
-    }
-    else 
-        return FALSE;
+  AABB a = A->collider.box;
+  AABB b = B->collider.box;
+
+  //calc half extents on x-axis
+  f32 a_extent = (a.max.x - a.min.x) / 2.f;
+  f32 b_extent = (b.max.x - b.min.x) / 2.f;
+
+  //calc verlap on x-axis
+  f32 x_overlap = a_extent + b_extent - fabs(n.x);
+
+  if (x_overlap > 0.f)
+  {
+      //half intersections on y-axis
+      f32 a_extent = (a.max.y - a.min.y) / 2.f;
+      f32 b_extent = (b.max.y - b.min.y) / 2.f;
+
+      f32 y_overlap = a_extent + b_extent - fabs(n.y);
+      if (y_overlap > 0.f)
+      {
+          //half intersections on z-axis
+          f32 a_extent = (a.max.z - a.min.z) / 2.f;
+          f32 b_extent = (b.max.z - b.min.z) / 2.f;
+
+          f32 z_overlap = a_extent + b_extent - fabs(n.z);
+      
+          if (z_overlap > 0.f)
+          {
+              if (x_overlap < y_overlap && x_overlap < z_overlap)
+              {
+                  if (n.x > 0)
+                      m->normal = v3(1,0,0);
+                  else 
+                      m->normal = v3(-1,0,0);
+                  m->penetration = x_overlap;
+              }
+              else if (z_overlap < y_overlap && z_overlap < x_overlap)
+              {
+                  if (n.z > 0)
+                      m->normal = v3(0,0,1);
+                  else 
+                      m->normal = v3(0,0,-1);
+                  m->penetration = z_overlap;
+              }
+              else if (y_overlap < x_overlap && y_overlap < z_overlap)
+              {
+                  if (n.y > 0)
+                      m->normal = v3(0,1,0);
+                  else 
+                      m->normal = v3(0,-1,0);
+                  m->penetration = y_overlap;
+              }
+              //n.z = 0;
+              //m->normal = vec3_normalize(n); 
+              return TRUE;
+          }
+      }
   }
+
+  return FALSE;
 }
 internal void resolve_collision(Manifold *m)
 {
