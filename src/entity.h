@@ -132,19 +132,66 @@ entity_remove_model(ModelManager* manager, Entity entity)
     manager->next_index--;
   }
 }
+internal void
+model_manager_init(ModelManager *manager)
+{
+    manager->table = hashmap_create(20);
+    manager->next_index = 0;
+}
 
-internal ModelComponent* 
-entity_get_model(ModelManager *manager, Entity entity)
+typedef SimplePhysicsBody SimplePhysicsBodyComponent;
+typedef struct PhysicsManager
+{
+    SimplePhysicsBodyComponent bodies[MAX_COMPONENTS];
+    Entity entities[MAX_ENTITY];
+    u32 next_index;
+    EntityHashMap table;
+}PhysicsManager;
+
+internal SimplePhysicsBodyComponent*
+entity_add_body(PhysicsManager *manager, Entity entity)
+{
+  assert(entity != INVALID_ENTITY);
+  hashmap_insert(&manager->table, entity, manager->next_index);
+  manager->bodies[manager->next_index] = (SimplePhysicsBodyComponent){0}; 
+  manager->entities[manager->next_index] = entity;
+  return &manager->bodies[manager->next_index++];
+}
+
+internal void 
+entity_remove_body(PhysicsManager* manager, Entity entity)
+{
+  u32 index = hashmap_lookup(&manager->table, entity);
+  if (index != -1)
+  {
+    Entity entity = manager->entities[index];
+    if (index < manager->next_index)
+    {
+      manager->bodies[index] = manager->bodies[manager->next_index-1];// try to use move
+      manager->entities[index] = manager->entities[manager->next_index-1];
+      hashmap_remove(&manager->table,entity);
+      hashmap_remove(&manager->table,manager->entities[index]);
+      hashmap_insert(&manager->table,manager->entities[index], index); 
+    }
+    manager->next_index--;
+  }
+}
+
+
+internal SimplePhysicsBodyComponent* 
+entity_get_body(PhysicsManager *manager, Entity entity)
 {
     i32 index = hashmap_lookup(&manager->table, entity);
     if (index != -1)
     {
-        return &manager->models[index];
+        return &manager->bodies[index];
     }
     return NULL;
 }
+
+
 internal void
-model_manager_init(ModelManager *manager)
+physics_manager_init(PhysicsManager *manager)
 {
     manager->table = hashmap_create(20);
     manager->next_index = 0;
@@ -160,6 +207,8 @@ typedef struct EntityManager
     Entity next_entity;
     PositionManager position_manager;
     ModelManager model_manager;
+
+    //PhysicsManager physics_manager;
     SimplePhysicsBodyPair pairs[1000];
     u32 pairs_count;
 }EntityManager;
@@ -257,7 +306,7 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
         //manager->model_manager.models[i].physics_body.velocity = vec3_divf(manager->model_manager.models[i].physics_body.velocity , 1.003f);
     }
     insertion_sort_pairs(manager->pairs, manager->pairs_count);
-    //manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
+    manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
     resolve_collisions(manager);
 
     Ray r =  (Ray){rend->cam.pos, 1, v3(0,0,0)};
