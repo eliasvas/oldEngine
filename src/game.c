@@ -99,12 +99,12 @@ render(void)
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
         }
     }
+    entity_manager_render(&entity_manager, &rend);
     do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
     dui_frame_end();
 
     update_animator(&animator);
     renderer_push_animated_model(&rend, &animator.model);
-    entity_manager_render(&entity_manager, &rend);
     renderer_end_frame(&rend);
 }
 

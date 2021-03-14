@@ -149,12 +149,12 @@ model_manager_init(ModelManager *manager)
     manager->table = hashmap_create(20);
     manager->next_index = 0;
 }
-
 typedef struct SimplePhysicsBodyPair
 {
     SimplePhysicsBody *A;
     SimplePhysicsBody *B;
 }SimplePhysicsBodyPair;
+
 typedef struct EntityManager
 {
     Entity next_entity;
@@ -164,6 +164,55 @@ typedef struct EntityManager
     u32 pairs_count;
 }EntityManager;
 
+
+internal void insertion_sort_pairs(SimplePhysicsBodyPair *arr, i32 n)
+{
+    i32 i, j;
+    SimplePhysicsBodyPair key;
+    for (i = 1; i < n; i++) {
+        key = arr[i];
+        j = i - 1;
+
+        while (j >= 0 && (u32)arr[j].A > (u32)key.A) {
+            arr[j + 1] = arr[j];
+            j = j - 1;
+        }
+        arr[j + 1] = key;
+    }
+}
+
+//NOTE: pretty complicated micro optimization, @check
+internal u32 cull_dupe_pairs(SimplePhysicsBodyPair *arr, u32 n)
+{ 
+    if (n ==0)return 0;
+    u32 unique_index = 1;
+    for (u32 i = 1; i < n; ++i)
+    {
+        SimplePhysicsBodyPair curr = arr[i];
+        SimplePhysicsBodyPair prev = arr[i-1];
+        if ((i32)curr.A + (i32)curr.B != (i32)prev.A + (i32)prev.A)
+            arr[unique_index++] = curr; 
+    }
+    return unique_index;
+}
+internal void collision_table_cleanup(EntityManager *manager)
+{
+    manager->pairs_count = 0;
+}
+internal void resolve_collisions(EntityManager *manager)
+{
+    Manifold m;
+    for (u32 i = 0; i < manager->pairs_count; ++i)
+    {
+        m.A = manager->pairs[i].A;
+        m.B = manager->pairs[i].B;
+        if (test_aabb_aabb_manifold(&m))
+            resolve_collision(&m);
+
+        manager->model_manager.models[i].physics_body.velocity = vec3_divf(manager->model_manager.models[i].physics_body.velocity , 1.003f);
+    }
+
+}
 
 internal void 
 entity_manager_init(EntityManager *manager)
@@ -184,7 +233,7 @@ internal i32 last_entity_pressed = -1;
 internal void 
 entity_manager_update(EntityManager *manager, Renderer *rend)
 {
-
+    collision_table_cleanup(manager);
     Manifold m;
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
     {
@@ -196,18 +245,20 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
         for (u32 j = 0; j < manager->model_manager.next_index; ++j)
         {
             if (i == j)continue;
-            //test_collision(&manager->model_manager.models[i].physics_body.collider, &manager->model_manager.models[j].physics_body.collider);
             m.A = &manager->model_manager.models[i].physics_body;
             m.B = &manager->model_manager.models[j].physics_body;
             if (test_aabb_aabb_manifold(&m))
-                resolve_collision(&m);
+                manager->pairs[manager->pairs_count++] = (SimplePhysicsBodyPair){m.A, m.B};
+                //resolve_collision(&m);
         }
         //every frame some velociy is lost
         manager->model_manager.models[i].physics_body.velocity.y -= manager->model_manager.models[i].physics_body.gravity_scale 
             * manager->model_manager.models[i].physics_body.mass_data.inv_mass * global_platform.dt;
-        manager->model_manager.models[i].physics_body.velocity = vec3_divf(manager->model_manager.models[i].physics_body.velocity , 1.003f);
-
+        //manager->model_manager.models[i].physics_body.velocity = vec3_divf(manager->model_manager.models[i].physics_body.velocity , 1.003f);
     }
+    insertion_sort_pairs(manager->pairs, manager->pairs_count);
+    //manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
+    resolve_collisions(manager);
 
     Ray r =  (Ray){rend->cam.pos, 1, v3(0,0,0)};
     r.d = get_ray_dir(v2(global_platform.mouse_x, global_platform.mouse_y),global_platform.window_width, global_platform.window_height, rend->view, rend->proj);//(Ray){v3(0,0,0), 1, v3(0,0,-1)};
@@ -248,9 +299,13 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
 
     }
 }
+char to_render[200];
 internal void 
 entity_manager_render(EntityManager *manager, Renderer *rend)
 {
+    sprintf(to_render,"pairs count = %u", manager->pairs_count); 
+
+    dui_draw_string(200,200, to_render);
     if (last_entity_pressed >= 0)
     {
         mat4 model = manager->model_manager.models[last_entity_pressed].model;
@@ -291,6 +346,8 @@ void scene_init(char *filepath, EntityManager * manager)
             //if volume big -> its static object :P
             if (scale.x * scale.y * scale.z > 5.f)
                 m->physics_body.mass_data = mass_data_init(0.f);
+            else
+                m->physics_body.mass_data = mass_data_init(1.f);
         }
         else if (strcmp("SPHERE", str) == 0)
         {
