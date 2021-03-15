@@ -49,8 +49,6 @@ update(void)
 {
   entity_manager_update(&entity_manager, &rend);
   renderer_begin_frame(&rend);
-  camera_update(&rend.cam);
-  rend.view = get_view_mat(&rend.cam);
   rend.cam.can_rotate = !UI_OPEN;
   if (global_platform.key_pressed[KEY_P])
     scene_init("../assets/scene2.txt", &entity_manager);

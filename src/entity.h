@@ -264,6 +264,7 @@ internal void resolve_collisions(PhysicsManager *manager)
     {
         m.A = manager->pairs[i].A;
         m.B = manager->pairs[i].B;
+        //positional_correction(&m);
         if (test_aabb_aabb_manifold(&m))
             resolve_collision(&m);
 
@@ -409,6 +410,13 @@ entity_manager_reset(EntityManager *manager)
 #include "stdio.h"
 void scene_init(char *filepath, EntityManager * manager)
 {
+    //cleanup already existing models (each model has a MeshInfo pointer which need cleaning)
+    for (u32 i = 0; i < manager->model_manager.next_index; ++i)
+    {
+        Model *m = &manager->model_manager.models[i];
+        FREE(m->meshes);
+    }
+
     entity_manager_reset(manager);
     FILE *file = fopen(filepath, "r");
     if (!file)return;

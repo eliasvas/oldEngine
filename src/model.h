@@ -6,12 +6,11 @@
 #include "physics.h"
 #include "shader.h"
 #include "texture.h"
-
-/*
-NOTE(ilias): OpenGL function pointers needed if
-model.h is used in another translation unit
-*/
 #include "platform.h"
+
+//TODO: ALLOC(sizeof(MeshInfo)) generates a little garbage, clean it up.
+//TODO: ALLOC(sizeof(MeshInfo)) generates a little garbage, clean it up.
+//TODO: ALLOC(sizeof(MeshInfo)) generates a little garbage, clean it up.
 
 typedef struct Model
 {

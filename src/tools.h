@@ -221,7 +221,7 @@ rrandom(f32 lo, f32 hi)
 
 //NOTE(ilias): maybe make a free_file because our game leaks :(
 INLINE char * 
-read_whole_file(const char *filename)
+read_whole_file(char *filename)
 {
     FILE *f = fopen(filename, "rb");
     fseek(f, 0, SEEK_END);
@@ -2094,7 +2094,6 @@ hashmap_insert(IntHashMap* table, i32 key, i32 val)
 {
    i32 pos = hash_code(table, key);
    IntPair *list_to_insert_pair = table->data[pos];
-   IntPair *new_pair = (IntPair*)ALLOC(sizeof(IntPair));
    IntPair *iter = &list_to_insert_pair[0];
    while (iter)
    {
@@ -2105,6 +2104,7 @@ hashmap_insert(IntHashMap* table, i32 key, i32 val)
         }
         iter = iter->next;
    }
+   IntPair *new_pair = (IntPair*)ALLOC(sizeof(IntPair));
    new_pair->key = key;
    new_pair->value = val;
    new_pair->next = &list_to_insert_pair[0];
@@ -2163,7 +2163,7 @@ internal void *free_next(IntPair *p)
     if (p)
     {
         free_next(p->next);
-        free(p);
+        FREE(p);
     }
 }
 
@@ -2183,6 +2183,7 @@ hashmap_reset(IntHashMap *table)
 {
     u32 count = table->size;
     hashmap_destroy(table);
+    FREE(table->data);
     *table = hashmap_create(count);
 }
 

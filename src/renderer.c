@@ -197,6 +197,11 @@ renderer_begin_frame(Renderer *rend)
   rend->line_alloc_pos = 0;
   rend->point_light_count = 0;
   rend->text_alloc_pos = 0;
+
+  //update the camera stuff
+  camera_update(&rend->cam);
+  rend->view = get_view_mat(&rend->cam);
+
 }
 
 internal void

@@ -156,7 +156,7 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
   SimplePhysicsBody *B = m->B;
   //default collision values
   m->normal = v3(0,1,0);
-  m->penetration = 1.f;
+  m->penetration = 0.1;
 
   if (A == B)return;
   
@@ -198,7 +198,7 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
                       m->normal = v3(1,0,0);
                   else 
                       m->normal = v3(-1,0,0);
-                  m->penetration = x_overlap;
+                  //m->penetration = x_overlap;
               }
               else if (z_overlap < y_overlap && z_overlap < x_overlap)
               {
@@ -206,7 +206,7 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
                       m->normal = v3(0,0,1);
                   else 
                       m->normal = v3(0,0,-1);
-                  m->penetration = z_overlap;
+                  //m->penetration = z_overlap;
               }
               else if (y_overlap < x_overlap && y_overlap < z_overlap)
               {
@@ -214,7 +214,7 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
                       m->normal = v3(0,1,0);
                   else 
                       m->normal = v3(0,-1,0);
-                  m->penetration = y_overlap;
+                  //m->penetration = y_overlap;
               }
               //n.z = 0;
               //m->normal = vec3_normalize(n); 
@@ -298,5 +298,17 @@ get_ray_dir(vec2 screen_coords,f32 ww, f32 wh, mat4 view, mat4 proj)
     vec3 dir = vec3_normalize(v3(ray_world.x,ray_world.y,ray_world.z));
 } 
 
+internal void positional_correction(Manifold *m)
+{
+  f32 percent = 0.2f; // usually 20% to 80%
+  vec3 correction = vec3_mulf(m->normal, m->penetration / (m->A->mass_data.inv_mass + m->B->mass_data.inv_mass) * percent);
+  m->A->transform.elements[3][0] -= m->A->mass_data.inv_mass * correction.x;
+  m->A->transform.elements[3][1] -= m->A->mass_data.inv_mass * correction.y;
+  m->A->transform.elements[3][2] -= m->A->mass_data.inv_mass * correction.z;
+  m->B->transform.elements[3][0] += m->B->mass_data.inv_mass * correction.x;
+  m->B->transform.elements[3][1] += m->B->mass_data.inv_mass * correction.y;
+  m->B->transform.elements[3][2] += m->B->mass_data.inv_mass * correction.z;
+  
+}
 
 #endif

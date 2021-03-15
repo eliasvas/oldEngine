@@ -76,9 +76,11 @@ internal void shader_load (Shader* s, const char * vertex_path, const char * fra
 {
     s->vertex_str = vertex_path;
     s->fragment_str = fragment_path;
-    const char* vs = read_whole_file(vertex_path);
-    const char* fs = read_whole_file(fragment_path); 
+    char* vs = read_whole_file(vertex_path);
+    char* fs = read_whole_file(fragment_path); 
     s->ID = shader_load_from_strings(vs,fs);
+    FREE(vs);
+    FREE(fs);
 
 }
 
