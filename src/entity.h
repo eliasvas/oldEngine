@@ -138,6 +138,12 @@ model_manager_init(ModelManager *manager)
     manager->table = hashmap_create(20);
     manager->next_index = 0;
 }
+typedef struct SimplePhysicsBodyPair
+{
+    SimplePhysicsBody *A;
+    SimplePhysicsBody *B;
+}SimplePhysicsBodyPair;
+
 
 typedef SimplePhysicsBody SimplePhysicsBodyComponent;
 typedef struct PhysicsManager
@@ -146,6 +152,11 @@ typedef struct PhysicsManager
     Entity entities[MAX_ENTITY];
     u32 next_index;
     EntityHashMap table;
+
+
+
+    SimplePhysicsBodyPair pairs[1000];
+    u32 pairs_count;
 }PhysicsManager;
 
 internal SimplePhysicsBodyComponent*
@@ -196,21 +207,12 @@ physics_manager_init(PhysicsManager *manager)
     manager->table = hashmap_create(20);
     manager->next_index = 0;
 }
-typedef struct SimplePhysicsBodyPair
-{
-    SimplePhysicsBody *A;
-    SimplePhysicsBody *B;
-}SimplePhysicsBodyPair;
-
 typedef struct EntityManager
 {
     Entity next_entity;
     PositionManager position_manager;
     ModelManager model_manager;
-
     PhysicsManager physics_manager;
-    SimplePhysicsBodyPair pairs[1000];
-    u32 pairs_count;
 }EntityManager;
 
 
@@ -244,11 +246,11 @@ internal u32 cull_dupe_pairs(SimplePhysicsBodyPair *arr, u32 n)
     }
     return unique_index;
 }
-internal void collision_table_cleanup(EntityManager *manager)
+internal void collision_table_cleanup(PhysicsManager *manager)
 {
     manager->pairs_count = 0;
 }
-internal void resolve_collisions(EntityManager *manager)
+internal void resolve_collisions(PhysicsManager *manager)
 {
     Manifold m;
     for (u32 i = 0; i < manager->pairs_count; ++i)
@@ -258,7 +260,7 @@ internal void resolve_collisions(EntityManager *manager)
         if (test_aabb_aabb_manifold(&m))
             resolve_collision(&m);
 
-        manager->model_manager.models[i].physics_body->velocity = vec3_divf(manager->model_manager.models[i].physics_body->velocity , 1.003f);
+        manager->bodies[i].velocity = vec3_divf(manager->bodies[i].velocity , 1.003f);
     }
 
 }
@@ -280,49 +282,55 @@ entity_create(EntityManager *manager)
 */
 
 internal i32 last_entity_pressed = -1;
-internal void 
-entity_manager_update(EntityManager *manager, Renderer *rend)
+internal void physics_manager_update(PhysicsManager *manager)
 {
     collision_table_cleanup(manager);
     Manifold m;
-    for (u32 i = 0; i < manager->model_manager.next_index; ++i)
+    for (u32 i = 0; i < manager->next_index; ++i)
     {
-        mat4 model = manager->model_manager.models[i].model;
-        SimplePhysicsBody *pb = manager->model_manager.models[i].physics_body;
-        pb->transform = mat4_translate(v3(model.elements[3][0], model.elements[3][1], model.elements[3][2]));
+        SimplePhysicsBody *pb = &manager->bodies[i];
+        mat4 model =pb->transform;
+        //pb->transform = mat4_translate(v3(model.elements[3][0], model.elements[3][1], model.elements[3][2]));
         vec3 offset = vec3_sub(pb->collider.box.max, pb->collider.box.min);
         pb->collider.box.min = v3(model.elements[3][0] - offset.x/2, model.elements[3][1] - offset.y/2, model.elements[3][2] - offset.z/2);
         pb->collider.box.max = vec3_add(pb->collider.box.min , offset);
-        for (u32 j = 0; j < manager->model_manager.next_index; ++j)
+        //this should move from here no??
+        pb->velocity.y -= pb->gravity_scale * pb->mass_data.inv_mass * global_platform.dt;
+    }
+    for (u32 i = 0; i < manager->next_index; ++i)
+    {
+        for (u32 j = 0; j < manager->next_index; ++j)
         {
+            SimplePhysicsBodyComponent *pb = &manager->bodies[i];
             if (i == j)continue;
-            m.A = manager->model_manager.models[i].physics_body;
-            m.B = manager->model_manager.models[j].physics_body;
+            m.A = &manager->bodies[i];
+            m.B = &manager->bodies[j];
             if (test_aabb_aabb_manifold(&m))
                 manager->pairs[manager->pairs_count++] = (SimplePhysicsBodyPair){m.A, m.B};
-                //resolve_collision(&m);
         }
-        //every frame some velociy is lost
-        pb->velocity.y -= pb->gravity_scale * pb->mass_data.inv_mass * global_platform.dt;
-        //manager->model_manager.models[i].physics_body.velocity = vec3_divf(manager->model_manager.models[i].physics_body.velocity , 1.003f);
+        
     }
+    //TODO here do the test intersections!!
     insertion_sort_pairs(manager->pairs, manager->pairs_count);
     manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
     resolve_collisions(manager);
+}
+internal void mouse_pick_phys(PhysicsManager *manager, Renderer *rend)
+{
 
     Ray r =  (Ray){rend->cam.pos, 1, v3(0,0,0)};
     r.d = get_ray_dir(v2(global_platform.mouse_x, global_platform.mouse_y),global_platform.window_width, global_platform.window_height, rend->view, rend->proj);//(Ray){v3(0,0,0), 1, v3(0,0,-1)};
-    for (u32 i = 0; i < manager->model_manager.next_index; ++i)
+    for (u32 i = 0; i < manager->next_index; ++i)
     {
-        SimplePhysicsBody *pb = manager->model_manager.models[i].physics_body;
-        mat4 model = manager->model_manager.models[i].model;
+        SimplePhysicsBody *pb = &manager->bodies[i];
+        mat4 model = manager->bodies[i].transform;
         vec3 pos = v3(model.elements[3][0], model.elements[3][1], model.elements[3][2]);
         i32 collision = intersect_ray_sphere_simple(r, (Sphere){pos, 0.5});
         if (collision && global_platform.right_mouse_down || last_entity_pressed == i)
         {
             //sprintf(error_log, "good collision, mouse_dt = %f, %f", global_platform.mouse_dt.x, global_platform.mouse_dt.y);
             last_entity_pressed = i;
-            vec3 right = vec3_normalize(vec3_cross(rend->cam.front, rend->cam.up));
+            vec3 right = vec3_normalize(vec3_cross(rend->cam.front,rend->cam.up));
             vec3 up = vec3_normalize(rend->cam.up);
             pb->velocity.x += vec3_mulf(right, ((-1.f)*(f32)global_platform.mouse_dt.x / global_platform.window_width)).x;
             pb->velocity.y += vec3_mulf(up,((f32)1.f * global_platform.mouse_dt.y / global_platform.window_height)).y;
@@ -337,12 +345,22 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
     }
 
 
+}
+
+internal void 
+entity_manager_update(EntityManager *manager, Renderer *rend)
+{
+
+    physics_manager_update(&manager->physics_manager);
+    mouse_pick_phys(&manager->physics_manager, rend);
+
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
     {
         SimplePhysicsBody *current = manager->model_manager.models[i].physics_body;
-        current->transform.elements[3][0] += current->velocity.x;
-        current->transform.elements[3][1] += current->velocity.y;
-        current->transform.elements[3][2] += current->velocity.z;
+        vec3 transform = current->velocity; //*dt???
+        current->transform.elements[3][0] += transform.x;
+        current->transform.elements[3][1] += transform.y;
+        current->transform.elements[3][2] += transform.z;
         //update the _model's_ position
         manager->model_manager.models[i].model.elements[3][0] = current->transform.elements[3][0];
         manager->model_manager.models[i].model.elements[3][1] = current->transform.elements[3][1];
@@ -354,7 +372,7 @@ char to_render[200];
 internal void 
 entity_manager_render(EntityManager *manager, Renderer *rend)
 {
-    sprintf(to_render,"pairs count = %u", manager->pairs_count); 
+    sprintf(to_render,"pairs count = %u", manager->physics_manager.pairs_count); 
 
     dui_draw_string(200,200, to_render);
     if (last_entity_pressed >= 0)
@@ -397,6 +415,8 @@ void scene_init(char *filepath, EntityManager * manager)
             *(m->physics_body) = simple_physics_body_default();
             m->physics_body->collider = simple_collider_init(pos,scale);
             m->physics_body->gravity_scale = 1.f;
+
+            m->physics_body->transform = mat4_mul(mat4_translate(pos), mat4_mul(mat4_rotate(0.0, v3(1,1,0)), mat4_scale(scale)));
             if (scale.x * scale.y * scale.z > 5.f)
                 m->physics_body->mass_data = mass_data_init(0.f);
             else
@@ -410,6 +430,7 @@ void scene_init(char *filepath, EntityManager * manager)
 
            
             m->physics_body = entity_add_body(&manager->physics_manager,entity_create(manager));
+            m->physics_body->transform= mat4_mul(mat4_translate(pos), mat4_scale(scale));
             *(m->physics_body) = simple_physics_body_default();
             m->physics_body->collider = simple_collider_default();
             m->physics_body->gravity_scale = 0.f;
