@@ -138,6 +138,13 @@ model_manager_init(ModelManager *manager)
     manager->table = hashmap_create(20);
     manager->next_index = 0;
 }
+
+internal void 
+model_manager_reset(ModelManager *manager)
+{
+    manager->next_index = 0;
+    hashmap_reset(&manager->table);
+}
 typedef struct SimplePhysicsBodyPair
 {
     SimplePhysicsBody *A;
@@ -266,6 +273,14 @@ internal void resolve_collisions(PhysicsManager *manager)
 }
 
 internal void 
+physics_manager_reset(PhysicsManager *manager)
+{
+    manager->next_index = 0;
+    hashmap_reset(&manager->table);
+    manager->pairs_count = 0;
+}
+
+internal void 
 entity_manager_init(EntityManager *manager)
 {
     manager->next_entity = 0;
@@ -368,13 +383,9 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
 
     }
 }
-char to_render[200];
 internal void 
 entity_manager_render(EntityManager *manager, Renderer *rend)
 {
-    sprintf(to_render,"pairs count = %u", manager->physics_manager.pairs_count); 
-
-    dui_draw_string(200,200, to_render);
     if (last_entity_pressed >= 0)
     {
         mat4 model = manager->model_manager.models[last_entity_pressed].model;
@@ -388,9 +399,17 @@ entity_manager_render(EntityManager *manager, Renderer *rend)
     }
 }
 
+internal void 
+entity_manager_reset(EntityManager *manager)
+{
+    physics_manager_reset(&manager->physics_manager);
+    model_manager_reset(&manager->model_manager);
+    manager->next_entity = 0;
+}
 #include "stdio.h"
 void scene_init(char *filepath, EntityManager * manager)
 {
+    entity_manager_reset(manager);
     FILE *file = fopen(filepath, "r");
     if (!file)return;
     Model *m;
@@ -430,10 +449,10 @@ void scene_init(char *filepath, EntityManager * manager)
 
            
             m->physics_body = entity_add_body(&manager->physics_manager,entity_create(manager));
-            m->physics_body->transform= mat4_mul(mat4_translate(pos), mat4_scale(scale));
             *(m->physics_body) = simple_physics_body_default();
             m->physics_body->collider = simple_collider_default();
             m->physics_body->gravity_scale = 0.f;
+            m->physics_body->transform= mat4_mul(mat4_translate(pos), mat4_scale(scale));
             //sprintf(error_log, "sphere done");
         }
         else

@@ -2111,6 +2111,7 @@ hashmap_insert(IntHashMap* table, i32 key, i32 val)
    table->data[pos] = new_pair;
 }
 
+
 internal i32 
 hashmap_lookup(IntHashMap* table, u32 key)
 {
@@ -2159,8 +2160,11 @@ hashmap_remove(IntHashMap *table, u32 key)
 
 internal void *free_next(IntPair *p)
 {
-    free_next(p->next);
-    free(p);
+    if (p)
+    {
+        free_next(p->next);
+        free(p);
+    }
 }
 
 internal void hashmap_destroy(IntHashMap *table)
@@ -2170,6 +2174,16 @@ internal void hashmap_destroy(IntHashMap *table)
         IntPair *next = table->data[i];
         free_next(next);
     }
+}
+
+//NOTE: deletes previous hashmap, initializes a new one
+//with same hash function..
+internal void
+hashmap_reset(IntHashMap *table)
+{
+    u32 count = table->size;
+    hashmap_destroy(table);
+    *table = hashmap_create(count);
 }
 
 

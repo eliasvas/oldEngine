@@ -52,6 +52,10 @@ update(void)
   camera_update(&rend.cam);
   rend.view = get_view_mat(&rend.cam);
   rend.cam.can_rotate = !UI_OPEN;
+  if (global_platform.key_pressed[KEY_P])
+    scene_init("../assets/scene2.txt", &entity_manager);
+  else if (global_platform.key_pressed[KEY_O])
+    scene_init("../assets/scene.txt", &entity_manager);
 }
 
 internal void 
