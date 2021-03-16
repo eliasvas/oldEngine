@@ -19,6 +19,7 @@ global Model sphere;
 global Model model;
 Renderer rend;
 global Animator animator;
+global Coroutine *co;
 
 global b32 UI_OPEN;
 
@@ -40,6 +41,11 @@ init(void)
     animator = animator_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
         str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
     dui_default();
+    {
+        co = ALLOC(sizeof(Coroutine));
+        coroutine_init(co);
+    }
+
 }
 
 

@@ -2188,6 +2188,40 @@ hashmap_reset(IntHashMap *table)
 }
 
 
+//COROUTINES its pretty much cute_coroutine.h, awesome idea thanks randy!
+
+#define COROUTINE_MAX_DEPTH 8
+#define COROUTINE_CASE_OFFSET (1024 * 1024)
+
+#ifndef COROUTINE_ASSERT
+	#include <assert.h>
+	#define COROUTINE_ASSERT assert
+#endif
+
+typedef struct Coroutine
+{
+	f32 elapsed;
+	i32 flag;
+	i32 index;
+	i32 line[COROUTINE_MAX_DEPTH];
+} Coroutine;
+
+INLINE void coroutine_init(Coroutine *co)
+{
+	co->elapsed = 0;
+	co->flag = 0;
+	co->index = 0;
+	for (i32 i = 0; i < COROUTINE_MAX_DEPTH; ++i) co->line[i] = 0;
+}
+#define COROUTINE_START(co)          do { co->flag = 0; switch (co->line[co->index]) { default:
+#define COROUTINE_CASE(co, name)     case __LINE__: name: co->line[co->index] = __LINE__;
+#define COROUTINE_WAIT(co, time, dt) do { case __LINE__: co->line[co->index] = __LINE__; co->elapsed += dt; do { if (co->elapsed < time) { co->flag = 1; goto __co_end; } else { co->elapsed = 0; } } while (0); } while (0)
+#define COROUTINE_EXIT(co)           do { co->flag = 1; goto __co_end; } while (0)
+#define COROUTINE_YIELD(co)          do { co->line[co->index] = __LINE__; COROUTINE_EXIT(co); case __LINE__:; } while (0)
+#define COROUTINE_CALL(co, ...)      co->flag = 0; case __LINE__: COROUTINE_ASSERT(co->index < COROUTINE_MAX_DEPTH); co->line[co->index++] = __LINE__; __VA_ARGS__; co->index--; do { if (co->flag) { goto __co_end; } else { case __LINE__ + COROUTINE_CASE_OFFSET: co->line[co->index] = __LINE__ + COROUTINE_CASE_OFFSET; } } while (0)
+#define COROUTINE_END(co)            } co->line[co->index] = 0; __co_end:; } while (0)
+
+
 #ifdef __cplusplus
 }
 #endif

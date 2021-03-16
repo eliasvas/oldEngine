@@ -143,3 +143,24 @@ void dui_default(void)
     layout.cx = 0;
     layout.cy = 0;
 }
+/*
+//@COROUTINE TEST
+char to_print[8];
+u32 count = 0;
+dui_draw_string_timed_basic(i32 x, i32 y, char *string, Coroutine *co)
+{
+    if (count < 18)
+    {
+        f32 milli = 1.f;
+        COROUTINE_START(co);
+        COROUTINE_WAIT(co, milli, global_platform.dt);
+        COROUTINE_CALL(co, count++);
+        COROUTINE_END(co);
+    }
+
+    memcpy(to_print, string, count);
+    dui_draw_string(x, y, to_print);
+
+}
+*/
+
