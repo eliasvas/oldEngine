@@ -48,7 +48,7 @@ get_joint_transform_matrix(JointTransform j)
     return res;
 }
 
- JointTransform
+JointTransform
 interpolate_joint_transforms(JointTransform l, JointTransform r, f32 time)
 {
     JointTransform res = {0};
@@ -58,11 +58,11 @@ interpolate_joint_transforms(JointTransform l, JointTransform r, f32 time)
     res.rotation = q;
     return res;
 }
- void 
+void 
 increase_animation_time(Animator* animator)
 {
     assert(animator);
-    animator->animation_time += global_platform.dt * animator->anim->playback_rate / 10.f; //this should be the Δt from global platform but its bugged rn
+    animator->animation_time += global_platform.dt * animator->anim->playback_rate; //this should be the Δt from global platform but its bugged rn
     //animator->animation_time += 3.f/60; //this should be the Δt from global platform but its bugged rn
     if (animator->animation_time > animator->anim->length)
         animator->animation_time -= animator->anim->length;
@@ -142,13 +142,28 @@ get_previous_and_next_keyframes(Animator* animator, i32 joint_animation_index)
     return current_time / total_time;
 }
 
+extern info_log[256];
 JointKeyFrame interpolate_poses(JointKeyFrame prev, JointKeyFrame next, f32 x)
 {
     JointKeyFrame res;
     //if (x > 1 || x < 0)sprintf(error_log, "x: ", x);
     
+    vec3 angle1 = quat_to_angle(prev.transform.rotation);
+    vec3 angle2 = quat_to_angle(next.transform.rotation);
+    if (!equalf(x, 0.0,0.000001))
+        sprintf(info_log, "interp x = %f", x);
     res.transform.position = vec3_lerp(prev.transform.position, next.transform.position, x);
-    res.transform.rotation = nlerp(quat_normalize(prev.transform.rotation), quat_normalize(next.transform.rotation), x);
+    prev.transform.rotation = quat_normalize(prev.transform.rotation); 
+    next.transform.rotation = quat_normalize(next.transform.rotation); 
+    res.transform.rotation = nlerp(prev.transform.rotation, next.transform.rotation, x);
+    //THIS IS HUUUUUUUUUUUUGE
+    //https://stackoverflow.com/questions/42428136/quaternion-is-flipping-sign-for-very-similar-rotations
+    if (quat_mul(prev.transform.rotation, quat_conj(next.transform.rotation)).w < 0)
+        res.transform.rotation = nlerp(prev.transform.rotation, next.transform.rotation, -x);
+    //res.transform.rotation = quat_mulf(res.transform.rotation, -1.f);
+    //res.transform.rotation = nlerp(quat_normalize(next.transform.rotation),quat_normalize(prev.transform.rotation), x);
+
+    //res.transform.rotation = nlerp(prev.transform.rotation, next.transform.rotation, x);
     res.joint_index = prev.joint_index;
     
     return res;
@@ -168,7 +183,7 @@ JointKeyFrame interpolate_poses(JointKeyFrame prev, JointKeyFrame next, f32 x)
     JointKeyFrame* frames = get_previous_and_next_keyframes(animator, joint_animation_index);
     f32 x = calc_progress(animator, frames[0],frames[1]);
     //if (joint_animation_index == 28 && global_platform.current_time >=1.f)snprintf(error_log, sizeof(error_log), "%f", x);
-    return interpolate_poses(frames[0],frames[1], x);
+    return interpolate_poses(frames[0],frames[1],x);
 }
 
 

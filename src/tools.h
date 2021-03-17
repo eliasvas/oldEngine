@@ -49,6 +49,7 @@ typedef char      b8;
 
 #ifdef CRTLESS | 1 
 #define offsetof2(type, member) ((unsigned int)((unsigned char*)&((type*)0)->member - (unsigned char*)0)) 
+#define SIGN(x) ((x < 0) ? -1 : (x > 0))
 INLINE i32 abs2(i32 x)
 {
   return x < 0 ? -x : x;
@@ -1400,6 +1401,19 @@ INLINE Quaternion quat_vec4(vec4 vec)
     return res;
 }
 
+INLINE Quaternion quat_conj(Quaternion l)
+{
+    Quaternion res;
+
+    res.x = -l.x;
+    res.y = -l.y;
+    res.z = -l.z;
+    res.w = l.w;
+
+    return res;
+}
+
+
 INLINE Quaternion quat_add(Quaternion l, Quaternion r)
 {
     Quaternion res;
@@ -1411,7 +1425,6 @@ INLINE Quaternion quat_add(Quaternion l, Quaternion r)
 
     return res;
 }
-
 INLINE Quaternion quat_sub(Quaternion l, Quaternion r)
 {
     Quaternion res;

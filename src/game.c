@@ -117,14 +117,17 @@ render(void)
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
         }
     }
+    dui_draw_string(400, 400, info_log);
+    sprintf(info_log, "time: %f", global_platform.current_time);
+    dui_draw_string(400, 420, info_log);
     entity_manager_render(&entity_manager, &rend);
     do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
-    dui_frame_end();
 
     update_animator(&animator);
     update_animator_no_interp(&animator_no_interp);
     renderer_push_animated_model(&rend, &animator.model);
     renderer_push_animated_model(&rend, &animator_no_interp.model);
+    dui_frame_end();
     renderer_end_frame(&rend);
 }
 
