@@ -160,10 +160,6 @@ JointKeyFrame interpolate_poses(JointKeyFrame prev, JointKeyFrame next, f32 x)
     //https://stackoverflow.com/questions/42428136/quaternion-is-flipping-sign-for-very-similar-rotations
     if (quat_mul(prev.transform.rotation, quat_conj(next.transform.rotation)).w < 0)
         res.transform.rotation = nlerp(prev.transform.rotation, next.transform.rotation, -x);
-    //res.transform.rotation = quat_mulf(res.transform.rotation, -1.f);
-    //res.transform.rotation = nlerp(quat_normalize(next.transform.rotation),quat_normalize(prev.transform.rotation), x);
-
-    //res.transform.rotation = nlerp(prev.transform.rotation, next.transform.rotation, x);
     res.joint_index = prev.joint_index;
     
     return res;
