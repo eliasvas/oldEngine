@@ -268,7 +268,7 @@ internal void resolve_collisions(PhysicsManager *manager)
         if (test_aabb_aabb_manifold(&m))
             resolve_collision(&m);
 
-        manager->bodies[i].velocity = vec3_divf(manager->bodies[i].velocity , 1.003f);
+        manager->bodies[i].velocity= vec3_divf(manager->bodies[i].velocity, 1.003f);
     }
 
 }
@@ -305,6 +305,7 @@ internal void physics_manager_update(PhysicsManager *manager)
     for (u32 i = 0; i < manager->next_index; ++i)
     {
         SimplePhysicsBody *pb = &manager->bodies[i];
+        pb->force = v3(0,0,0);
         mat4 model =pb->transform;
         //pb->transform = mat4_translate(v3(model.elements[3][0], model.elements[3][1], model.elements[3][2]));
         vec3 offset = vec3_sub(pb->collider.box.max, pb->collider.box.min);
@@ -373,6 +374,8 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
     {
         SimplePhysicsBody *current = manager->model_manager.models[i].physics_body;
+        //current->force = vec3_mulf(current->force, global_platform.dt);
+        //current->velocity = vec3_add(current->velocity, vec3_mulf(current->force,global_platform.dt));
         vec3 transform = current->velocity; //*dt???
         current->transform.elements[3][0] += transform.x;
         current->transform.elements[3][1] += transform.y;

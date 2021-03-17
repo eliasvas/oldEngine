@@ -124,10 +124,6 @@ typedef struct SimplePhysicsBody
     f32 gravity_scale;
 }SimplePhysicsBody;
 
-internal void simple_physics_body_update(void)
-{
-}
-
 internal SimplePhysicsBody simple_physics_body_default(void)
 {
     SimplePhysicsBody b;
@@ -136,7 +132,7 @@ internal SimplePhysicsBody simple_physics_body_default(void)
     b.gravity_scale = 1.f;
     b.force = v3(0,0,0);
     b.mass_data = mass_data_init(1.f);
-    b.mat = physics_material_init(0.1f, 0.4f); //@check
+    b.mat = physics_material_init(0.5f, 0.5f); //@check
     b.collider = simple_collider_default();
     return b;
 }

@@ -19,6 +19,7 @@ global Model sphere;
 global Model model;
 Renderer rend;
 global Animator animator;
+global Animator animator_no_interp;
 global Coroutine *co;
 
 global b32 UI_OPEN;
@@ -28,7 +29,7 @@ internal void
 init(void)
 {
     entity_manager_init(&entity_manager);
-    scene_init("../assets/scene.txt", &entity_manager);
+    scene_init("../assets/scene2.txt", &entity_manager);
 
     model_init_cube(&debug_cube);
     renderer_init(&rend);
@@ -39,13 +40,14 @@ init(void)
     model = model_info_init("../assets/arena/arena.mtl");
     model.model = mat4_scale(v3(0.2f,0.2f,0.2f));
     animator = animator_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
-        str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
+        str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/kick.dae"));  
+    animator_no_interp = animator_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
+        str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/kick.dae"));  
     dui_default();
     {
         co = ALLOC(sizeof(Coroutine));
         coroutine_init(co);
     }
-
 }
 
 
@@ -60,6 +62,7 @@ update(void)
     scene_init("../assets/scene2.txt", &entity_manager);
   else if (global_platform.key_pressed[KEY_O])
     scene_init("../assets/scene.txt", &entity_manager);
+
 }
 
 internal void 
@@ -78,6 +81,13 @@ render(void)
       }
     }
     */
+
+    Quaternion rotation1 = quat_from_angle(v3(1,1,0), PI);
+    Quaternion rotation2 = quat_from_angle(v3(1,1,0), 0);
+    Quaternion rotation = nlerp(quat_normalize(rotation1), quat_normalize(rotation2), sin(global_platform.current_time));
+    mat4 local_transform = mat4_mul(mat4_translate(v3(4,1,0)), quat_to_mat4(rotation));
+    debug_cube.model = local_transform; 
+    //renderer_push_model(&rend, &debug_cube);
 
     light_cube.model = mat4_translate(v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)));
     //renderer_push_model(&rend, &light_cube);
@@ -112,7 +122,9 @@ render(void)
     dui_frame_end();
 
     update_animator(&animator);
+    update_animator_no_interp(&animator_no_interp);
     renderer_push_animated_model(&rend, &animator.model);
+    renderer_push_animated_model(&rend, &animator_no_interp.model);
     renderer_end_frame(&rend);
 }
 

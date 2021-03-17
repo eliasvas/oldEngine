@@ -232,7 +232,8 @@ WinMain(HINSTANCE Instance,
 
         i64 frame_count = ft.QuadPart - st.QuadPart;
         i64 desired_frame_count = (f32)fr.QuadPart / global_platform.target_fps;
-#if 0
+        f32 wait_dt;
+#if 1
         if (desired_frame_count > frame_count ){
             //NOTE(ilias): wait remaining time --this is wrong
             i64 counts_to_wait = desired_frame_count - frame_count;
@@ -247,14 +248,14 @@ WinMain(HINSTANCE Instance,
                 counts_to_wait -= (end_wait_time_delta.QuadPart - begin_wait_time_delta.QuadPart);
                 begin_wait_time_delta = end_wait_time_delta;
             }
-            f32 wait_dt = (begin_wait_time_delta.QuadPart - end_wait_time_delta.QuadPart)/ (float)fr.QuadPart; //NOTE(ilias): check on actual simulation!!
-            //global_platform.dt = frame_dt + wait_dt;
-            //global_platform.current_time += global_platform.dt;//dt;
+            wait_dt = (end_wait_time_delta.QuadPart - begin_wait_time_delta.QuadPart)/ (float)fr.QuadPart; //NOTE(ilias): check on actual simulation!!
+            global_platform.dt = frame_dt + wait_dt;
+            global_platform.current_time += global_platform.dt;//dt;
         }
 #endif
            //global_platform.dt = 1.f/60.f;
-           global_platform.dt = frame_count / (f32)fr.QuadPart;
-           global_platform.current_time += global_platform.dt;//dt;
+           //global_platform.dt = frame_count / (f32)fr.QuadPart;
+           //global_platform.current_time += global_platform.dt;//dt;
            global_platform.window_resized = FALSE;
 
         if (strlen(error_log) != 0){
