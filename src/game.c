@@ -19,7 +19,6 @@ global Model sphere;
 global Model model;
 Renderer rend;
 global Animator animator;
-global Animator animator_no_interp;
 global Coroutine *co;
 
 global b32 UI_OPEN;
@@ -40,9 +39,7 @@ init(void)
     model = model_info_init("../assets/arena/arena.mtl");
     model.model = mat4_scale(v3(0.2f,0.2f,0.2f));
     animator = animator_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
-        str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/kick.dae"));  
-    animator_no_interp = animator_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
-        str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/kick.dae"));  
+        str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/run.dae"));  
     dui_default();
     {
         co = ALLOC(sizeof(Coroutine));
@@ -63,6 +60,19 @@ update(void)
   else if (global_platform.key_pressed[KEY_O])
     scene_init("../assets/scene.txt", &entity_manager);
 
+  //animator controller test
+  {
+      if (global_platform.key_down[KEY_UP])
+          animator.model.model.elements[3][2] += global_platform.dt * 10;
+      if (global_platform.key_down[KEY_DOWN])
+          animator.model.model.elements[3][2] -= global_platform.dt * 10;
+
+      if (global_platform.key_down[KEY_LEFT])
+          animator.model.model.elements[3][0] += global_platform.dt * 10;
+      if (global_platform.key_down[KEY_RIGHT])
+          animator.model.model.elements[3][0] -= global_platform.dt * 10;
+  }
+
 }
 
 internal void 
@@ -70,24 +80,6 @@ render(void)
 {
     renderer_push_point_light(&rend,(PointLight){v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)),
         1.f,0.09f,0.0032f,v3(6,5,7),v3(9,8,8),v3(9,8,8),256.f});
-
-    /*
-    for (int i = 0; i < 10; ++i)
-    {
-      for(int j = 0; j < 10;++j)
-      {
-        debug_cube.model = mat4_translate(v3(2*i,i*sin(global_platform.current_time),2*j));
-        renderer_push_model(&rend, &debug_cube);
-      }
-    }
-    */
-
-    Quaternion rotation1 = quat_from_angle(v3(1,1,0), PI);
-    Quaternion rotation2 = quat_from_angle(v3(1,1,0), 0);
-    Quaternion rotation = nlerp(quat_normalize(rotation1), quat_normalize(rotation2), sin(global_platform.current_time));
-    mat4 local_transform = mat4_mul(mat4_translate(v3(4,1,0)), quat_to_mat4(rotation));
-    debug_cube.model = local_transform; 
-    //renderer_push_model(&rend, &debug_cube);
 
     light_cube.model = mat4_translate(v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)));
     //renderer_push_model(&rend, &light_cube);
@@ -117,16 +109,11 @@ render(void)
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
         }
     }
-    dui_draw_string(400, 400, info_log);
-    sprintf(info_log, "time: %f", global_platform.current_time);
-    dui_draw_string(400, 420, info_log);
     entity_manager_render(&entity_manager, &rend);
     do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
 
     update_animator(&animator);
-    update_animator_no_interp(&animator_no_interp);
     renderer_push_animated_model(&rend, &animator.model);
-    renderer_push_animated_model(&rend, &animator_no_interp.model);
     dui_frame_end();
     renderer_end_frame(&rend);
 }

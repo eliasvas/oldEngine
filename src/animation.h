@@ -100,6 +100,7 @@ typedef struct AnimatedModel
     mat4 bind_shape_matrix;
     u32 vertices_count;
     
+    mat4 model;
 }AnimatedModel;
 
 

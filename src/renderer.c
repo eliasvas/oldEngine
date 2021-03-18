@@ -495,7 +495,7 @@ void renderer_push_animated_model(Renderer *rend, AnimatedModel *m)
   data.joint_count = m->joint_count;
   data.joints = m->joints;
   data.vertices_count = m->vertices_count; 
-  data.model = mat4_translate(v3(2*rend->animated_model_alloc_pos + 1,0,0));
+  data.model = m->model;
   rend->animated_model_instance_data[rend->animated_model_alloc_pos++] = data;
 }
 
