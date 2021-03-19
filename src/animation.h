@@ -103,16 +103,18 @@ typedef struct AnimatedModel
     mat4 model;
 }AnimatedModel;
 
-
+//TODO: animation indexes should be in an enum, e.g  PLAYER_RUN_ANIM = 1, ...
 typedef struct AnimationController
 {
     AnimatedModel model;
-    AnimationClip* anim;
+    AnimationClip *current_animation;
+    AnimationClip anims[8]; //maybe be a pair of [String, Clip]
+    u32 anims_count;
     f32 animation_time;
 
     JointKeyFrame *prev_pose;
-    f32 blend_percentage; //in [0,1], tells us how much of prev_pose we should blend
-    f32 blend_time; //time the (linear) blending should take place =1?
+    f32 fade_blend_percentage; //in [0,1], tells us how much of prev_pose we should blend
+    f32 fade_blend_time; //time the (linear) blending should take place =1?
 }AnimationController;
 
 //is this correct? sure hope so..

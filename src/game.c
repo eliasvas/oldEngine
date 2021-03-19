@@ -24,6 +24,15 @@ global Coroutine *co;
 global b32 UI_OPEN;
 
 global EntityManager entity_manager;
+
+
+/*
+ Engine TODO:
+    -[]IMGUI tweaks (add size member configure events and stuff) 
+    -[WIP]Animation Overhaul (Add many animations on controller + additive Blenndig)
+    -[]Physics Engine (Stabilize current version..)
+    -[]OBJ Loader (add -o support and we'll be mostly complete)
+*/
 internal void 
 init(void)
 {
@@ -39,7 +48,9 @@ init(void)
     model = model_info_init("../assets/arena/arena.mtl");
     model.model = mat4_scale(v3(0.2f,0.2f,0.2f));
     ac = animation_controller_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
-        str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/run.dae"));  
+        str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
+    animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/kick.dae"));
+    animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/run.dae"));
     dui_default();
     {
         co = ALLOC(sizeof(Coroutine));
@@ -72,7 +83,10 @@ update(void)
       if (global_platform.key_down[KEY_RIGHT])
           ac.model.model.elements[3][0] -= global_platform.dt * 10;
   }
-
+    if (global_platform.key_pressed[KEY_U])
+        animation_controller_play_anim(&ac,1);
+    if (global_platform.key_pressed[KEY_I])
+        animation_controller_play_anim(&ac,0);
 }
 
 internal void 

@@ -6,7 +6,7 @@
 
 typedef Vertex vertex ;
 
-static b32 
+internal b32 
 vert_equals(vertex l, vertex r)
 {
     i32 res = ( equalf(l.position.x, r.position.x, 0.001f) && equalf(l.position.y, r.position.y, 0.001f) && equalf(l.position.z, r.position.z, 0.001f)  && equalf(l.normal.x, r.normal.x, 0.001f) && equalf(l.normal.y, r.normal.y, 0.001f) && equalf(l.normal.z, r.normal.z, 0.001f) && equalf(l.tex_coord.x, r.tex_coord.x, 0.001f) && equalf(l.tex_coord.y, r.tex_coord.y, 0.001f));
@@ -15,7 +15,7 @@ vert_equals(vertex l, vertex r)
 
 #include "animation.h"
 
-static MeshData 
+internal MeshData 
 read_collada_maya(String filepath)
 {
    MeshData data = {0}; 
@@ -705,6 +705,21 @@ read_collada_animation(String filepath) {
 
 
 
+/*
+typedef struct AnimationController
+{
+    AnimatedModel model;
+    AnimationClip *anim;
+    AnimationClip *anims[32]; //maybe be a pair of [String, Clip]
+    f32 animation_time;
+
+    JointKeyFrame *prev_pose;
+    f32 fade_blend_percentage; //in [0,1], tells us how much of prev_pose we should blend
+    f32 fade_blend_time; //time the (linear) blending should take place =1?
+}AnimationController;
+*/
+
+
 internal AnimationController
 animation_controller_init(String diffuse_texture, String collada_model, String collada_animation) 
 {
@@ -717,13 +732,29 @@ animation_controller_init(String diffuse_texture, String collada_model, String c
         MeshData dae_data = read_collada_maya(str(&global_platform.permanent_storage,collada_model.data));
         AnimatedModel animated_model = animated_model_init(anim_tex, dae_data.root,&dae_data);
         AnimationClip animation_to_play = read_collada_animation(str(&global_platform.permanent_storage,collada_animation.data));
-        AnimationClip *atp = arena_alloc(&global_platform.permanent_storage, sizeof(AnimationClip));
-        *atp = animation_to_play;
+        //AnimationClip *atp= ALLOC(sizeof(animation_to_play));
+        //*atp= animation_to_play;
         JointKeyFrame *prev_pose = arena_alloc(&global_platform.permanent_storage, sizeof(JointKeyFrame) * animated_model.joint_count);
-        ac = (AnimationController){animated_model, atp, 1.05f, prev_pose, 0.f, 1.f};
+
+        u32 current_anim_index = 0; //index it will be put on AnimationController struct 
+        ac.model = animated_model;
+        ac.animation_time = 1.05;
+        ac.prev_pose = prev_pose;
+        ac.fade_blend_percentage = 0.f;
+        ac.fade_blend_time = 1.f;
+        ac.anims_count = 0;
+        ac.anims[ac.anims_count++] = animation_to_play; 
+        ac.current_animation = NULL; //it will go to default animation -> index 0
+
         return ac;
 }
 
-
+internal void
+animation_controller_add_anim(AnimationController *ac, String collada_animation)
+{
+    AnimationClip animation_to_play = read_collada_animation(str(&global_platform.permanent_storage,collada_animation.data));
+    ac->anims[ac->anims_count++] = animation_to_play; 
+    //ac->current_animation = &ac->anims[ac->anims_count -1]; 
+}
 
 #endif

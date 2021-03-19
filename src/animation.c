@@ -62,17 +62,17 @@ void
 increase_animation_time(AnimationController* ac)
 {
     assert(ac);
-    ac->animation_time += global_platform.dt * ac->anim->playback_rate; //this should be the Δt from global platform but its bugged rn
+    ac->animation_time += global_platform.dt * ac->current_animation->playback_rate; //this should be the Δt from global platform but its bugged rn
     //ac->animation_time += 3.f/60; //this should be the Δt from global platform but its bugged rn
-    if (ac->animation_time > ac->anim->length)
-        ac->animation_time -= ac->anim->length;
+    if (ac->animation_time > ac->current_animation->length)
+        ac->animation_time -= ac->current_animation->length;
     //NOTE(ilias): this is in case playback rate is negative
     if (ac->animation_time < 0.f)
-      ac->animation_time += ac->anim->length;
+      ac->animation_time += ac->current_animation->length;
     //TODO(ilias): check da math
-    ac->blend_percentage -= (1.f/(ac->blend_time)) *global_platform.dt;
-    if (ac->blend_percentage < 0.f)
-      ac->blend_percentage = 0.f;
+    ac->fade_blend_percentage -= (1.f/(ac->fade_blend_time)) *global_platform.dt;
+    if (ac->fade_blend_percentage < 0.f)
+      ac->fade_blend_percentage = 0.f;
 
 }
 
@@ -118,11 +118,11 @@ set_joint_transform_uniforms(Shader* s, Joint *j)
 get_previous_and_next_keyframes(AnimationController *ac, i32 joint_animation_index)
 {
     JointKeyFrame frames[2];
-    JointKeyFrame* all_frames = ac->anim->joint_animations[joint_animation_index].keyframes;
+    JointKeyFrame* all_frames = ac->current_animation->joint_animations[joint_animation_index].keyframes;
     JointKeyFrame prev = all_frames[0];
     JointKeyFrame next = all_frames[0];
     f32 animation_time = ac->animation_time;
-    for (i32 i = 1; i < ac->anim->joint_animations[joint_animation_index].keyframe_count; ++i)
+    for (i32 i = 1; i < ac->current_animation->joint_animations[joint_animation_index].keyframe_count; ++i)
     {
         next = all_frames[i];
         if (next.timestamp >= ac->animation_time)
@@ -179,7 +179,9 @@ JointKeyFrame interpolate_poses(JointKeyFrame prev, JointKeyFrame next, f32 x)
  void
 animation_controller_update(AnimationController *ac)
 {
-    if (ac->anim == NULL)return;
+    //this first step gives default animations where they can be given
+    if (ac->current_animation == NULL && ac->anims_count > 0)ac->current_animation = &ac->anims[0];
+    if (ac->current_animation == NULL)return;
     increase_animation_time(ac);
       //this is the array holding the animated local bind transforms for each joint,
     //if there is no animation in a certain joint its simply m4d(1.f)
@@ -193,7 +195,7 @@ animation_controller_update(AnimationController *ac)
     for (u32 i = 0; i < ac->model.joint_count; ++i)
     {
         JointKeyFrame current_pose = calc_current_animation_pose(ac, i); 
-        if (ac->blend_percentage < 0.001f)
+        if (ac->fade_blend_percentage < 0.001f)
         {
           ac->prev_pose[current_pose.joint_index] = (JointKeyFrame){0};
           //this might be the error
@@ -201,15 +203,15 @@ animation_controller_update(AnimationController *ac)
         }
     }
     //we put the INTERPOLATED local(wrt parent) animated transforms in the array
-    for (u32 i = 0; i < ac->anim->joint_anims_count; ++i)
+    for (u32 i = 0; i < ac->current_animation->joint_anims_count; ++i)
     {
         JointKeyFrame current_pose = calc_current_animation_pose(ac, i); 
         //JointKeyFrame current_pose = ac->anim->joint_animations[i].keyframes[((int)(global_platform.current_time * 24) % ac->anim->joint_animations[i].keyframe_count)];
         mat4 local_animated_transform = mat4_mul(mat4_translate(current_pose.transform.position), quat_to_mat4(current_pose.transform.rotation));
         local_animated_transforms[current_pose.joint_index] = local_animated_transform;
-        if (ac->blend_percentage > 0.001f)
+        if (ac->fade_blend_percentage > 0.001f)
         {
-          current_pose = interpolate_poses(current_pose,ac->prev_pose[current_pose.joint_index], ac->blend_percentage);
+          current_pose = interpolate_poses(current_pose,ac->prev_pose[current_pose.joint_index], ac->fade_blend_percentage);
           mat4 local_animated_transform = mat4_mul(mat4_translate(current_pose.transform.position), quat_to_mat4(current_pose.transform.rotation));
           local_animated_transforms[current_pose.joint_index] = local_animated_transform;
         }else
@@ -333,5 +335,14 @@ animated_model_init(Texture* diff, Joint root,MeshData* data)
     //not sure about this one -- let's figure out the parser first
     data->transforms = arena_alloc(&global_platform.permanent_storage, sizeof(mat4) * model.root.num_of_children);
     return model;
+}
+
+void
+
+animation_controller_play_anim(AnimationController *ac, u32 i)
+{
+    ac->current_animation = &ac->anims[i];
+    ac->fade_blend_percentage = 1.f;
+    ac->fade_blend_time = 0.4f;
 }
 
