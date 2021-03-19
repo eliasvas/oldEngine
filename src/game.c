@@ -18,7 +18,7 @@ global Model light_cube;
 global Model sphere;
 global Model model;
 Renderer rend;
-global Animator animator;
+global AnimationController ac;
 global Coroutine *co;
 
 global b32 UI_OPEN;
@@ -38,7 +38,7 @@ init(void)
 
     model = model_info_init("../assets/arena/arena.mtl");
     model.model = mat4_scale(v3(0.2f,0.2f,0.2f));
-    animator = animator_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
+    ac = animation_controller_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
         str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/run.dae"));  
     dui_default();
     {
@@ -60,17 +60,17 @@ update(void)
   else if (global_platform.key_pressed[KEY_O])
     scene_init("../assets/scene.txt", &entity_manager);
 
-  //animator controller test
+  //ac controller test
   {
       if (global_platform.key_down[KEY_UP])
-          animator.model.model.elements[3][2] += global_platform.dt * 10;
+          ac.model.model.elements[3][2] += global_platform.dt * 10;
       if (global_platform.key_down[KEY_DOWN])
-          animator.model.model.elements[3][2] -= global_platform.dt * 10;
+          ac.model.model.elements[3][2] -= global_platform.dt * 10;
 
       if (global_platform.key_down[KEY_LEFT])
-          animator.model.model.elements[3][0] += global_platform.dt * 10;
+          ac.model.model.elements[3][0] += global_platform.dt * 10;
       if (global_platform.key_down[KEY_RIGHT])
-          animator.model.model.elements[3][0] -= global_platform.dt * 10;
+          ac.model.model.elements[3][0] -= global_platform.dt * 10;
   }
 
 }
@@ -112,8 +112,8 @@ render(void)
     entity_manager_render(&entity_manager, &rend);
     do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
 
-    update_animator(&animator);
-    renderer_push_animated_model(&rend, &animator.model);
+    animation_controller_update(&ac);
+    renderer_push_animated_model(&rend, &ac.model);
     dui_frame_end();
     renderer_end_frame(&rend);
 }

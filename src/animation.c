@@ -59,20 +59,20 @@ interpolate_joint_transforms(JointTransform l, JointTransform r, f32 time)
     return res;
 }
 void 
-increase_animation_time(Animator* animator)
+increase_animation_time(AnimationController* ac)
 {
-    assert(animator);
-    animator->animation_time += global_platform.dt * animator->anim->playback_rate; //this should be the Δt from global platform but its bugged rn
-    //animator->animation_time += 3.f/60; //this should be the Δt from global platform but its bugged rn
-    if (animator->animation_time > animator->anim->length)
-        animator->animation_time -= animator->anim->length;
+    assert(ac);
+    ac->animation_time += global_platform.dt * ac->anim->playback_rate; //this should be the Δt from global platform but its bugged rn
+    //ac->animation_time += 3.f/60; //this should be the Δt from global platform but its bugged rn
+    if (ac->animation_time > ac->anim->length)
+        ac->animation_time -= ac->anim->length;
     //NOTE(ilias): this is in case playback rate is negative
-    if (animator->animation_time < 0.f)
-      animator->animation_time += animator->anim->length;
+    if (ac->animation_time < 0.f)
+      ac->animation_time += ac->anim->length;
     //TODO(ilias): check da math
-    animator->blend_percentage -= (1.f/(animator->blend_time)) *global_platform.dt;
-    if (animator->blend_percentage < 0.f)
-      animator->blend_percentage = 0.f;
+    ac->blend_percentage -= (1.f/(ac->blend_time)) *global_platform.dt;
+    if (ac->blend_percentage < 0.f)
+      ac->blend_percentage = 0.f;
 
 }
 
@@ -88,7 +88,7 @@ concat_local_transforms(Joint *joints, mat4 *local_transforms, u32 index)
 
 
  void
-calc_animated_transform(Animator *animator, Joint *joints, mat4 *local_transforms, u32 index)
+calc_animated_transform(AnimationController *ac, Joint *joints, mat4 *local_transforms, u32 index)
 {
     //here we get the animated joint transform meaning the world pos of the joint in the animation
     mat4 animated_joint_transform = concat_local_transforms(joints, local_transforms, index); 
@@ -115,17 +115,17 @@ set_joint_transform_uniforms(Shader* s, Joint *j)
 
 
  JointKeyFrame* 
-get_previous_and_next_keyframes(Animator* animator, i32 joint_animation_index)
+get_previous_and_next_keyframes(AnimationController *ac, i32 joint_animation_index)
 {
     JointKeyFrame frames[2];
-    JointKeyFrame* all_frames = animator->anim->joint_animations[joint_animation_index].keyframes;
+    JointKeyFrame* all_frames = ac->anim->joint_animations[joint_animation_index].keyframes;
     JointKeyFrame prev = all_frames[0];
     JointKeyFrame next = all_frames[0];
-    f32 animation_time = animator->animation_time;
-    for (i32 i = 1; i < animator->anim->joint_animations[joint_animation_index].keyframe_count; ++i)
+    f32 animation_time = ac->animation_time;
+    for (i32 i = 1; i < ac->anim->joint_animations[joint_animation_index].keyframe_count; ++i)
     {
         next = all_frames[i];
-        if (next.timestamp >= animator->animation_time)
+        if (next.timestamp >= ac->animation_time)
             break;
         prev = all_frames[i];
     }
@@ -134,10 +134,10 @@ get_previous_and_next_keyframes(Animator* animator, i32 joint_animation_index)
     return (frames);
 }
 
- f32 calc_progress(Animator* animator, JointKeyFrame prev, JointKeyFrame next)
+ f32 calc_progress(AnimationController *ac, JointKeyFrame prev, JointKeyFrame next)
 {
     f32 total_time = next.timestamp - prev.timestamp;
-    f32 current_time = animator->animation_time - prev.timestamp;
+    f32 current_time = ac->animation_time - prev.timestamp;
     //if (current_time/total_time < 0.4)return 0;
     return current_time / total_time;
 }
@@ -167,66 +167,66 @@ JointKeyFrame interpolate_poses(JointKeyFrame prev, JointKeyFrame next, f32 x)
 }
 
 
- JointKeyFrame calc_current_animation_pose(Animator* animator, u32 joint_animation_index)
+ JointKeyFrame calc_current_animation_pose(AnimationController *ac, u32 joint_animation_index)
 {
-    JointKeyFrame* frames = get_previous_and_next_keyframes(animator, joint_animation_index);
-    f32 x = calc_progress(animator, frames[0],frames[1]);
+    JointKeyFrame* frames = get_previous_and_next_keyframes(ac, joint_animation_index);
+    f32 x = calc_progress(ac, frames[0],frames[1]);
     //if (joint_animation_index == 28 && global_platform.current_time >=1.f)snprintf(error_log, sizeof(error_log), "%f", x);
     return interpolate_poses(frames[0],frames[1],x);
 }
 
 
  void
-update_animator(Animator* animator)
+animation_controller_update(AnimationController *ac)
 {
-    if (animator->anim == NULL)return;
-    increase_animation_time(animator);
+    if (ac->anim == NULL)return;
+    increase_animation_time(ac);
       //this is the array holding the animated local bind transforms for each joint,
     //if there is no animation in a certain joint its simply m4d(1.f)
-    mat4 *local_animated_transforms= (mat4*)arena_alloc(&global_platform.frame_storage, sizeof(mat4) * animator->model.joint_count);
-    for (i32 i = 0; i < animator->model.joint_count; ++i)
+    mat4 *local_animated_transforms= (mat4*)arena_alloc(&global_platform.frame_storage, sizeof(mat4) * ac->model.joint_count);
+    for (i32 i = 0; i < ac->model.joint_count; ++i)
     {
         local_animated_transforms[i] = m4d(1.f);//mul_mat4(translate_mat4((vec3){0,0,0}), quat_om_angle((vec3){0,1,0}, 0));
     }
 
     //setting every prev joint pose to m4d(1.f)
-    for (u32 i = 0; i < animator->model.joint_count; ++i)
+    for (u32 i = 0; i < ac->model.joint_count; ++i)
     {
-        JointKeyFrame current_pose = calc_current_animation_pose(animator, i); 
-        if (animator->blend_percentage < 0.001f)
+        JointKeyFrame current_pose = calc_current_animation_pose(ac, i); 
+        if (ac->blend_percentage < 0.001f)
         {
-          animator->prev_pose[current_pose.joint_index] = (JointKeyFrame){0};
+          ac->prev_pose[current_pose.joint_index] = (JointKeyFrame){0};
           //this might be the error
-          animator->prev_pose[current_pose.joint_index].transform.rotation = (Quaternion){0};//quat_from_angle(v3(0,1,0),0);
+          ac->prev_pose[current_pose.joint_index].transform.rotation = (Quaternion){0};//quat_from_angle(v3(0,1,0),0);
         }
     }
     //we put the INTERPOLATED local(wrt parent) animated transforms in the array
-    for (u32 i = 0; i < animator->anim->joint_anims_count; ++i)
+    for (u32 i = 0; i < ac->anim->joint_anims_count; ++i)
     {
-        JointKeyFrame current_pose = calc_current_animation_pose(animator, i); 
-        //JointKeyFrame current_pose = animator->anim->joint_animations[i].keyframes[((int)(global_platform.current_time * 24) % animator->anim->joint_animations[i].keyframe_count)];
+        JointKeyFrame current_pose = calc_current_animation_pose(ac, i); 
+        //JointKeyFrame current_pose = ac->anim->joint_animations[i].keyframes[((int)(global_platform.current_time * 24) % ac->anim->joint_animations[i].keyframe_count)];
         mat4 local_animated_transform = mat4_mul(mat4_translate(current_pose.transform.position), quat_to_mat4(current_pose.transform.rotation));
         local_animated_transforms[current_pose.joint_index] = local_animated_transform;
-        if (animator->blend_percentage > 0.001f)
+        if (ac->blend_percentage > 0.001f)
         {
-          current_pose = interpolate_poses(current_pose,animator->prev_pose[current_pose.joint_index], animator->blend_percentage);
+          current_pose = interpolate_poses(current_pose,ac->prev_pose[current_pose.joint_index], ac->blend_percentage);
           mat4 local_animated_transform = mat4_mul(mat4_translate(current_pose.transform.position), quat_to_mat4(current_pose.transform.rotation));
           local_animated_transforms[current_pose.joint_index] = local_animated_transform;
         }else
-          animator->prev_pose[current_pose.joint_index] = current_pose;
+          ac->prev_pose[current_pose.joint_index] = current_pose;
     }
 
     //now we recursively apply the pose to get the animated bind(wrt world) transform
-    for (u32 i = 0; i < animator->model.joint_count;++i)
-        calc_animated_transform(animator, animator->model.joints, local_animated_transforms, animator->model.joints[i].index);
+    for (u32 i = 0; i < ac->model.joint_count;++i)
+        calc_animated_transform(ac, ac->model.joints, local_animated_transforms, ac->model.joints[i].index);
 
-    for (u32 i = 0; i < animator->model.joint_count; ++i)
-        animator->model.joints[i].animated_transform = mat4_mul(animator->model.joints[i].animated_transform, animator->model.bind_shape_matrix);
+    for (u32 i = 0; i < ac->model.joint_count; ++i)
+        ac->model.joints[i].animated_transform = mat4_mul(ac->model.joints[i].animated_transform, ac->model.bind_shape_matrix);
 
 }
 
 
- GLuint 
+GLuint 
 animated_model_create_vao(MeshData* data)
 {
     GLuint vao;

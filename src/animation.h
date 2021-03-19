@@ -75,13 +75,13 @@ typedef struct JointAnimation
     f32 length;
 }JointAnimation;
 
-typedef struct Animation
+typedef struct AnimationClip
 {
     JointAnimation *joint_animations;
     u32 joint_anims_count;
     f32 length;
     f32 playback_rate;
-}Animation;
+}AnimationClip;
 
 
 
@@ -89,8 +89,8 @@ typedef struct AnimatedModel
 {
     //skin
     GLuint vao;
-    mat4 * transforms;
-    Texture * diff_tex;
+    mat4 *transforms;
+    Texture *diff_tex;
     //Texture * spec_tex;
     
     //skeleton
@@ -104,19 +104,19 @@ typedef struct AnimatedModel
 }AnimatedModel;
 
 
-typedef struct Animator
+typedef struct AnimationController
 {
     AnimatedModel model;
-    Animation* anim;
+    AnimationClip* anim;
     f32 animation_time;
 
     JointKeyFrame *prev_pose;
     f32 blend_percentage; //in [0,1], tells us how much of prev_pose we should blend
     f32 blend_time; //time the (linear) blending should take place =1?
-}Animator;
+}AnimationController;
 
 //is this correct? sure hope so..
-typedef Animator AnimatorComponent;
+typedef AnimationController AnimationControllerComponent;
 
  Joint 
 joint_sid(u32 index, String name,String sid, mat4 local_bind_transform);
@@ -134,33 +134,33 @@ get_joint_transform_matrix(JointTransform j);
 interpolate_joint_transforms(JointTransform l, JointTransform r, f32 time);
 
  void 
-increase_animation_time(Animator* animator);
+increase_animation_time(AnimationController* animator);
 
  mat4
 concat_local_transforms(Joint *joints, mat4 *local_transforms, u32 index);
 
  void
-calc_animated_transform(Animator *animator, Joint *joints, mat4 *local_transforms, u32 index);
+calc_animated_transform(AnimationController *animator, Joint *joints, mat4 *local_transforms, u32 index);
 
  void 
 set_joint_transform_uniforms(Shader *s, Joint *j);
 
 
  JointKeyFrame* 
-get_previous_and_next_keyframes(Animator *animator, i32 joint_animation_index);
+get_previous_and_next_keyframes(AnimationController *animator, i32 joint_animation_index);
 
 
- f32 calc_progress(Animator *animator, JointKeyFrame prev, JointKeyFrame next);
+ f32 calc_progress(AnimationController *animator, JointKeyFrame prev, JointKeyFrame next);
 
 
 
 JointKeyFrame interpolate_poses(JointKeyFrame prev, JointKeyFrame next, f32 x);
 
 
- JointKeyFrame calc_current_animation_pose(Animator *animator, u32 joint_animation_index);
+ JointKeyFrame calc_current_animation_pose(AnimationController *animator, u32 joint_animation_index);
 
  void
-update_animator(Animator *animator);
+animation_controller_update(AnimationController *animator);
 
  GLuint 
 animated_model_create_vao(MeshData *data);

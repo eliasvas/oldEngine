@@ -541,16 +541,16 @@ read_collada_maya(String filepath)
 
 
 
-static Animation 
+internal AnimationClip 
 read_collada_animation(String filepath) {
-   Animation anim;    
+   AnimationClip anim;    
    //by default all animations play at normal speed!
    anim.playback_rate = 1.f;
    FILE* file = fopen(filepath.data, "r");
    if (file == NULL)
    {
        sprintf(error_log, "Error opening Collada file: %s", filepath.data);
-       return (Animation){0};
+       return (AnimationClip){0};
    }
    char line[256];
    char garbage[256];
@@ -705,10 +705,10 @@ read_collada_animation(String filepath) {
 
 
 
-static Animator
-animator_init(String diffuse_texture, String collada_model, String collada_animation) 
+internal AnimationController
+animation_controller_init(String diffuse_texture, String collada_model, String collada_animation) 
 {
-        Animator animator;
+        AnimationController ac;
         Texture *anim_tex = malloc(sizeof(Texture));
         texture_load(anim_tex,diffuse_texture.data);
         //only initialize if not already initialized!
@@ -716,12 +716,12 @@ animator_init(String diffuse_texture, String collada_model, String collada_anima
             shader_load(&anim_shader,"../assets/shaders/animated3d.vert", "../assets/shaders/animated3d.frag");
         MeshData dae_data = read_collada_maya(str(&global_platform.permanent_storage,collada_model.data));
         AnimatedModel animated_model = animated_model_init(anim_tex, dae_data.root,&dae_data);
-        Animation animation_to_play = read_collada_animation(str(&global_platform.permanent_storage,collada_animation.data));
-        Animation *atp = arena_alloc(&global_platform.permanent_storage, sizeof(Animation));
+        AnimationClip animation_to_play = read_collada_animation(str(&global_platform.permanent_storage,collada_animation.data));
+        AnimationClip *atp = arena_alloc(&global_platform.permanent_storage, sizeof(AnimationClip));
         *atp = animation_to_play;
         JointKeyFrame *prev_pose = arena_alloc(&global_platform.permanent_storage, sizeof(JointKeyFrame) * animated_model.joint_count);
-        animator = (Animator){animated_model, atp, 1.05f, prev_pose, 0.f, 1.f};
-        return animator;
+        ac = (AnimationController){animated_model, atp, 1.05f, prev_pose, 0.f, 1.f};
+        return ac;
 }
 
 
