@@ -108,6 +108,8 @@ typedef struct AnimationController
 {
     AnimatedModel model;
     AnimationClip *current_animation;
+    AnimationClip *blend_animation;
+    f32 blend_percentage;
     AnimationClip anims[8]; //maybe be a pair of [String, Clip]
     u32 anims_count;
     f32 animation_time;

@@ -69,7 +69,7 @@ increase_animation_time(AnimationController* ac)
     //NOTE(ilias): this is in case playback rate is negative
     if (ac->animation_time < 0.f)
       ac->animation_time += ac->current_animation->length;
-    //TODO(ilias): check da math
+    //TODO(ilias): check the math
     ac->fade_blend_percentage -= (1.f/(ac->fade_blend_time)) *global_platform.dt;
     if (ac->fade_blend_percentage < 0.f)ac->fade_blend_percentage = 0.f;
 
@@ -232,51 +232,55 @@ animation_controller_update(AnimationController *ac)
 {
     //this first step gives default animations where they can be given
     if (ac->current_animation == NULL && ac->anims_count > 0)ac->current_animation = &ac->anims[0];
+    if (ac->blend_animation == NULL && ac->anims_count > 0)ac->blend_animation = &ac->anims[1];
     if (ac->current_animation == NULL)return;
-    AnimationClip *secondary_animation = &ac->anims[1];
     increase_animation_time(ac);
     mat4 *local_animated_transforms= (mat4*)arena_alloc(&global_platform.frame_storage, sizeof(mat4) * ac->model.joint_count);
     mat4 *local_animated_transforms_secondary= (mat4*)arena_alloc(&global_platform.frame_storage, sizeof(mat4) * ac->model.joint_count);
+    AnimationClip *current_animation = ac->current_animation;
+    AnimationClip *blend_animation = ac->blend_animation;
+    f32 animation_progress_time = ac->animation_time / ac->current_animation->length;
+    //time passed in current animaton
+    f32 current_anim_time = ac->animation_time;
+    //time passed in blend animation (we normalze it!!)
+    f32 blend_anim_time = animation_progress_time * ac->blend_animation->length;
     for (i32 i = 0; i < ac->model.joint_count; ++i)
     {
         local_animated_transforms[i] = m4d(1.f);
         local_animated_transforms_secondary[i] = m4d(1.f);
     }
-    ac->current_animation = &ac->anims[1];
+    ac->current_animation = current_animation;
+    ac->animation_time = current_anim_time;
+
     for (u32 i = 0; i < ac->current_animation->joint_anims_count; ++i)
     {
         JointKeyFrame current_pose = calc_current_animation_pose(ac, i); 
         mat4 local_animated_transform = mat4_mul(mat4_translate(current_pose.transform.position), quat_to_mat4(current_pose.transform.rotation));
         local_animated_transforms[current_pose.joint_index] = local_animated_transform;
     }
-    ac->current_animation = &ac->anims[0];
+    ac->current_animation = blend_animation;
+    ac->animation_time = blend_anim_time;
+
     for (u32 i = 0; i < ac->current_animation->joint_anims_count; ++i)
     {
         JointKeyFrame current_pose = calc_current_animation_pose(ac, i); 
         mat4 local_animated_transform = mat4_mul(mat4_translate(current_pose.transform.position), quat_to_mat4(current_pose.transform.rotation));
         local_animated_transforms_secondary[current_pose.joint_index] = local_animated_transform;
     }
-    ac->current_animation = &ac->anims[1];
-    /*
+    ac->current_animation = current_animation;
+    ac->animation_time = current_anim_time;
     for (u32 i = 0; i < ac->current_animation->joint_anims_count; ++i)
     {
        JointKeyFrame current_pose = calc_current_animation_pose(ac, i); //here just for the index 
-       mat4 D = mat4_mul(local_animated_transforms[current_pose.joint_index],mat4_transpose(local_animated_transforms_secondary[current_pose.joint_index]));
-       local_animated_transforms[current_pose.joint_index] = mat4_add(D, local_animated_transforms_secondary[current_pose.joint_index]); 
-    }
-    */
-    for (u32 i = 0; i < ac->current_animation->joint_anims_count; ++i)
-    {
-       JointKeyFrame current_pose = calc_current_animation_pose(ac, i); //here just for the index 
-       mat4 D = mat4_mul(local_animated_transforms_secondary[current_pose.joint_index],mat4_inv(local_animated_transforms[current_pose.joint_index]));
+       mat4 D = mat4_mul(local_animated_transforms[current_pose.joint_index],mat4_inv(local_animated_transforms_secondary[current_pose.joint_index]));
        //local_animated_transforms[current_pose.joint_index] = mat4_mul(D, local_animated_transforms_secondary[current_pose.joint_index]); 
-       mat4 A = mat4_mul(D, local_animated_transforms_secondary[current_pose.joint_index]); 
-       mat4 M = local_animated_transforms_secondary[current_pose.joint_index];
+       mat4 A = mat4_mul(D, local_animated_transforms[current_pose.joint_index]);
+       mat4 M = local_animated_transforms[current_pose.joint_index];
 
        JointTransform t1 = {v3(A.elements[3][0],A.elements[3][1],A.elements[3][2]),mat4_to_quat(A), A};
        JointTransform t2 = {v3(M.elements[3][0],M.elements[3][1],M.elements[3][2]),mat4_to_quat(M), M};
 
-       JointTransform final = interpolate_joint_transforms(t2, t1, 0.f);
+       JointTransform final = interpolate_joint_transforms(t2, t1, ac->blend_percentage);
        mat4 final_transform = mat4_mul(mat4_translate(final.position), quat_to_mat4(final.rotation));
        local_animated_transforms[current_pose.joint_index] = final_transform;
     }
