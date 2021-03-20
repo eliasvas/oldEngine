@@ -43,6 +43,7 @@ init(void)
     renderer_init(&rend);
     model_init_cube(&light_cube);
     model_init_sphere(&sphere, 2.f, 20,20);
+    model = model_info_init("../assets/sword/sword.mtl");
 
     ac = animation_controller_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
         str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
@@ -101,10 +102,12 @@ render(void)
     renderer_push_point_light(&rend,(PointLight){v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)),
         1.f,0.09f,0.0032f,v3(6,5,7),v3(9,8,8),v3(9,8,8),256.f});
 
+    //renderer_push_model(&rend, &sphere);
     light_cube.model = mat4_translate(v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)));
-    sphere.model = mat4_mul(animation_controller_socket(&ac, 16, mat4_translate(v3(0,0,0.001))),m4d(1.f));
-    sphere.model = mat4_mul(sphere.model, mat4_scale(v3(0.05,0.05,0.05)));
-    renderer_push_model(&rend, &sphere);
+    model.model = mat4_mul(animation_controller_socket(&ac, 16, mat4_translate(v3(0,0,0.001))),m4d(1.f));
+    model.model = mat4_mul(model.model, quat_to_mat4(quat_from_angle(v3(0,0,1), 80)));
+    model.model = mat4_mul(model.model, mat4_scale(v3(0.02,0.02,0.02)));
+    renderer_push_model(&rend, &model);
 
     dui_frame_begin();
     //UI bullshit..
