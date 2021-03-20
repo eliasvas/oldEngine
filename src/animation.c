@@ -141,7 +141,6 @@ get_previous_and_next_keyframes(AnimationController *ac, i32 joint_animation_ind
     return current_time / total_time;
 }
 
-extern info_log[256];
 JointKeyFrame interpolate_poses(JointKeyFrame prev, JointKeyFrame next, f32 x)
 {
     JointKeyFrame res;
@@ -277,7 +276,7 @@ animation_controller_update(AnimationController *ac)
        JointTransform t1 = {v3(A.elements[3][0],A.elements[3][1],A.elements[3][2]),mat4_to_quat(A), A};
        JointTransform t2 = {v3(M.elements[3][0],M.elements[3][1],M.elements[3][2]),mat4_to_quat(M), M};
 
-       JointTransform final = interpolate_joint_transforms(t2, t1, 0.1);
+       JointTransform final = interpolate_joint_transforms(t2, t1, 0.f);
        mat4 final_transform = mat4_mul(mat4_translate(final.position), quat_to_mat4(final.rotation));
        local_animated_transforms[current_pose.joint_index] = final_transform;
     }
@@ -406,5 +405,23 @@ animation_controller_play_anim(AnimationController *ac, u32 i)
     ac->current_animation = &ac->anims[i];
     ac->fade_blend_percentage = 1.f;
     ac->fade_blend_time = 0.4f;
+}
+
+//TODO: this joint index might _NOT_ be the index of the joint, but an offset to the table? investigate
+mat4 animation_controller_get_bone_transform(AnimationController *ac,u32 joint_index)
+{
+    if (!ac)return m4d(0.f);
+    assert(ac->current_animation->joint_anims_count > joint_index);
+    mat4 s = ac->model.joints[joint_index].animated_transform;
+    s = mat4_mul(s, mat4_inv(ac->model.joints[joint_index].inv_bind_transform)); //why tho ?? :O
+    s = mat4_mul(ac->model.model, s);
+    return s;
+
+}
+
+mat4 animation_controller_socket(AnimationController *ac, u32 joint_index, mat4 socket_transform)
+{
+    mat4 bone_transform = animation_controller_get_bone_transform(ac,joint_index);
+    return mat4_mul(socket_transform, bone_transform);
 }
 

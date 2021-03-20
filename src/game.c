@@ -61,6 +61,7 @@ internal void
 update(void)
 {
   entity_manager_update(&entity_manager, &rend);
+  animation_controller_update(&ac);
   renderer_begin_frame(&rend);
   rend.cam.can_rotate = !UI_OPEN;
   if (global_platform.key_pressed[KEY_P])
@@ -80,6 +81,7 @@ update(void)
       if (global_platform.key_down[KEY_RIGHT])
           ac.model.model.elements[3][0] -= global_platform.dt * 10;
   }
+  /* These dont serve any purpose right now.. TODO make am ASM (animation state machine) for player at least.
     if (global_platform.key_pressed[KEY_U])
     {
         ac.animation_time = 0;
@@ -90,6 +92,7 @@ update(void)
         ac.animation_time = 0;
         animation_controller_play_anim(&ac,0);
     }
+    */
 }
 
 internal void 
@@ -99,9 +102,9 @@ render(void)
         1.f,0.09f,0.0032f,v3(6,5,7),v3(9,8,8),v3(9,8,8),256.f});
 
     light_cube.model = mat4_translate(v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)));
-    //renderer_push_model(&rend, &light_cube);
-    sphere.model = mat4_mul(mat4_translate(v3(0,5,0)),mat4_scale(v3(0.2f,0.2f,0.2f)));
-    //renderer_push_model(&rend, &sphere);
+    sphere.model = mat4_mul(animation_controller_socket(&ac, 16, mat4_translate(v3(0,0,0.001))),m4d(1.f));
+    sphere.model = mat4_mul(sphere.model, mat4_scale(v3(0.05,0.05,0.05)));
+    renderer_push_model(&rend, &sphere);
 
     dui_frame_begin();
     //UI bullshit..
@@ -128,8 +131,6 @@ render(void)
     }
     entity_manager_render(&entity_manager, &rend);
     do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
-
-    animation_controller_update(&ac);
     renderer_push_animated_model(&rend, &ac.model);
     dui_frame_end();
     renderer_end_frame(&rend);

@@ -173,6 +173,7 @@ render_animated_model(AnimatedModel *model, Shader* s, mat4 proj, mat4 view);
 AnimatedModel
 animated_model_init(Texture *diff, Joint root,MeshData* data);
 
+mat4 animation_controller_socket(AnimationController *ac, u32 joint_index, mat4 socket_transform);
 
 #endif
 
