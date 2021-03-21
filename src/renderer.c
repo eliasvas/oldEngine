@@ -45,6 +45,7 @@ renderer_init(Renderer *rend)
     rend->depthpeel_count = 1;
     rend->renderer_settings.render_dim = (ivec2){global_platform.window_width, global_platform.window_height};
     rend->renderer_settings.lighting_disabled = FALSE;
+    rend->renderer_settings.light_cull = TRUE;
 
 
 
@@ -260,7 +261,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];
-    mat4 ortho_proj = orthographic_proj(-100.f, 100.f, -100.f, 100.f, 0.01f, 100.f);
+    mat4 ortho_proj = orthographic_proj(-30.f, 30.f, -30.f, 30.f, 0.01f, 100.f);
     //mat4 light_space_matrix = mat4_mul(ortho_proj, mat4_mul(
      //     mat4_translate(v3(rend->view.elements[3][0],rend->view.elements[3][1] + 10.f,rend->view.elements[3][2])), mat4_rotate(-90.f, v3(1.f,0.f,0.f))));
 
@@ -543,7 +544,7 @@ void renderer_push_line(Renderer *rend, vec3 start, vec3 end, vec4 color)
 
 void renderer_push_point_light(Renderer *rend, PointLight l)
 {
-  rend->point_lights[rend->point_light_count++] = l;
+    rend->point_lights[rend->point_light_count++] = l;
 }
 void renderer_push_compass(Renderer *rend, vec3 position)
 {

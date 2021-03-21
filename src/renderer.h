@@ -16,6 +16,7 @@ typedef struct RendererSettings
   b32 no_mips;
   b32 motion_blur;
   b32 z_prepass;
+  b32 light_cull;
   //multisampling settings
   //depth peeling settings
 }RendererSettings;
@@ -66,7 +67,7 @@ typedef struct RendererChar
 
 
 #define RENDERER_MAX_SHADERS 256
-#define RENDERER_MAX_POINT_LIGHTS 256
+#define RENDERER_MAX_POINT_LIGHTS 1024 
 #define RENDERER_BYTES_PER_MODEL sizeof(RendererModelData)
 #define RENDERER_MAX_MODELS 256
 #define RENDERER_MAX_RECTS 256

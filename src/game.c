@@ -28,10 +28,14 @@ global EntityManager entity_manager;
 
 /*
  Engine TODO:
-    -[]IMGUI tweaks (add size member configure events and stuff) 
-    -[WIP]Animation Overhaul (Add many animations on controller + additive Blenndig)
+    -[]Fix Timestepping!!!!
+    -[WIP]Add a good forward+ step to the renderer (GPU compute).
+    -[]Render Settings are real screen coords @fix renderer.c
+    -[]Material System Overhaul (maybe go the blender route?)
     -[]Physics Engine (Stabilize current version..)
     -[]OBJ Loader (add -o support and we'll be mostly complete)
+    -[]IMGUI tweaks (add size member configure events and stuff) 
+    -[]2D sprites (projected in 3d space) w/animations
 */
 internal void 
 init(void)
@@ -42,13 +46,12 @@ init(void)
     model_init_cube(&debug_cube);
     renderer_init(&rend);
     model_init_cube(&light_cube);
-    model_init_sphere(&sphere, 2.f, 20,20);
+    model_init_sphere(&sphere, 2.f, 100,100);
     model = model_info_init("../assets/sword/sword.mtl");
 
-    ac = animation_controller_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), 
-        str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
-    animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/run.dae"));
-    animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/kick.dae"));
+    //ac = animation_controller_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
+    //animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/run.dae"));
+    //animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/kick.dae"));
     dui_default();
     {
         co = ALLOC(sizeof(Coroutine));
@@ -62,7 +65,7 @@ internal void
 update(void)
 {
   entity_manager_update(&entity_manager, &rend);
-  animation_controller_update(&ac);
+  //animation_controller_update(&ac);
   renderer_begin_frame(&rend);
   rend.cam.can_rotate = !UI_OPEN;
   if (global_platform.key_pressed[KEY_P])
@@ -70,18 +73,6 @@ update(void)
   else if (global_platform.key_pressed[KEY_O])
     scene_init("../assets/scene.txt", &entity_manager);
 
-  //ac controller test
-  {
-      if (global_platform.key_down[KEY_UP])
-          ac.model.model.elements[3][2] += global_platform.dt * 10;
-      if (global_platform.key_down[KEY_DOWN])
-          ac.model.model.elements[3][2] -= global_platform.dt * 10;
-
-      if (global_platform.key_down[KEY_LEFT])
-          ac.model.model.elements[3][0] += global_platform.dt * 10;
-      if (global_platform.key_down[KEY_RIGHT])
-          ac.model.model.elements[3][0] -= global_platform.dt * 10;
-  }
   /* These dont serve any purpose right now.. TODO make am ASM (animation state machine) for player at least.
     if (global_platform.key_pressed[KEY_U])
     {
@@ -99,17 +90,26 @@ update(void)
 internal void 
 render(void)
 {
-    renderer_push_point_light(&rend,(PointLight){v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)),
-        1.f,0.09f,0.0032f,v3(6,5,7),v3(9,8,8),v3(9,8,8),256.f});
-
-    //renderer_push_model(&rend, &sphere);
-    light_cube.model = mat4_translate(v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)));
-    model.model = mat4_mul(animation_controller_socket(&ac, 16, mat4_translate(v3(0,0,0.001))),m4d(1.f));
-    model.model = mat4_mul(model.model, quat_to_mat4(quat_from_angle(v3(0,0,1), 80)));
-    model.model = mat4_mul(model.model, mat4_scale(v3(0.02,0.02,0.02)));
-    renderer_push_model(&rend, &model);
+    sphere.model = mat4_translate(v3(0,0,0));
+    renderer_push_model(&rend, &sphere);
+    PointLight pl = (PointLight){v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)),
+        1.f,0.09f,0.0032f,v3(6,5,7),v3(9,8,8),v3(9,8,8),1.f};
+    for (u32 i = 0;i< 900; ++i)
+    {
+        pl.position = v3(i, 5, 30);
+        light_cube.model = mat4_translate(pl.position);
+        renderer_push_point_light(&rend,pl);
+        //renderer_push_model(&rend, &light_cube);
+    }
+    sprintf(info_log,"point light count: %i", rend.point_light_count);
+    //model.model = mat4_mul(animation_controller_socket(&ac, 16, mat4_translate(v3(0,0,0.001))),m4d(1.f));
+    //model.model = mat4_mul(model.model, quat_to_mat4(quat_from_angle(v3(0,0,1), 80)));
+    //model.model = mat4_mul(model.model, mat4_scale(v3(0.02,0.02,0.02)));
+    //renderer_push_model(&rend, &model);
 
     dui_frame_begin();
+
+    dui_draw_string(320, 180, info_log);
     //UI bullshit..
     {
         if (global_platform.key_pressed[KEY_TAB])
@@ -134,7 +134,7 @@ render(void)
     }
     entity_manager_render(&entity_manager, &rend);
     do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
-    renderer_push_animated_model(&rend, &ac.model);
+    //renderer_push_animated_model(&rend, &ac.model);
     dui_frame_end();
     renderer_end_frame(&rend);
 }

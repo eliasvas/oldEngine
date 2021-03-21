@@ -31,7 +31,7 @@ struct PointLight
    vec3 diffuse;
    vec3 specular;
 };
-#define MAX_POINT_LIGHTS 32
+#define MAX_POINT_LIGHTS 512
 uniform vec3 view_pos;
 uniform Material material;
 uniform PointLight point_lights[MAX_POINT_LIGHTS];
@@ -42,7 +42,7 @@ uniform sampler2D shadow_map;
 
 float shadow_calc()
 {
-	float bias = 0.001;
+	float bias = 0.005;
 	// perform perspective divide
     vec3 proj_coords = f_frag_pos_ls.xyz / f_frag_pos_ls.w;
     // transform to [0,1] range

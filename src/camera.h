@@ -24,13 +24,12 @@ typedef struct Camera
 internal void 
 camera_init(Camera* cam)
 {
-    cam->pos = v3(2,3,10);
+    cam->pos = v3(0,0,5);
     cam->front = v3(0.0f,0.0f,-1.0f);
     cam->up = v3(0.f,1.f,0.f);
     cam->yaw = -90.0f;
     
-    //cam->camera_speed = 100.f;
-    cam->camera_speed = 15.f;
+    cam->camera_speed = 10.f;
     cam->first_mouse = 0;
 }
 
