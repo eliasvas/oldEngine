@@ -46,6 +46,7 @@ renderer_init(Renderer *rend)
     rend->renderer_settings.render_dim = (ivec2){global_platform.window_width, global_platform.window_height};
     rend->renderer_settings.lighting_disabled = FALSE;
     rend->renderer_settings.light_cull = TRUE;
+    rend->renderer_settings.z_prepass = TRUE;
 
 
 
@@ -159,6 +160,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[5],"../assets/shaders/filled_rect.vert","../assets/shaders/filled_rect.frag");
     shader_load(&rend->shaders[6],"../assets/shaders/line.vert","../assets/shaders/line.frag");
     shader_load(&rend->shaders[7],"../assets/shaders/text.vert","../assets/shaders/text.frag");
+    shader_load(&rend->shaders[8],"../assets/shaders/zprepass.vert","../assets/shaders/zprepass.frag");
 
 
     //misc
@@ -334,12 +336,23 @@ renderer_end_frame(Renderer *rend)
 
 
 
-
-  //first we render the scene to the depth map
+  //first we do an (optional) Z Prepass 
+  if (rend->renderer_settings.z_prepass)
+  {
+      fbo_bind(&rend->main_fbo);
+      glDepthFunc(GL_LESS);
+      glColorMask(0,0,0,0);
+      glDepthMask(GL_TRUE);
+      renderer_render_scene3D(rend,&rend->shaders[8]);
+      glDepthFunc(GL_LEQUAL);
+      glColorMask(1,1,1,1);
+  }
+  //second, we render the scene to the depth map
   fbo_bind(&rend->shadowmap_fbo);
   renderer_render_scene3D(rend,&rend->shaders[3]);
   //then we render to the main fbo
   fbo_bind(&rend->main_fbo);
+  //TODO TODO TODO this should go inside render scene 3d!!!!!!!!!!!!!!!!!!!!!!!
   for (u32 i = 0; i < rend->animated_model_alloc_pos; ++i)
   {
       use_shader(&rend->shaders[4]);
