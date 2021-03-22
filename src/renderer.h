@@ -126,6 +126,10 @@ typedef struct Renderer
   Texture bmf;
   mat4 view;
   mat4 proj;
+
+  //forward+ stuff
+  GLuint light_buffer;
+  GLuint visible_light_indices_buffer;
 }Renderer;
 
 void

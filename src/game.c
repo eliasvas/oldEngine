@@ -46,7 +46,7 @@ init(void)
     model_init_cube(&debug_cube);
     renderer_init(&rend);
     model_init_cube(&light_cube);
-    model_init_sphere(&sphere, 2.f, 100,100);
+    model_init_sphere(&sphere, 2.f, 50,50);
     model = model_info_init("../assets/sword/sword.mtl");
 
     //ac = animation_controller_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
@@ -92,6 +92,7 @@ render(void)
 {
     sphere.model = mat4_translate(v3(0,0,0));
     renderer_push_model(&rend, &sphere);
+ 
     PointLight pl = (PointLight){v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)),
         1.f,0.09f,0.0032f,v3(6,5,7),v3(9,8,8),v3(9,8,8),1.f};
     for (u32 i = 0;i< 900; ++i)

@@ -93,6 +93,7 @@ GLFunc( CLEARBUFFERDATA, glClearBufferData);
 GLFunc( TEXSTORAGE2D, glTexStorage2D);
 GLFunc( BUFFERSUBDATA, glBufferSubData);
 GLFunc( CLEARTEXIMAGE, glClearTexImage);
+GLFunc( DISPATCHCOMPUTE, glDispatchCompute);
 
 
 
@@ -166,10 +167,11 @@ LoadAllOpenGLProcedures()
 
    glDeleteFramebuffers =  (PFNGLDELETEFRAMEBUFFERSPROC)GetGLFuncAddress("glDeleteFramebuffers");
    glBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)GetGLFuncAddress("glBlitFramebuffer");
-glBindBufferBase = (PFNGLBINDBUFFERBASEPROC)GetGLFuncAddress("glBindBufferBase");
+   glBindBufferBase = (PFNGLBINDBUFFERBASEPROC)GetGLFuncAddress("glBindBufferBase");
    glUnmapBuffer = (PFNGLUNMAPBUFFERPROC)GetGLFuncAddress("glUnmapBuffer");
    glGetBufferSubData = (PFNGLGETBUFFERSUBDATAPROC)GetGLFuncAddress("glGetBufferSubData");
    glBufferSubData = (PFNGLBUFFERSUBDATAPROC)GetGLFuncAddress("glBufferSubData");
+   glDispatchCompute = (PFNGLDISPATCHCOMPUTEPROC)GetGLFuncAddress("glDispatchCompute");
 
    //and on and on and on......
 }

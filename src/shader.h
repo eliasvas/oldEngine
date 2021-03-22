@@ -83,6 +83,37 @@ internal void shader_load (Shader* s, const char * vertex_path, const char * fra
     FREE(fs);
 
 }
+internal void shader_load_compute(Shader* s, const char * compute_path)
+{
+    //this should change but i am bored to death rn
+    s->vertex_str = compute_path;
+    char *cs = read_whole_file(compute_path);
+ 
+    u32 compute;
+    u32 success;
+    compute= glCreateShader(GL_COMPUTE_SHADER);
+    glShaderSource(compute, 1, &cs, NULL);
+    glCompileShader(compute);
+    // print compile errors if any
+    glGetShaderiv(compute, GL_COMPILE_STATUS, &success);
+    if(!success)
+    {
+        glGetShaderInfoLog(compute, 512, NULL, error_log);
+    }
+ 
+    // shader Program
+    GLuint ID = glCreateProgram();
+    glAttachShader(ID, compute);
+    glLinkProgram(ID);
+    glGetProgramiv(ID, GL_LINK_STATUS, &success);
+    if(!success)
+    {
+        glGetShaderInfoLog(compute, 512, NULL, error_log);
+    }
+    s->ID = ID;
+    FREE(cs);
+}
+
 
 internal void shader_reload_from_files( GLuint* program, const char* vertex_shader_filename, const char* fragment_shader_filename ) {
   assert( program && vertex_shader_filename && fragment_shader_filename );

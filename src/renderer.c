@@ -2,6 +2,7 @@
 #include "fbo.h"
 #include "skybox.h"
 #include "tools.h"
+//TODO check if Z Prepass works correctly
 
 local_persist char point_attr[7][64] = {
         "point_lights[x].position",
@@ -150,6 +151,32 @@ renderer_init(Renderer *rend)
         glVertexAttribDivisor(3,1);
     }
 
+    //initialize forward+ buffers (if forward+ is ok)
+    if (rend->renderer_settings.light_cull)
+    {
+        // Generate our shader storage buffers
+        glGenBuffers(1, &rend->light_buffer);
+        glGenBuffers(1, &rend->visible_light_indices_buffer);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->light_buffer);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, 100 * sizeof(int), 0, GL_DYNAMIC_DRAW);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->visible_light_indices_buffer);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, 100 * sizeof(int), 0, GL_DYNAMIC_DRAW);
+
+
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, rend->light_buffer);
+        /*
+        // Bind light buffer
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, NUM_LIGHTS * sizeof(PointLight), 0, GL_DYNAMIC_DRAW);
+
+        // Bind visible light indices buffer
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, visibleLightIndicesBuffer);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, numberOfTiles * sizeof(VisibleIndex) * 1024, 0, GL_STATIC_DRAW);
+        */
+    }
 
 
     shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
@@ -161,6 +188,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[6],"../assets/shaders/line.vert","../assets/shaders/line.frag");
     shader_load(&rend->shaders[7],"../assets/shaders/text.vert","../assets/shaders/text.frag");
     shader_load(&rend->shaders[8],"../assets/shaders/zprepass.vert","../assets/shaders/zprepass.frag");
+    shader_load_compute(&rend->shaders[9], "../assets/shaders/compute_test.comp");
 
 
     //misc
@@ -323,6 +351,13 @@ renderer_end_frame(Renderer *rend)
   mat4 inv_view = mat4_inv(rend->view);
   vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
   //renderer_check_gl_errors();
+  
+  //launch compute shaders
+  {
+      use_shader(&rend->shaders[9]);
+      glDispatchCompute((GLuint)100, (GLuint)1, 1);
+      //synchronize everything
+  } 
 
   //update instance data for filled rect
   glBindBuffer(GL_ARRAY_BUFFER, rend->filled_rect_instance_vbo);
@@ -335,11 +370,13 @@ renderer_end_frame(Renderer *rend)
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererChar) * rend->text_alloc_pos, &rend->text_instance_data[0], GL_DYNAMIC_DRAW);
 
 
-
-  //first we do an (optional) Z Prepass 
+  //first, we render the scene to the depth map
+  fbo_bind(&rend->shadowmap_fbo);
+  renderer_render_scene3D(rend,&rend->shaders[3]);
+  //second we do an (optional) opaque Z Prepass 
+  fbo_bind(&rend->main_fbo);
   if (rend->renderer_settings.z_prepass)
   {
-      fbo_bind(&rend->main_fbo);
       glDepthFunc(GL_LESS);
       glColorMask(0,0,0,0);
       glDepthMask(GL_TRUE);
@@ -347,11 +384,7 @@ renderer_end_frame(Renderer *rend)
       glDepthFunc(GL_LEQUAL);
       glColorMask(1,1,1,1);
   }
-  //second, we render the scene to the depth map
-  fbo_bind(&rend->shadowmap_fbo);
-  renderer_render_scene3D(rend,&rend->shaders[3]);
   //then we render to the main fbo
-  fbo_bind(&rend->main_fbo);
   //TODO TODO TODO this should go inside render scene 3d!!!!!!!!!!!!!!!!!!!!!!!
   for (u32 i = 0; i < rend->animated_model_alloc_pos; ++i)
   {
