@@ -94,6 +94,7 @@ GLFunc( TEXSTORAGE2D, glTexStorage2D);
 GLFunc( BUFFERSUBDATA, glBufferSubData);
 GLFunc( CLEARTEXIMAGE, glClearTexImage);
 GLFunc( DISPATCHCOMPUTE, glDispatchCompute);
+GLFunc( MEMORYBARRIER, glMemoryBarrier);
 
 
 
@@ -172,6 +173,7 @@ LoadAllOpenGLProcedures()
    glGetBufferSubData = (PFNGLGETBUFFERSUBDATAPROC)GetGLFuncAddress("glGetBufferSubData");
    glBufferSubData = (PFNGLBUFFERSUBDATAPROC)GetGLFuncAddress("glBufferSubData");
    glDispatchCompute = (PFNGLDISPATCHCOMPUTEPROC)GetGLFuncAddress("glDispatchCompute");
+   glMemoryBarrier = (PFNGLMEMORYBARRIERPROC)GetGLFuncAddress("glMemoryBarrier");
 
    //and on and on and on......
 }

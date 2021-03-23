@@ -32,14 +32,24 @@ struct PointLight
    vec3 specular;
 };
 #define MAX_POINT_LIGHTS 512
+uniform mat4 proj;
 uniform vec3 view_pos;
 uniform Material material;
 uniform PointLight point_lights[MAX_POINT_LIGHTS];
 uniform DirLight dirlight;
 uniform int point_light_count;
 uniform sampler2D shadow_map;
-
-
+//if i linearize depth here it becomes veeery much slower
+/*
+float linearize_depth(float d)
+{
+	float A = proj[2].z;
+    float B = proj[3].z;
+    float zNear = - B / (1.0 - A);
+    float zFar  =   B / (1.0 + A);
+	return (2.0 * zNear) / (zFar + zNear - d * (zFar - zNear));	 
+}
+*/
 float shadow_calc()
 {
 	float bias = 0.005;
@@ -72,6 +82,7 @@ float shadow_calc()
 
 void main()
 {
+
 	vec3 ambient = dirlight.ambient * vec3(texture(material.diffuse,f_tex_coord));
 	
 	vec3 n = normalize(f_normal);
@@ -126,5 +137,6 @@ void main()
 		*/
 		color += ((specular + diffuse) + ambient);
 	}
+	//gl_FragDepth = linearize_depth(gl_FragCoord.z);
 	FragColor = vec4(color,1.0);
 }

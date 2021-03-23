@@ -12,11 +12,14 @@ float offset = 1.0 / 300.0; //tweak this
 uniform mat4 proj;
 float linearize_depth(float d)
 {
+	///*
 	float A = proj[2].z;
     float B = proj[3].z;
     float zNear = - B / (1.0 - A);
     float zFar  =   B / (1.0 + A);
 	return (2.0 * zNear) / (zFar + zNear - d * (zFar - zNear));	 
+	//*/
+	//return (0.5 * proj[3][2]) / (d + 0.5 * proj[2][2] - 0.5);
 }
 //return zNear * zFar / (zFar + d * (zNear - zFar));
 

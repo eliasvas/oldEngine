@@ -68,7 +68,7 @@ renderer_init(Renderer *rend)
 
     char **faces= cubemap_default();
     skybox_init(&rend->skybox, faces);
-    rend->proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,80.f); 
+    rend->proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,100.f); 
 
     //initialize postproc VAO
     {
@@ -86,7 +86,7 @@ renderer_init(Renderer *rend)
     }
 
     //initialize filled rect vao
-    {
+        {
         GLuint vbo;
         glGenVertexArrays(1, &rend->filled_rect_vao);
         glGenBuffers(1, &vbo);
@@ -108,6 +108,22 @@ renderer_init(Renderer *rend)
         glVertexAttribDivisor(1,1);
         glVertexAttribDivisor(2,1);
         glVertexAttribDivisor(3,1);
+    }
+    //initialize point vao
+    {
+        GLuint vbo;
+        glGenVertexArrays(1, &rend->point_vao);
+        glGenBuffers(1, &rend->point_vbo);
+        glBindVertexArray(rend->point_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, rend->point_vbo);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0,3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(0 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1,4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(3 * sizeof(float)));
+        glVertexAttribDivisor(0,1);
+        glVertexAttribDivisor(1,1);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        rend->point_alloc_pos= 0;
     }
     //initialize line vao 
     {
@@ -189,6 +205,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[7],"../assets/shaders/text.vert","../assets/shaders/text.frag");
     shader_load(&rend->shaders[8],"../assets/shaders/zprepass.vert","../assets/shaders/zprepass.frag");
     shader_load_compute(&rend->shaders[9], "../assets/shaders/compute_test.comp");
+    shader_load(&rend->shaders[11],"../assets/shaders/point.vert","../assets/shaders/point.frag");
 
 
     //misc
@@ -223,6 +240,7 @@ renderer_begin_frame(Renderer *rend)
   //fbo_resize(&rend->depthpeel_fbo, rend->renderer_settings.render_dim.x*2, rend->renderer_settings.render_dim.y*2, FBO_COLOR_0|FBO_DEPTH);
   rend->current_fbo = &rend->main_fbo;
   rend->model_alloc_pos = 0;
+  rend->point_alloc_pos= 0;
   rend->animated_model_alloc_pos = 0;
   rend->filled_rect_alloc_pos = 0;
   rend->line_alloc_pos = 0;
@@ -354,9 +372,11 @@ renderer_end_frame(Renderer *rend)
   
   //launch compute shaders
   {
+      glMemoryBarrier(GL_ALL_BARRIER_BITS);
       use_shader(&rend->shaders[9]);
       glDispatchCompute((GLuint)100, (GLuint)1, 1);
       //synchronize everything
+      glMemoryBarrier(GL_ALL_BARRIER_BITS);
   } 
 
   //update instance data for filled rect
@@ -368,7 +388,9 @@ renderer_end_frame(Renderer *rend)
   //update instance data for text 
   glBindBuffer(GL_ARRAY_BUFFER, rend->text_instance_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererChar) * rend->text_alloc_pos, &rend->text_instance_data[0], GL_DYNAMIC_DRAW);
-
+  //update point nstance data
+  glBindBuffer(GL_ARRAY_BUFFER, rend->point_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(RendererPointData) * rend->point_alloc_pos, &rend->point_instance_data[0], GL_DYNAMIC_DRAW);
 
   //first, we render the scene to the depth map
   fbo_bind(&rend->shadowmap_fbo);
@@ -453,6 +475,14 @@ renderer_end_frame(Renderer *rend)
     glBindVertexArray(rend->line_vao);
     glDrawArraysInstanced(GL_LINES, 0, 2, rend->line_alloc_pos);
     glBindVertexArray(0);
+    //render points
+    glPointSize(10);
+   use_shader(&rend->shaders[11]);
+   shader_set_mat4fv(&rend->shaders[11], "view", (GLfloat*)rend->view.elements);
+   shader_set_mat4fv(&rend->shaders[11], "proj", (GLfloat*)rend->proj.elements);
+   glBindVertexArray(rend->point_vao);
+   glDrawArraysInstanced(GL_POINTS, 0, 1, rend->point_alloc_pos);
+   glBindVertexArray(0);
 
 
   skybox_render(&rend->skybox, rend->proj, rend->view);
@@ -615,6 +645,9 @@ void renderer_push_cube_wireframe(Renderer *rend, vec3 min, vec3 max)
     renderer_push_line(rend, v3(max.x,min.y,min.z),v3(max.x,min.y,max.z), v4(0.9,0.2,0.2,1.f));
 }
 
-
+void renderer_push_point(Renderer *rend, RendererPointData point)
+{
+    rend->point_instance_data[rend->point_alloc_pos++] = point;
+}
 
 

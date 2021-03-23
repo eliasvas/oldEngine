@@ -212,7 +212,7 @@ extern GLFunc( TEXSTORAGE2D, glTexStorage2D);
 extern GLFunc( BUFFERSUBDATA, glBufferSubData);
 extern GLFunc( CLEARTEXIMAGE, glClearTexImage);
 extern GLFunc( DISPATCHCOMPUTE, glDispatchCompute);
-
+extern GLFunc( MEMORYBARRIER, glMemoryBarrier);
 
 
 #endif

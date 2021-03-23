@@ -29,6 +29,7 @@ global EntityManager entity_manager;
 /*
  Engine TODO:
     -[]Fix Timestepping!!!!
+    -[WIP]Linearize ALL depth
     -[WIP]Add a good forward+ step to the renderer (GPU compute).
     -[]Render Settings are real screen coords @fix renderer.c
     -[]Material System Overhaul (maybe go the blender route?)
@@ -90,16 +91,23 @@ update(void)
 internal void 
 render(void)
 {
+     sphere.model = mat4_translate(v3(0,0,-10));
+    renderer_push_model(&rend, &sphere);
+     sphere.model = mat4_translate(v3(0,0,-5));
+    renderer_push_model(&rend, &sphere);
     sphere.model = mat4_translate(v3(0,0,0));
     renderer_push_model(&rend, &sphere);
- 
-    PointLight pl = (PointLight){v3(40*sin(global_platform.current_time),5,40*cos(global_platform.current_time)),
+     
+    PointLight pl = (PointLight){v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),
         1.f,0.09f,0.0032f,v3(6,5,7),v3(9,8,8),v3(9,8,8),1.f};
+    renderer_push_point(&rend,pl.position, v4(1,1,1,1));
+    renderer_push_point_light(&rend,pl);
     for (u32 i = 0;i< 900; ++i)
     {
-        pl.position = v3(i, 5, 30);
+        pl.position.y += 0.5; 
         light_cube.model = mat4_translate(pl.position);
         renderer_push_point_light(&rend,pl);
+        renderer_push_point(&rend, pl.position, v4(1,1,1,1));
         //renderer_push_model(&rend, &light_cube);
     }
     sprintf(info_log,"point light count: %i", rend.point_light_count);
@@ -120,8 +128,7 @@ render(void)
             dui_draw_rect(200, 200, 270, 200, v4(0.1,0.1,0.1,0.9));
             do_slider(GEN_ID, 200 ,300, 4, &rend.multisampling_count);
             do_switch(GEN_ID, (dui_Rect){200,270,20,20}, &rend.renderer_settings.motion_blur);
-            if (do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.z_prepass))rend.renderer_settings.z_prepass = 0;
-            if (do_switch(GEN_ID, (dui_Rect){220,240,20,20}, &rend.renderer_settings.z_prepass))rend.renderer_settings.z_prepass = 1;
+            do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.z_prepass);
             do_button(GEN_ID, (dui_Rect){260,200,150,30});
             dui_draw_string(260, 370, "options");
             dui_draw_string(190, 330, "multisampling");
