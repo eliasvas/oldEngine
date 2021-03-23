@@ -70,6 +70,11 @@ typedef struct RendererChar
     vec2 uv; //where in the bitmap font the character is 
 }RendererChar;
 
+typedef struct VisibleIndex
+{
+    u32 index;
+}VisibleIndex;
+
 
 #define RENDERER_MAX_SHADERS 256
 #define RENDERER_MAX_POINT_LIGHTS 1024 

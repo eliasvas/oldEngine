@@ -45,15 +45,9 @@ typedef struct DirLight {
 }DirLight;  
 typedef struct PointLight {    
     vec3 position;
-    
-    f32 constant;
-    f32 linear;
-    f32 quadratic;  
-
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
-    f32 shininess;
 }PointLight;  
 
 //NOTE(ilias): these are for debug, in case the renderer

@@ -126,9 +126,9 @@ void main()
 		float distance = abs(length(point_lights[i].position - f_frag_pos));
 		float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
 		attenuation = 1.0/(distance);
-		ambient *= attenuation * 0.02;
-		diffuse *= attenuation* 0.02;
-		specular *= attenuation* 0.02;
+		ambient *= attenuation;
+		diffuse *= attenuation;
+		specular *= attenuation;
 		/*
 		float attenuation = 1.0/(distance);
 		ambient *= attenuation;

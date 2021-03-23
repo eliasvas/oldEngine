@@ -99,10 +99,8 @@ render(void)
     renderer_push_model(&rend, &sphere);
      
     PointLight pl = (PointLight){v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),
-        1.f,0.09f,0.0032f,v3(6,5,7),v3(9,8,8),v3(9,8,8),1.f};
-    renderer_push_point(&rend,pl.position, v4(1,1,1,1));
-    renderer_push_point_light(&rend,pl);
-    for (u32 i = 0;i< 900; ++i)
+        v3(6,5,7),v3(9,8,8),v3(9,8,8)};
+    for (u32 i = 0;i< 100; ++i)
     {
         pl.position.y += 0.5; 
         light_cube.model = mat4_translate(pl.position);

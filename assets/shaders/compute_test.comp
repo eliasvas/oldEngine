@@ -1,10 +1,21 @@
 #version 460 core
 
-layout (local_size_x = 1, local_size_y = 1)in;
 
-layout(binding = 1, std430) buffer  buf
+struct PointLight {    
+    vec3 position;
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};  
+struct VisibleLight
+{
+	uint index;
+};
+
+layout (local_size_x = 1, local_size_y = 1)in;
+layout(binding = 1, std430) buffer  pl
 { 
-	int array[]; 
+	PointLight point_lights[]; 
 };
 
 void main()
@@ -13,5 +24,5 @@ void main()
   // get index in global work group i.e x,y position
   ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
   //pixel.x = pixel_coords.x * 15.0;
-  array[gl_WorkGroupID.x] = pixel_coords.x;
+  //array[gl_WorkGroupID.x] = pixel_coords.x;
 }

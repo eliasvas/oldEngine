@@ -4,25 +4,17 @@
 #include "tools.h"
 //TODO check if Z Prepass works correctly
 
-local_persist char point_attr[7][64] = {
+local_persist char point_attr[4][64] = {
         "point_lights[x].position",
         "point_lights[x].ambient",
         "point_lights[x].diffuse",
         "point_lights[x].specular",
-
-        "point_lights[x].constant",
-        "point_lights[x].linear",
-        "point_lights[x].quadratic",
 };
-local_persist char big_point_attr[7][64] = {
+local_persist char big_point_attr[4][64] = {
         "point_lights[xx].position",
         "point_lights[xx].ambient",
         "point_lights[xx].diffuse",
         "point_lights[xx].specular",
-
-        "point_lights[xx].constant",
-        "point_lights[xx].linear",
-        "point_lights[xx].quadratic",
 };
 local_persist f32 screen_verts[] = { 
         -1.0f,  1.0f,  0.0f, 1.0f,
@@ -175,14 +167,19 @@ renderer_init(Renderer *rend)
         glGenBuffers(1, &rend->visible_light_indices_buffer);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->light_buffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, 100 * sizeof(int), 0, GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, RENDERER_MAX_POINT_LIGHTS* sizeof(PointLight), 0, GL_DYNAMIC_DRAW);
+
+        u32 work_groups_x = (global_platform.window_width + (global_platform.window_width % 16)) / 16;
+        u32 work_groups_y = (global_platform.window_height + (global_platform.window_height % 16)) / 16;
+        u32 number_of_tiles = work_groups_x* work_groups_y;
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->visible_light_indices_buffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, 100 * sizeof(int), 0, GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, number_of_tiles * sizeof(VisibleIndex), 0, GL_DYNAMIC_DRAW);
 
 
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, rend->light_buffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, rend->visible_light_indices_buffer);
         /*
         // Bind light buffer
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightBuffer);
@@ -205,6 +202,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[7],"../assets/shaders/text.vert","../assets/shaders/text.frag");
     shader_load(&rend->shaders[8],"../assets/shaders/zprepass.vert","../assets/shaders/zprepass.frag");
     shader_load_compute(&rend->shaders[9], "../assets/shaders/compute_test.comp");
+    shader_load(&rend->shaders[10],"../assets/shaders/phong33.vert","../assets/shaders/phong33.frag");
     shader_load(&rend->shaders[11],"../assets/shaders/point.vert","../assets/shaders/point.frag");
 
 
@@ -265,29 +263,20 @@ renderer_set_light_uniforms(Renderer *rend, Shader *s)
         point_attr[1][13] = '0'+i;
         point_attr[2][13] = '0'+i;
         point_attr[3][13] = '0'+i;
-        point_attr[4][13] = '0'+i;
-        point_attr[5][13] = '0'+i;
-        point_attr[6][13] = '0'+i;
         shader_set_vec3(s,point_attr[0], rend->point_lights[i].position);
         shader_set_vec3(s,point_attr[1], rend->point_lights[i].ambient);
         shader_set_vec3(s,point_attr[2], rend->point_lights[i].diffuse);
         shader_set_vec3(s,point_attr[3], rend->point_lights[i].specular);
-        shader_set_float(s,point_attr[4], rend->point_lights[i].constant);
-        shader_set_float(s,point_attr[5], rend->point_lights[i].linear);
-        shader_set_float(s,point_attr[6], rend->point_lights[i].quadratic);
       }
       else
       {
-
+        continue;
         point_attr[0][13] = '0'+ (i / 10);
-       point_attr[0][14] = '0'+ (i % 10);
+        point_attr[0][14] = '0'+ (i % 10);
         shader_set_vec3(s,big_point_attr[0], rend->point_lights[i].position);
         shader_set_vec3(s,big_point_attr[1], rend->point_lights[i].ambient);
         shader_set_vec3(s,big_point_attr[2], rend->point_lights[i].diffuse);
         shader_set_vec3(s,big_point_attr[3], rend->point_lights[i].specular);
-        shader_set_float(s,big_point_attr[4], rend->point_lights[i].constant);
-        shader_set_float(s,big_point_attr[5], rend->point_lights[i].linear);
-        shader_set_float(s,big_point_attr[6], rend->point_lights[i].quadratic);
       }
     }
     //directional light properties
@@ -370,6 +359,14 @@ renderer_end_frame(Renderer *rend)
   vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
   //renderer_check_gl_errors();
   
+  //set light ssbo @check
+  {
+   	glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->light_buffer);
+	PointLight *point_lights = (PointLight*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_WRITE);
+    memcpy(point_lights, rend->point_lights, sizeof(PointLight) * rend->point_light_count);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); 
+  }
   //launch compute shaders
   {
       glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -466,7 +463,6 @@ renderer_end_frame(Renderer *rend)
     //glDrawArrays(GL_LINES,0, 40000);
     glBindVertexArray(0);
   }
-  renderer_render_scene3D(rend,&rend->shaders[0]);
     //render lines
     glLineWidth(5);
     use_shader(&rend->shaders[6]);
@@ -484,6 +480,8 @@ renderer_end_frame(Renderer *rend)
    glDrawArraysInstanced(GL_POINTS, 0, 1, rend->point_alloc_pos);
    glBindVertexArray(0);
 
+  renderer_set_light_uniforms(rend, &rend->shaders[0]);
+  renderer_render_scene3D(rend,&rend->shaders[0]);
 
   skybox_render(&rend->skybox, rend->proj, rend->view);
 
