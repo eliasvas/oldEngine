@@ -23,14 +23,16 @@ struct DirLight
    vec3 diffuse;
    vec3 specular;
 };
-struct PointLight
-{
-   vec3 position;
-
-   vec3 ambient;
-   vec3 diffuse;
-   vec3 specular;
-};
+struct PointLight {    
+    vec3 position;
+    float constant;
+    vec3 ambient;
+    float linear;
+    vec3 diffuse;
+    float quadratic;
+    vec3 specular;
+    float shininess;
+}; 
 #define MAX_POINT_LIGHTS 512
 uniform mat4 proj;
 uniform vec3 view_pos;
@@ -39,17 +41,6 @@ uniform PointLight point_lights[MAX_POINT_LIGHTS];
 uniform DirLight dirlight;
 uniform int point_light_count;
 uniform sampler2D shadow_map;
-//if i linearize depth here it becomes veeery much slower
-/*
-float linearize_depth(float d)
-{
-	float A = proj[2].z;
-    float B = proj[3].z;
-    float zNear = - B / (1.0 - A);
-    float zFar  =   B / (1.0 + A);
-	return (2.0 * zNear) / (zFar + zNear - d * (zFar - zNear));	 
-}
-*/
 float shadow_calc()
 {
 	float bias = 0.005;
@@ -126,17 +117,10 @@ void main()
 		float distance = abs(length(point_lights[i].position - f_frag_pos));
 		float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
 		attenuation = 1.0/(distance);
-		ambient *= attenuation;
-		diffuse *= attenuation;
-		specular *= attenuation;
-		/*
-		float attenuation = 1.0/(distance);
-		ambient *= attenuation;
-		diffuse *= attenuation;
-		specular *= attenuation;
-		*/
+		ambient *= attenuation * 0.02;
+		diffuse *= attenuation * 0.02;
+		specular *= attenuation * 0.02;
 		color += ((specular + diffuse) + ambient);
 	}
-	//gl_FragDepth = linearize_depth(gl_FragCoord.z);
 	FragColor = vec4(color,1.0);
 }

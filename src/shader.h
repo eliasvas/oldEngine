@@ -26,7 +26,7 @@ internal void use_shader(Shader* shader)
     glUseProgram(shader->ID);
 }
 
-internal GLuint shader_load_from_strings (const char * vertex_str, const char * fragment_str)
+internal GLuint shader_load_from_strings (char * vertex_str,  char * fragment_str)
 { 
     GLuint ID;
     // 2. compile shaders
@@ -72,7 +72,7 @@ internal GLuint shader_load_from_strings (const char * vertex_str, const char * 
     glDeleteShader(fragment);
     return ID;
 }
-internal void shader_load (Shader* s, const char * vertex_path, const char * fragment_path)
+internal void shader_load (Shader* s, char * vertex_path, char * fragment_path)
 {
     s->vertex_str = vertex_path;
     s->fragment_str = fragment_path;
@@ -83,7 +83,7 @@ internal void shader_load (Shader* s, const char * vertex_path, const char * fra
     FREE(fs);
 
 }
-internal void shader_load_compute(Shader* s, const char * compute_path)
+internal void shader_load_compute(Shader* s, char * compute_path)
 {
     //this should change but i am bored to death rn
     s->vertex_str = compute_path;
@@ -115,7 +115,7 @@ internal void shader_load_compute(Shader* s, const char * compute_path)
 }
 
 
-internal void shader_reload_from_files( GLuint* program, const char* vertex_shader_filename, const char* fragment_shader_filename ) {
+internal void shader_reload_from_files( GLuint* program, char* vertex_shader_filename, char* fragment_shader_filename ) {
   assert( program && vertex_shader_filename && fragment_shader_filename );
   Shader new_shader;
   shader_load(&new_shader,vertex_shader_filename, fragment_shader_filename );
@@ -125,33 +125,33 @@ internal void shader_reload_from_files( GLuint* program, const char* vertex_shad
   }
 }
 internal void 
-shader_set_bool(Shader* shader, const char *name, b8 value)
+shader_set_bool(Shader* shader, char *name, b8 value)
 {         
     glUniform1i(glGetUniformLocation(shader->ID, name), (int)value); 
 }
 internal void 
-shader_set_int(Shader* shader, const char *name, i32 value)
+shader_set_int(Shader* shader, char *name, i32 value)
 { 
     glUniform1i(glGetUniformLocation(shader->ID, name), value); 
 }
 internal void 
-shader_set_float(Shader * shader, const char *name, f32 value)
+shader_set_float(Shader * shader, char *name, f32 value)
 { 
     glUniform1f(glGetUniformLocation(shader->ID, name), value); 
 } 
 internal void
-shader_set_vec3(Shader * shader, const char *name, vec3 value)
+shader_set_vec3(Shader * shader, char *name, vec3 value)
 { 
     glUniform3f(glGetUniformLocation(shader->ID, name), value.x,value.y,value.z); 
 } 
 
 internal void
-shader_set_vec4(Shader * shader, const char *name, vec4 value)
+shader_set_vec4(Shader * shader, char *name, vec4 value)
 { 
     glUniform3f(glGetUniformLocation(shader->ID, name), value.x,value.y,value.z, value.w); 
 } 
 internal void 
-shader_set_mat4fv(Shader * shader, const char *name, f32* value)
+shader_set_mat4fv(Shader * shader, char *name, f32* value)
 { 
     glUniformMatrix4fv(glGetUniformLocation(shader->ID, name),1,GL_FALSE, value);  //NOTE(ilias): check
 }

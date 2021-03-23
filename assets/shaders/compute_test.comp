@@ -1,21 +1,31 @@
-#version 460 core
+#version 430 core
 
 
 struct PointLight {    
     vec3 position;
+    float constant;
     vec3 ambient;
+    float linear;
     vec3 diffuse;
+    float quadratic;
     vec3 specular;
+    float shininess;
 };  
-struct VisibleLight
+
+struct VisibleIndex
 {
 	uint index;
 };
 
 layout (local_size_x = 1, local_size_y = 1)in;
-layout(binding = 1, std430) buffer  pl
+
+layout(binding = 1, std430) buffer  light_buffer
 { 
-	PointLight point_lights[]; 
+	PointLight data[]; 
+};
+layout(binding = 2, std430) buffer  visible_index_buffer
+{ 
+	VisibleIndex index[]; 
 };
 
 void main()
@@ -23,6 +33,5 @@ void main()
   vec4 pixel = vec4(0.0, 0.0, 0.0, 1.0);
   // get index in global work group i.e x,y position
   ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-  //pixel.x = pixel_coords.x * 15.0;
-  //array[gl_WorkGroupID.x] = pixel_coords.x;
+  //data[gl_GlobalInvocationID.x].position.x += gl_GlobalInvocationID.x * 100;
 }

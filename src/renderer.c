@@ -480,9 +480,14 @@ renderer_end_frame(Renderer *rend)
    glDrawArraysInstanced(GL_POINTS, 0, 1, rend->point_alloc_pos);
    glBindVertexArray(0);
 
-  renderer_set_light_uniforms(rend, &rend->shaders[0]);
-  renderer_render_scene3D(rend,&rend->shaders[0]);
-
+   if (rend->renderer_settings.light_cull) 
+       renderer_render_scene3D(rend,&rend->shaders[0]);
+   else
+   {
+       //set light uniforms is only used for the simple forward renderer
+      renderer_set_light_uniforms(rend, &rend->shaders[10]);
+      renderer_render_scene3D(rend,&rend->shaders[10]);
+   }
   skybox_render(&rend->skybox, rend->proj, rend->view);
 
 

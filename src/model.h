@@ -45,9 +45,13 @@ typedef struct DirLight {
 }DirLight;  
 typedef struct PointLight {    
     vec3 position;
+    f32 constant;
     vec3 ambient;
+    f32 linear;
     vec3 diffuse;
+    f32 quadratic;
     vec3 specular;
+    f32 shininess;
 }PointLight;  
 
 //NOTE(ilias): these are for debug, in case the renderer
@@ -314,6 +318,22 @@ model_render(Model *m)
     }
     glBindVertexArray(0);
 
+}
+
+
+internal PointLight
+point_light_init(vec3 pos, vec3 amb, vec3 diff, vec3 spec)
+{
+    PointLight res;
+    res.position = pos;
+    res.ambient = amb;
+    res.diffuse = diff;
+    res.specular = spec;
+    res.constant = 1.f;
+    res.linear = 0.09;
+    res.quadratic = 0.032;
+    res.shininess = 1.f;
+    return res;
 }
 
 

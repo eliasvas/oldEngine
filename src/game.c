@@ -98,8 +98,7 @@ render(void)
     sphere.model = mat4_translate(v3(0,0,0));
     renderer_push_model(&rend, &sphere);
      
-    PointLight pl = (PointLight){v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),
-        v3(6,5,7),v3(9,8,8),v3(9,8,8)};
+    PointLight pl = point_light_init(v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),v3(6,5,7),v3(9,8,8),v3(9,8,8));
     for (u32 i = 0;i< 100; ++i)
     {
         pl.position.y += 0.5; 
@@ -109,10 +108,6 @@ render(void)
         //renderer_push_model(&rend, &light_cube);
     }
     sprintf(info_log,"point light count: %i", rend.point_light_count);
-    //model.model = mat4_mul(animation_controller_socket(&ac, 16, mat4_translate(v3(0,0,0.001))),m4d(1.f));
-    //model.model = mat4_mul(model.model, quat_to_mat4(quat_from_angle(v3(0,0,1), 80)));
-    //model.model = mat4_mul(model.model, mat4_scale(v3(0.02,0.02,0.02)));
-    //renderer_push_model(&rend, &model);
 
     dui_frame_begin();
 
@@ -125,13 +120,13 @@ render(void)
         {
             dui_draw_rect(200, 200, 270, 200, v4(0.1,0.1,0.1,0.9));
             do_slider(GEN_ID, 200 ,300, 4, &rend.multisampling_count);
-            do_switch(GEN_ID, (dui_Rect){200,270,20,20}, &rend.renderer_settings.motion_blur);
+            do_switch(GEN_ID, (dui_Rect){200,270,20,20}, &rend.renderer_settings.light_cull);
             do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.z_prepass);
             do_button(GEN_ID, (dui_Rect){260,200,150,30});
             dui_draw_string(260, 370, "options");
             dui_draw_string(190, 330, "multisampling");
-            dui_draw_string(215, 275, "antialiasing");
-            dui_draw_string(230, 240, "Z-Prepass");
+            dui_draw_string(215, 275, "light cull");
+            dui_draw_string(230, 240, "z_prepass");
             dui_draw_string(280, 210, " PAUSE");
             char ms[64];
             sprintf(ms, "%.4f ms", global_platform.dt);
