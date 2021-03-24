@@ -44,14 +44,15 @@ uniform Material material;
 uniform DirLight dirlight;
 uniform int point_light_count;
 uniform sampler2D shadow_map;
+uniform int number_of_tiles_x;
 
 layout(binding = 1, std430) buffer  light_buffer
 { 
-	PointLight data[]; 
+	PointLight light_data[]; 
 };
 layout(binding = 2, std430) buffer  visible_index_buffer
 { 
-	VisibleIndex index[]; 
+	VisibleIndex light_index[]; 
 };
 float shadow_calc()
 {
@@ -109,11 +110,15 @@ void main()
 	float linear = 0.09;
 	float quadratic = 0.032;
 	
-	
-	for(int i = 0; i < point_light_count;++i)
+	ivec2 location = ivec2(gl_FragCoord.xy);
+	ivec2 tileID = location / ivec2(16, 16);
+	uint index = tileID.y * number_of_tiles_x + tileID.x;
+	uint offset = index * 1024;
+	for(int i = 0; i < 1024 && light_index[offset + i].index != -1;++i)
 	{
 		//PointLight current_light = point_lights[i];
-		PointLight current_light = data[i];
+		uint light_idx = light_index[offset + i].index;
+		PointLight current_light = light_data[light_idx];
 		ambient = current_light.ambient * vec3(texture(material.diffuse,f_tex_coord));	
 			
 		n = normalize(f_normal);
@@ -131,15 +136,9 @@ void main()
 		float distance = abs(length(current_light.position - f_frag_pos));
 		float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
 		attenuation = 1.0/(distance);
-		ambient *= attenuation * 0.02;
-		diffuse *= attenuation* 0.02;
-		specular *= attenuation* 0.02;
-		/*
-		float attenuation = 1.0/(distance);
-		ambient *= attenuation;
-		diffuse *= attenuation;
-		specular *= attenuation;
-		*/
+		ambient *= attenuation * 0.03;
+		diffuse *= attenuation * 0.03;
+		specular *= attenuation * 0.03;
 		color += ((specular + diffuse) + ambient);
 	}
 	//gl_FragDepth = linearize_depth(gl_FragCoord.z);

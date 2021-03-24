@@ -29,8 +29,8 @@ global EntityManager entity_manager;
 /*
  Engine TODO:
     -[]Fix Timestepping!!!!
-    -[WIP]Linearize ALL depth
     -[WIP]Add a good forward+ step to the renderer (GPU compute).
+    -[]Normal visualization with a gemoetry shader.
     -[]Render Settings are real screen coords @fix renderer.c
     -[]Material System Overhaul (maybe go the blender route?)
     -[]Physics Engine (Stabilize current version..)

@@ -14,24 +14,68 @@ struct PointLight {
 
 struct VisibleIndex
 {
-	uint index;
+	int index;
 };
-
-layout (local_size_x = 1, local_size_y = 1)in;
+#define LOCAL_TILE_SIZE 16
+layout (local_size_x = LOCAL_TILE_SIZE, local_size_y = LOCAL_TILE_SIZE, local_size_z = 1)in;
 
 layout(binding = 1, std430) buffer  light_buffer
 { 
-	PointLight data[]; 
+	PointLight light_data[]; 
 };
 layout(binding = 2, std430) buffer  visible_index_buffer
 { 
-	VisibleIndex index[]; 
+	VisibleIndex light_index[]; 
 };
+uniform int window_width;
+uniform int window_height;
+uniform sampler2D depth_map;//populated by a z prepass!!!
+uniform mat4 proj;
+uniform mat4 view;
 
+shared int visible_light_indices[1024];
+shared int visible_light_count;
+shared int max_depth_int;
+shared int min_depth_int;
+shared mat4 view_proj;
 void main()
 {
-  vec4 pixel = vec4(0.0, 0.0, 0.0, 1.0);
-  // get index in global work group i.e x,y position
-  ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-  //data[gl_GlobalInvocationID.x].position.x += gl_GlobalInvocationID.x * 100;
+	ivec2 location = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 itemID = ivec2(gl_LocalInvocationID.xy);
+	ivec2 tileID = ivec2(gl_WorkGroupID.xy);
+	ivec2 tileNumber = ivec2(gl_NumWorkGroups.xy);
+	uint index = tileID.y * tileNumber.x + tileID.x;
+  barrier();
+  if (gl_LocalInvocationIndex == 0)
+  {
+	  visible_light_count = 0;
+	  max_depth_int = 0;
+	  min_depth_int = 0xFFFFFFFF;
+	  view_proj = proj * view;
+  }
+  barrier();
+	  ivec2 screen_size = ivec2(window_width, window_height);
+	  if (gl_LocalInvocationIndex == 0)
+	  {
+		  for (int i = 0; i < 10; ++i)
+		  {
+			  int offset = atomicAdd(visible_light_count, 1);
+			  visible_light_indices[i] = i;
+		  }
+	  }
+  barrier();
+  // One thread should fill the global light buffer
+	if (gl_LocalInvocationIndex == 0) {
+		uint offset = index * 1024; // Determine bosition in global buffer
+		for (uint i = 0; i < 10; i++) {
+			light_index[offset + i].index = visible_light_indices[i];
+		}
+
+		if(visible_light_count != 1024) {
+			// Unless we have totally filled the entire array, mark it's end with -1
+			// Final shader step will use this to determine where to stop (without having to pass the light count)
+			light_index[offset + visible_light_count].index = -1;
+		}
+	}
+	barrier();
 }

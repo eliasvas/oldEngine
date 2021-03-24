@@ -174,7 +174,7 @@ renderer_init(Renderer *rend)
         u32 number_of_tiles = work_groups_x* work_groups_y;
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->visible_light_indices_buffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, number_of_tiles * sizeof(VisibleIndex), 0, GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, number_of_tiles * sizeof(VisibleIndex) * 1024, 0, GL_DYNAMIC_DRAW);
 
 
 
@@ -332,7 +332,9 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     //set material properties
     shader_set_float(&shader[0], "material.shininess", data.material.shininess);
     //light properties
-    renderer_set_light_uniforms(rend, shader);
+    //renderer_set_light_uniforms(rend, shader);
+    i32 work_groups_x = (global_platform.window_width + (global_platform.window_width % 16)) / 16;
+    shader_set_int(&shader[0], "number_of_tiles_x", work_groups_x);
 
     glBindVertexArray(data.model_vao);
     glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
@@ -367,15 +369,6 @@ renderer_end_frame(Renderer *rend)
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); 
   }
-  //launch compute shaders
-  {
-      glMemoryBarrier(GL_ALL_BARRIER_BITS);
-      use_shader(&rend->shaders[9]);
-      glDispatchCompute((GLuint)100, (GLuint)1, 1);
-      //synchronize everything
-      glMemoryBarrier(GL_ALL_BARRIER_BITS);
-  } 
-
   //update instance data for filled rect
   glBindBuffer(GL_ARRAY_BUFFER, rend->filled_rect_instance_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererFilledRect) * rend->filled_rect_alloc_pos, &rend->filled_rect_instance_data[0], GL_DYNAMIC_DRAW);
@@ -403,6 +396,26 @@ renderer_end_frame(Renderer *rend)
       glDepthFunc(GL_LEQUAL);
       glColorMask(1,1,1,1);
   }
+  //launch compute shader for light culling
+  {
+      glMemoryBarrier(GL_ALL_BARRIER_BITS);
+      u32 work_groups_x = (global_platform.window_width + (global_platform.window_width % 16)) / 16;
+      u32 work_groups_y = (global_platform.window_height + (global_platform.window_height % 16)) / 16;
+
+      glMemoryBarrier(GL_ALL_BARRIER_BITS);
+      use_shader(&rend->shaders[9]);
+      shader_set_int(&rend->shaders[9], "window_width", global_platform.window_width);
+      shader_set_int(&rend->shaders[9], "window_height", global_platform.window_height);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
+      shader_set_int(&rend->shaders[4], "depth_map", 0);
+
+      glDispatchCompute((GLuint)work_groups_x, (GLuint)work_groups_y, 1);
+      //synchronize everything
+      glMemoryBarrier(GL_ALL_BARRIER_BITS);
+  } 
+
+
   //then we render to the main fbo
   //TODO TODO TODO this should go inside render scene 3d!!!!!!!!!!!!!!!!!!!!!!!
   for (u32 i = 0; i < rend->animated_model_alloc_pos; ++i)
@@ -481,10 +494,12 @@ renderer_end_frame(Renderer *rend)
    glBindVertexArray(0);
 
    if (rend->renderer_settings.light_cull) 
+   {
+       //sprintf(error_log, "number of tiles x: %i", work_groups_x);
        renderer_render_scene3D(rend,&rend->shaders[0]);
+   }
    else
    {
-       //set light uniforms is only used for the simple forward renderer
       renderer_set_light_uniforms(rend, &rend->shaders[10]);
       renderer_render_scene3D(rend,&rend->shaders[10]);
    }
