@@ -11,6 +11,38 @@ struct PointLight {
     vec3 specular;
     float shininess;
 };  
+struct Plane
+{
+	vec3 N;//plane's normal vector
+	float d;//distance from origin
+};
+struct Frustum
+{
+	Plane planes[4];//left/right/top/bottom
+	//back/front calculated from min/max depth values
+};
+struct Sphere
+{
+	vec3 c;
+	float r;
+};
+bool sphere_inside_plane(Sphere sphere, Plane plane)
+{
+	return dot(plane.N,sphere.c)- plane.d < -sphere.r;
+}
+bool sphere_inside_frustum(Sphere sphere, Frustum frustum, float zNear, float zFar)
+{
+	bool res = true;
+	///*
+	if (sphere.c.z - sphere.r < zNear || sphere.c.z + sphere.r < zFar)
+		res = false;
+		//*/
+		///*
+	for (uint i = 0; i < 4; ++i)
+		if (!sphere_inside_plane(sphere, frustum.planes[i]))res = false;
+	//*/
+	return res;
+}
 
 struct VisibleIndex
 {
@@ -29,45 +61,127 @@ layout(binding = 2, std430) buffer  visible_index_buffer
 };
 uniform int window_width;
 uniform int window_height;
+uniform int point_light_count;
 uniform sampler2D depth_map;//populated by a z prepass!!!
 uniform mat4 proj;
 uniform mat4 view;
 
 shared int visible_light_indices[1024];
 shared int visible_light_count;
-shared int max_depth_int;
-shared int min_depth_int;
-shared mat4 view_proj;
+shared uint max_depth_uint;
+shared uint min_depth_uint;
+shared ivec2 screen_size;
+shared Frustum frustum;
+//this is super slow, maybe make it smaller
+float linearize_depth(float d)
+{
+	float A = proj[2].z;
+    float B = proj[3].z;
+    float zNear = - B / (1.0 - A);
+    float zFar  =   B / (1.0 + A);
+	return (2.0 * zNear) / (zFar + zNear - d * (zFar - zNear));
+}
+vec4 clip_to_view(vec4 clip)
+{
+	//we undo the projection step
+	vec4 view = inverse(proj) * clip;
+	//and we do the perspective division
+	view = view/view.w;
+	return view;
+}
+vec4 screen_to_view(vec4 screen)
+{
+	vec2 tex_coords = screen.xy / screen_size;
+	
+	vec4 clip = vec4(0,0,0,0);
+	return clip_to_view(clip);
+}
+Plane compute_plane(vec3 p0, vec3 p1, vec3 p2)
+{
+	Plane plane;
+	vec3 v0 = p1 - p0;
+	vec3 v2 = p2 - p0;
+	plane.N = normalize(cross(v0, v2));
+	plane.d = dot(plane.N, p0);
+	return plane;
+}
 void main()
 {
+	//[1]first we initialize shared stuff, find our tiles coords etc..
 	ivec2 location = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 itemID = ivec2(gl_LocalInvocationID.xy);
 	ivec2 tileID = ivec2(gl_WorkGroupID.xy);
-	ivec2 tileNumber = ivec2(gl_NumWorkGroups.xy);
-	uint index = tileID.y * tileNumber.x + tileID.x;
-  barrier();
+	ivec2 tile_number = ivec2(gl_NumWorkGroups.xy);
+	uint index = tileID.y * tile_number.x + tileID.x;
   if (gl_LocalInvocationIndex == 0)
   {
 	  visible_light_count = 0;
-	  max_depth_int = 0;
-	  min_depth_int = 0xFFFFFFFF;
-	  view_proj = proj * view;
+	  max_depth_uint = 0;
+	  min_depth_uint = 0xFFFFFFFF;
+	  screen_size = ivec2(window_width, window_height);
   }
   barrier();
-	  ivec2 screen_size = ivec2(window_width, window_height);
-	  if (gl_LocalInvocationIndex == 0)
-	  {
-		  for (int i = 0; i < 10; ++i)
-		  {
-			  int offset = atomicAdd(visible_light_count, 1);
-			  visible_light_indices[i] = i;
-		  }
-	  }
+  
+  //[2]now we find the smallest and largest depths for our (whole) 16x16 tile
+  
+  //float max_depth, min_depth;
+  vec2 tex_coords = vec2(location) / screen_size;
+  float min_depth, max_depth;
+  float depth = texture(depth_map, tex_coords).r;
+  depth = linearize_depth(depth);
+  uint depth_uint = floatBitsToUint(depth);
+  atomicMin(min_depth_uint, depth_uint);
+  atomicMax(max_depth_uint, depth_uint);
+  
   barrier();
-  // One thread should fill the global light buffer
+  
+  //[3]now we calculate the culling frustum for each tile
+  if (gl_LocalInvocationIndex == 0)
+  {
+	  min_depth = uintBitsToFloat(min_depth_uint);
+	  max_depth = uintBitsToFloat(max_depth_uint);
+	  vec3 eye_pos = vec3(0,0,0);
+	  //first we find the planes at screen space
+	  vec4 coords[4];
+	  coords[0] = vec4(gl_WorkGroupID.x * LOCAL_TILE_SIZE, gl_WorkGroupID.y * LOCAL_TILE_SIZE, -1.0,1.0); //BL
+	  coords[1] = vec4((gl_WorkGroupID.x+1) * LOCAL_TILE_SIZE, gl_WorkGroupID.y * LOCAL_TILE_SIZE, -1.0,1.0); //BR
+	  coords[2] = vec4(gl_WorkGroupID.x * LOCAL_TILE_SIZE, (gl_WorkGroupID.y+1) * LOCAL_TILE_SIZE, -1.0,1.0); //TL
+	  coords[3] = vec4((gl_WorkGroupID.x+1) * LOCAL_TILE_SIZE, (gl_WorkGroupID.y+1) * LOCAL_TILE_SIZE, -1.0,1.0); //TR
+	  //then we transform them to view space!!
+	  for (uint i = 0; i < 4; ++i)
+	  {
+		  coords[i] = screen_to_view(coords[i]);
+	  }
+	  //now we comstruct the frustum planes!!!!
+	  frustum.planes[0] = compute_plane(eye_pos, vec3(coords[0]), vec3(coords[2])); //left
+	  frustum.planes[1] = compute_plane(eye_pos, vec3(coords[1]), vec3(coords[3])); //right
+      frustum.planes[2] = compute_plane(eye_pos, vec3(coords[3]), vec3(coords[2])); //top
+      frustum.planes[3] = compute_plane(eye_pos, vec3(coords[0]), vec3(coords[1])); //bottom
+  }
+  barrier();
+  //[4] the threads fill the shared light index buffer for THIS (16x16) tile
+  uint thread_count = LOCAL_TILE_SIZE * LOCAL_TILE_SIZE;
+  uint pass_count = (point_light_count + thread_count - 1) / thread_count;
+  for (uint i = 0; i < pass_count; ++i)
+  {
+	  uint light_idx = i * thread_count  + gl_LocalInvocationIndex;
+	  if (light_idx >= point_light_count)break;
+	  
+	  vec3 position = light_data[light_idx].position;
+	  float radius = 5.0;
+	  Sphere pl = {position, radius};
+	  if (sphere_inside_frustum(pl, frustum, min_depth, max_depth))
+	  {
+		  uint offset = atomicAdd(visible_light_count, 1);
+		  visible_light_indices[offset] = int(light_idx);
+	  }
+  }
+  
+  barrier();
+  //[5] One thread should fill the global light buffer
 	if (gl_LocalInvocationIndex == 0) {
 		uint offset = index * 1024; // Determine bosition in global buffer
-		for (uint i = 0; i < 10; i++) {
+		for (uint i = 0; i < visible_light_count; i++) {
 			light_index[offset + i].index = visible_light_indices[i];
 		}
 
@@ -77,5 +191,5 @@ void main()
 			light_index[offset + visible_light_count].index = -1;
 		}
 	}
-	barrier();
+  barrier();
 }

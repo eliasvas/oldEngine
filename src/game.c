@@ -30,6 +30,7 @@ global EntityManager entity_manager;
  Engine TODO:
     -[]Fix Timestepping!!!!
     -[WIP]Add a good forward+ step to the renderer (GPU compute).
+    -[]Light Attenuation and radius stuff
     -[]Normal visualization with a gemoetry shader.
     -[]Render Settings are real screen coords @fix renderer.c
     -[]Material System Overhaul (maybe go the blender route?)

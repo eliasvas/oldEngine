@@ -114,6 +114,7 @@ void main()
 	ivec2 tileID = location / ivec2(16, 16);
 	uint index = tileID.y * number_of_tiles_x + tileID.x;
 	uint offset = index * 1024;
+	
 	for(int i = 0; i < 1024 && light_index[offset + i].index != -1;++i)
 	{
 		//PointLight current_light = point_lights[i];
@@ -136,11 +137,12 @@ void main()
 		float distance = abs(length(current_light.position - f_frag_pos));
 		float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
 		attenuation = 1.0/(distance);
-		ambient *= attenuation * 0.03;
-		diffuse *= attenuation * 0.03;
-		specular *= attenuation * 0.03;
+		ambient *= attenuation * 0.01;
+		diffuse *= attenuation * 0.01;
+		specular *= attenuation * 0.01;
 		color += ((specular + diffuse) + ambient);
 	}
+	
 	//gl_FragDepth = linearize_depth(gl_FragCoord.z);
 	FragColor = vec4(color,1.0);
 }

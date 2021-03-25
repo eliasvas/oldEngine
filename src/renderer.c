@@ -335,6 +335,12 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     //renderer_set_light_uniforms(rend, shader);
     i32 work_groups_x = (global_platform.window_width + (global_platform.window_width % 16)) / 16;
     shader_set_int(&shader[0], "number_of_tiles_x", work_groups_x);
+    shader_set_vec3(&shader[0], "dirlight.direction", rend->directional_light.direction);
+    shader_set_vec3(&shader[0], "dirlight.ambient", rend->directional_light.ambient);
+    shader_set_vec3(&shader[0], "dirlight.diffuse", rend->directional_light.diffuse);
+    shader_set_vec3(&shader[0], "dirlight.specular", rend->directional_light.specular);
+
+
 
     glBindVertexArray(data.model_vao);
     glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
@@ -408,7 +414,8 @@ renderer_end_frame(Renderer *rend)
       shader_set_int(&rend->shaders[9], "window_height", global_platform.window_height);
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
-      shader_set_int(&rend->shaders[4], "depth_map", 0);
+      shader_set_int(&rend->shaders[9], "depth_map", 0);
+      shader_set_int(&rend->shaders[9], "point_light_count", rend->point_light_count);
 
       glDispatchCompute((GLuint)work_groups_x, (GLuint)work_groups_y, 1);
       //synchronize everything
@@ -495,6 +502,7 @@ renderer_end_frame(Renderer *rend)
 
    if (rend->renderer_settings.light_cull) 
    {
+
        //sprintf(error_log, "number of tiles x: %i", work_groups_x);
        renderer_render_scene3D(rend,&rend->shaders[0]);
    }
