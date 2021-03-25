@@ -207,12 +207,13 @@ extern PFNGLBLITFRAMEBUFFERPROC glBlitFramebuffer;
 extern GLFunc( BINDBUFFERBASE, glBindBufferBase);
 extern GLFunc( UNMAPBUFFER, glUnmapBuffer);
 extern GLFunc( GETBUFFERSUBDATA, glGetBufferSubData);
+extern GLFunc( BINDIMAGETEXTURE, glBindImageTexture);
 extern GLFunc( CLEARBUFFERDATA, glClearBufferData);
 extern GLFunc( TEXSTORAGE2D, glTexStorage2D);
 extern GLFunc( BUFFERSUBDATA, glBufferSubData);
 extern GLFunc( CLEARTEXIMAGE, glClearTexImage);
 extern GLFunc( DISPATCHCOMPUTE, glDispatchCompute);
 extern GLFunc( MEMORYBARRIER, glMemoryBarrier);
-
+//extern GLFunc( TEXIMAGE2D, glTexImage2D);
 
 #endif

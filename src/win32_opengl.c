@@ -25,7 +25,7 @@
  * but to get their function pointers.. we need a Rendering Context! So we have to make a 
  * fake one first and obtain the function pointers [and then destroy it and make a proper one!]*/
 
-static HGLRC win32_opengl_context;
+internal HGLRC win32_opengl_context;
 
 PFNWGLCHOOSEPIXELFORMATARBPROC     wglChoosePixelFormatARB;
 PFNWGLCREATECONTEXTATTRIBSARBPROC  wglCreateContextAttribsARB;
@@ -79,6 +79,7 @@ GLFunc( RENDERBUFFERSTORAGE, glRenderbufferStorage);
 GLFunc( GENRENDERBUFFERS, glGenRenderbuffers);
 GLFunc( FRAMEBUFFERRENDERBUFFER, glFramebufferRenderbuffer);
 GLFunc( TEXIMAGE3D, glTexImage3D);
+//GLFunc( TEXIMAGE2D, glTexImage2D);
 GLFunc( BINDIMAGETEXTURE, glBindImageTexture);
 GLFunc( MEMORYBARRIER, glMemoryBarrier);
 GLFunc( COPYIMAGESUBDATA, glCopyImageSubData);
@@ -98,7 +99,7 @@ GLFunc( MEMORYBARRIER, glMemoryBarrier);
 
 
 
-static void *GetGLFuncAddress(const char *name)
+internal void *GetGLFuncAddress(const char *name)
 {
   void *p = (void *)wglGetProcAddress(name);
   if(p == 0 ||
@@ -113,7 +114,7 @@ static void *GetGLFuncAddress(const char *name)
 }
 
 //NOTE(ilias): maybe this should happen in fake window stage?
-static void 
+internal void 
 LoadAllOpenGLProcedures()
 {
    glGenBuffers = (PFNGLGENBUFFERSPROC)GetGLFuncAddress("glGenBuffers"); 
@@ -161,6 +162,7 @@ LoadAllOpenGLProcedures()
    glGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)GetGLFuncAddress("glGenRenderbuffers");
    glUniform3f = (PFNGLUNIFORM3FPROC) GetGLFuncAddress("glUniform3f");
    glTexImage3D = (PFNGLTEXIMAGE3DPROC)GetGLFuncAddress("glTexImage3D");
+   //glTexImage2D = (PFNGLTEXIMAGE2DPROC)GetGLFuncAddress("glTexImage2D");
    glBindImageTexture = (PFNGLBINDIMAGETEXTUREPROC)GetGLFuncAddress("glBindImageTexture");
    glMemoryBarrier = (PFNGLMEMORYBARRIERPROC)GetGLFuncAddress("glMemoryBarrier");
    glCopyImageSubData = (PFNGLCOPYIMAGESUBDATAPROC)GetGLFuncAddress("glCopyImageSubData");
@@ -180,7 +182,7 @@ LoadAllOpenGLProcedures()
 
 
 
-static b32 Win32InitOpenGL(HDC* device_context, HINSTANCE Instance){
+internal b32 Win32InitOpenGL(HDC* device_context, HINSTANCE Instance){
    
     PIXELFORMATDESCRIPTOR fakePFD;
     ZeroMemory(&fakePFD, sizeof(fakePFD));

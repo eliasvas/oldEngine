@@ -148,6 +148,7 @@ typedef struct Renderer
   //forward+ stuff
   GLuint light_buffer;
   GLuint visible_light_indices_buffer;
+  GLuint debug_texture;
 }Renderer;
 
 void

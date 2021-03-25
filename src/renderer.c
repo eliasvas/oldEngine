@@ -60,7 +60,8 @@ renderer_init(Renderer *rend)
 
     char **faces= cubemap_default();
     skybox_init(&rend->skybox, faces);
-    rend->proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,100.f); 
+    rend->proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,20.f); 
+
 
     //initialize postproc VAO
     {
@@ -209,6 +210,17 @@ renderer_init(Renderer *rend)
     //misc
     texture_load(&rend->white_texture,"../assets/white.tga");
     texture_load(&rend->bmf,"../assets/bmf.tga");
+    //generate debuf texture 
+    glGenTextures(1, &rend->debug_texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, rend->debug_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //TODO FIX
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, global_platform.window_width,global_platform.window_height, 0,  GL_RED, GL_FLOAT, 0);
+    glBindImageTexture(0, rend->debug_texture, 0, GL_FALSE, 0,  GL_READ_WRITE, GL_R32F); //maybe its GL_R32F??      
+    
 }
 
 void
@@ -411,6 +423,8 @@ renderer_end_frame(Renderer *rend)
       glMemoryBarrier(GL_ALL_BARRIER_BITS);
       use_shader(&rend->shaders[9]);
       shader_set_int(&rend->shaders[9], "window_width", global_platform.window_width);
+      shader_set_mat4fv(&rend->shaders[9], "proj", (GLfloat*)rend->proj.elements);
+      shader_set_mat4fv(&rend->shaders[9], "view", (GLfloat*)rend->view.elements);
       shader_set_int(&rend->shaders[9], "window_height", global_platform.window_height);
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
