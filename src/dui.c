@@ -87,7 +87,8 @@ b32 do_switch(DUIID id, dui_Rect rect, b32 *value)
     //user just clicked!
     if (ui.mouse_down == 0 && ui.hot == id && ui.active == id)
     {
-        *value = !*value;
+        if (*value)*value = 0;
+        else *value = 1;
         return 1;
     }
 

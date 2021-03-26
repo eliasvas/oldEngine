@@ -75,7 +75,7 @@ renderer_init(Renderer *rend)
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(GLfloat)));
-        glBindVertexArray(0); 
+
     }
 
     //initialize filled rect vao
@@ -161,7 +161,7 @@ renderer_init(Renderer *rend)
     }
 
     //initialize forward+ buffers (if forward+ is ok)
-    if (rend->renderer_settings.light_cull)
+    if (1)//rend->renderer_settings.light_cull)
     {
         // Generate our shader storage buffers
         glGenBuffers(1, &rend->light_buffer);
@@ -282,9 +282,14 @@ renderer_set_light_uniforms(Renderer *rend, Shader *s)
       }
       else
       {
-        continue;
-        point_attr[0][13] = '0'+ (i / 10);
-        point_attr[0][14] = '0'+ (i % 10);
+        big_point_attr[0][13] = '0'+ (i / 10);
+        big_point_attr[0][14] = '0'+ (i % 10);
+        big_point_attr[1][13] = '0'+ (i / 10);
+        big_point_attr[1][14] = '0'+ (i % 10);
+        big_point_attr[2][13] = '0'+ (i / 10);
+        big_point_attr[2][14] = '0'+ (i % 10);
+        big_point_attr[3][13] = '0'+ (i / 10);
+        big_point_attr[3][14] = '0'+ (i % 10);
         shader_set_vec3(s,big_point_attr[0], rend->point_lights[i].position);
         shader_set_vec3(s,big_point_attr[1], rend->point_lights[i].ambient);
         shader_set_vec3(s,big_point_attr[2], rend->point_lights[i].diffuse);
@@ -316,10 +321,12 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
 
     mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,10,0), v3(-10,0,0), v3(0,1,0)));
 
+   if (!rend->renderer_settings.light_cull)
+        renderer_set_light_uniforms(rend, shader);
 
 
     use_shader(&shader[0]);
-    glActiveTexture(GL_TEXTURE0);
+     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data.diff->id);
     shader_set_int(&shader[0], "material.diffuse", 0);
     glActiveTexture(GL_TEXTURE1);
@@ -514,15 +521,12 @@ renderer_end_frame(Renderer *rend)
    glDrawArraysInstanced(GL_POINTS, 0, 1, rend->point_alloc_pos);
    glBindVertexArray(0);
 
-   if (rend->renderer_settings.light_cull) 
-   {
-
-       //sprintf(error_log, "number of tiles x: %i", work_groups_x);
+   if (rend->renderer_settings.light_cull > 0) 
        renderer_render_scene3D(rend,&rend->shaders[0]);
-   }
    else
    {
       renderer_set_light_uniforms(rend, &rend->shaders[10]);
+      shader_set_int(&rend->shaders[10], "point_light_count", rend->point_light_count);
       renderer_render_scene3D(rend,&rend->shaders[10]);
    }
   skybox_render(&rend->skybox, rend->proj, rend->view);

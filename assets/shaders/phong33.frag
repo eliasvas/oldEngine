@@ -33,7 +33,7 @@ struct PointLight {
     vec3 specular;
     float shininess;
 }; 
-#define MAX_POINT_LIGHTS 512
+#define MAX_POINT_LIGHTS 1024
 uniform mat4 proj;
 uniform vec3 view_pos;
 uniform Material material;

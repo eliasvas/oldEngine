@@ -75,7 +75,7 @@ update(void)
   else if (global_platform.key_pressed[KEY_O])
     scene_init("../assets/scene.txt", &entity_manager);
 
-  /* These dont serve any purpose right now.. TODO make am ASM (animation state machine) for player at least.
+  /* These dont serve any purpose right now.. TODO make an ASM (animation state machine) for player at least.
     if (global_platform.key_pressed[KEY_U])
     {
         ac.animation_time = 0;
@@ -100,7 +100,7 @@ render(void)
     renderer_push_model(&rend, &sphere);
      
     PointLight pl = point_light_init(v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),v3(6,5,7),v3(9,8,8),v3(9,8,8));
-    for (u32 i = 0;i< 100; ++i)
+    for (u32 i = 0;i< 500; ++i)
     {
         pl.position.y += 0.5; 
         light_cube.model = mat4_translate(pl.position);
