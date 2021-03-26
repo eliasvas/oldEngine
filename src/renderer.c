@@ -202,7 +202,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[6],"../assets/shaders/line.vert","../assets/shaders/line.frag");
     shader_load(&rend->shaders[7],"../assets/shaders/text.vert","../assets/shaders/text.frag");
     shader_load(&rend->shaders[8],"../assets/shaders/zprepass.vert","../assets/shaders/zprepass.frag");
-    shader_load_compute(&rend->shaders[9], "../assets/shaders/compute_test.comp");
+    shader_load_compute(&rend->shaders[9], "../assets/shaders/light_cull.comp");
     shader_load(&rend->shaders[10],"../assets/shaders/phong33.vert","../assets/shaders/phong33.frag");
     shader_load(&rend->shaders[11],"../assets/shaders/point.vert","../assets/shaders/point.frag");
 

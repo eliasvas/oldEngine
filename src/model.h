@@ -332,7 +332,7 @@ point_light_init(vec3 pos, vec3 amb, vec3 diff, vec3 spec)
     res.constant = 1.f;
     res.linear = 0.09;
     res.quadratic = 0.032;
-    res.shininess = 1.f;
+    res.shininess = 3.f;
     return res;
 }
 
