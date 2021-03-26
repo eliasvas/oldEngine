@@ -11,44 +11,11 @@ struct PointLight {
     vec3 specular;
     float shininess;
 };  
-struct Plane
-{
-	vec3 N;//plane's normal vector
-	float d;//distance from origin
-};
-struct Frustum
-{
-	Plane planes[4];//left/right/top/bottom
-	//back/front calculated from min/max depth values
-};
 struct Sphere
 {
 	vec3 c;
 	float r;
 };
-Sphere sphere_init(vec3 c, float r)
-{
-	Sphere res;
-	res.c = c;
-	res.r = r;
-	return res;
-}
-bool sphere_inside_plane(Sphere sphere, Plane plane)
-{
-	return dot(plane.N,sphere.c)- plane.d < -sphere.r;
-}
-bool sphere_inside_frustum(Sphere sphere, Frustum frustum, float zNear, float zFar)
-{
-	bool res = true;
-	///*
-	if (sphere.c.z - sphere.r > zNear || sphere.c.z + sphere.r < zFar) res = false;
-		//*/
-		/*
-	for (uint i = 0; i < 4; ++i)
-		if (!sphere_inside_plane(sphere, frustum.planes[i]))res = false;
-	*/
-	return res;
-}
 
 struct VisibleIndex
 {
@@ -82,7 +49,8 @@ shared uint max_depth_uint;
 shared uint min_depth_uint;
 shared float min_depth, max_depth;
 shared ivec2 screen_size;
-shared Frustum frustum;
+
+shared vec4 frustum_planes[6];
 //this is super slow, maybe make it smaller
 float linearize_depth(float d)
 {
@@ -91,30 +59,6 @@ float linearize_depth(float d)
     float zNear = - B / (1.0 - A);
     float zFar  =   B / (1.0 + A);
 	return (2.0 * zNear) / (zFar + zNear - d * (zFar - zNear));
-}
-vec4 clip_to_view(vec4 clip)
-{
-	//we undo the projection step
-	vec4 view = inverse(proj) * clip;
-	//and we do the perspective division
-	view = view/view.w;
-	return view;
-}
-vec4 screen_to_view(vec4 screen)
-{
-	vec2 tex_coords = screen.xy / screen_size;
-	
-	vec4 clip = vec4(tex_coords.xy * 2 - 1,screen.w, screen.z);
-	return clip_to_view(clip);
-}
-Plane compute_plane(vec3 p0, vec3 p1, vec3 p2)
-{
-	Plane plane;
-	vec3 v0 = p1 - p0;
-	vec3 v2 = p2 - p0;
-	plane.N = normalize(cross(v0, v2));
-	plane.d = dot(plane.N, p0);
-	return plane;
 }
 void main()
 {
@@ -140,16 +84,118 @@ void main()
   
 	
   float depth = texture(depth_map, tex_coords).r;
-  depth = linearize_depth(depth);
+  //depth = linearize_depth(depth);
+  //depth = screen_to_view(vec4(location.x, location.y,depth, 1)).z;
   //depth = (0.5 * proj[3][2]) / (depth + 0.5 * proj[2][2] - 0.5);
   uint depth_uint = floatBitsToUint(depth);
   atomicMin(min_depth_uint, depth_uint);
   atomicMax(max_depth_uint, depth_uint);
-  barrier(); //visualization of depths
-  //imageStore(debug_image, location, vec4(depth, 0,0,0));
-  //imageStore(debug_image, location, vec4((float(location.x) / float(screen_size.x)) * (float(location.y) / float(screen_size.y)), 0,0,0));
   
+  barrier();  
+  //[3]now we calculate the culling frustum for each tile
+  if (gl_LocalInvocationIndex == 0)
+  {
+	  
+	  min_depth = uintBitsToFloat(min_depth_uint);
+	  max_depth = uintBitsToFloat(max_depth_uint);
+	  vec4 vs_min_depth = (inverse(proj) * vec4(0,0,2 * min_depth - 1, 1));
+	  vec4 vs_max_depth = (inverse(proj) * vec4(0,0,2 * max_depth - 1, 1));
+	  vs_min_depth /= vs_min_depth.w;
+	  vs_min_depth /= vs_max_depth.w;
+	  min_depth = vs_min_depth.z;
+	  max_depth = vs_max_depth.z;
+	  
+	  
+	  
+	  	vec2 tile_scale = vec2(screen_size) * (1.0 / float(2 * LOCAL_TILE_SIZE));
+		vec2 tile_bias = tile_scale - vec2(gl_WorkGroupID.xy);
+
+		vec4 col1 = vec4(-proj[0][0] * tile_scale.x, proj[0][1], tile_bias.x, proj[0][3]);
+		vec4 col2 = vec4(proj[1][0], -proj[1][1] * tile_scale.y, tile_bias.y, proj[1][3]);
+		vec4 col4 = vec4(proj[3][0], proj[3][1], -1.0, proj[3][3]);
+
+		frustum_planes[0] = col4 + col1;
+		frustum_planes[1] = col4 - col1;
+		frustum_planes[2] = col4 - col2;
+		frustum_planes[3] = col4 + col2;
+		frustum_planes[4] = vec4(0.0, 0.0, 1.0, -min_depth);
+		frustum_planes[5] = vec4(0.0, 0.0, -1.0, max_depth);
+		for (uint i = 0; i < 4; i++) {
+			frustum_planes[i] *= 1.0f / length(frustum_planes[i].xyz);
+		}
+		
+  }
   barrier();
+  
+  uint thread_count = LOCAL_TILE_SIZE * LOCAL_TILE_SIZE;
+  uint pass_count = (point_light_count + thread_count - 1) / thread_count;
+  float near_clip;
+  for (uint i = 0; i < pass_count; ++i)
+  {
+	  uint light_idx = i * thread_count  + gl_LocalInvocationIndex;
+	  if (light_idx >= point_light_count)break;
+	  
+	  vec3 position = light_data[light_idx].position;
+	  float radius = 3.0;
+	  vec4 lposition = (view * vec4(position, 1.0)).xyzw;
+	  bool in_frustum = true;
+	  for (uint j = 0;j < 6 && in_frustum; ++j)
+	  {
+		  float d = dot(frustum_planes[j], lposition);
+		  in_frustum = (d >= -radius);//light.rad
+	  }
+	  if (in_frustum)
+	  {
+		  uint offset = atomicAdd(visible_light_count, 1);
+		  visible_light_indices[offset] = int(light_idx);
+	  }
+	  
+  }
+  barrier();
+  imageStore(debug_image, location, vec4(float(visible_light_count), 0,0,0));
+  barrier();
+  //[5] One thread should fill the global light buffer
+	if (gl_LocalInvocationIndex == 0) {
+		uint offset = index * 1024; // Determine bosition in global buffer
+		
+		for (uint i = 0; i < visible_light_count; i++) {
+			light_index[offset + i].index = visible_light_indices[i];
+		}
+
+		if(visible_light_count != 1024) {
+			// Unless we have totally filled the entire array, mark it's end with -1
+			// Final shader step will use this to determine where to stop (without having to pass the light count)
+			light_index[offset + visible_light_count].index = -1;
+		}
+	}
+  barrier();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+barrier();
   
   //[3]now we calculate the culling frustum for each tile
   if (gl_LocalInvocationIndex == 0)
@@ -181,15 +227,19 @@ void main()
   //[4] the threads fill the shared light index buffer for THIS (16x16) tile
   uint thread_count = LOCAL_TILE_SIZE * LOCAL_TILE_SIZE;
   uint pass_count = (point_light_count + thread_count - 1) / thread_count;
+  float near_clip;
   for (uint i = 0; i < pass_count; ++i)
   {
 	  uint light_idx = i * thread_count  + gl_LocalInvocationIndex;
 	  if (light_idx >= point_light_count)break;
 	  
 	  vec3 position = light_data[light_idx].position;
-	  float radius = 1.0;
+	  float radius = 20.0;
 	  Sphere pl = sphere_init(position, radius);
-	  if (1)//sphere_inside_frustum(pl, frustum, min_depth*20, max_depth*20))
+	  near_clip = screen_to_view(vec4( 0, 0, 0, 1 )).z;
+	  //min_depth = screen_to_view(vec4(0,0,min_depth, 1)).z;
+	  //max_depth = screen_to_view(vec4(0,0,max_depth,1)).z;
+	  if (sphere_inside_frustum(pl, frustum, near_clip, max_depth))
 	  {
 		  uint offset = atomicAdd(visible_light_count, 1);
 		  visible_light_indices[offset] = int(light_idx);
@@ -197,21 +247,10 @@ void main()
 	  
   }
   barrier();
-  imageStore(debug_image, location, vec4(float(visible_light_count), 0,0,0));
+  vec4 test = screen_to_view(vec4(0,0,0.5,1));
+  imageStore(debug_image, location, vec4(test.z, 0,0,0));
   barrier();
-  //[5] One thread should fill the global light buffer
-	if (gl_LocalInvocationIndex == 0) {
-		uint offset = index * 1024; // Determine bosition in global buffer
-		
-		for (uint i = 0; i < visible_light_count; i++) {
-			light_index[offset + i].index = visible_light_indices[i];
-		}
+  */
 
-		if(visible_light_count != 1024) {
-			// Unless we have totally filled the entire array, mark it's end with -1
-			// Final shader step will use this to determine where to stop (without having to pass the light count)
-			light_index[offset + visible_light_count].index = -1;
-		}
-	}
-  barrier();
-}
+
+

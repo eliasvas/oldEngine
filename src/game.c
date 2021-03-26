@@ -108,7 +108,8 @@ render(void)
         renderer_push_point(&rend, pl.position, v4(1,1,1,1));
         //renderer_push_model(&rend, &light_cube);
     }
-    sprintf(info_log,"point light count: %i", rend.point_light_count);
+    //sprintf(info_log,"point light count: %i", rend.point_light_count);
+    sprintf(info_log,"camera pos: %f,%f,%f", rend.cam.pos.x, rend.cam.pos.y, rend.cam.pos.z);
 
     dui_frame_begin();
 
