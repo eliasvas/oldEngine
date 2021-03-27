@@ -40,6 +40,7 @@ renderer_init(Renderer *rend)
     rend->renderer_settings.lighting_disabled = FALSE;
     rend->renderer_settings.light_cull = TRUE;
     rend->renderer_settings.z_prepass = TRUE;
+    rend->renderer_settings.debug_mode = FALSE;
 
 
 
@@ -205,6 +206,7 @@ renderer_init(Renderer *rend)
     shader_load_compute(&rend->shaders[9], "../assets/shaders/light_cull.comp");
     shader_load(&rend->shaders[10],"../assets/shaders/phong33.vert","../assets/shaders/phong33.frag");
     shader_load(&rend->shaders[11],"../assets/shaders/point.vert","../assets/shaders/point.frag");
+    shader_load_full(&rend->shaders[12], "../assets/shaders/phong33.vert", "../assets/shaders/red.frag","../assets/shaders/normal_vis.geo");
 
 
     //misc
@@ -305,9 +307,7 @@ renderer_set_light_uniforms(Renderer *rend, Shader *s)
 
 
 }
-
 //here we put the draw calls for everything that needs shadowmapping!
-internal void
 renderer_render_scene3D(Renderer *rend,Shader *shader)
 {
   mat4 inv_view = mat4_inv(rend->view);
@@ -363,7 +363,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
 
     glBindVertexArray(data.model_vao);
     glDrawArrays(GL_TRIANGLES,0, data.model_vertex_count);
-    //glDrawArrays(GL_TRIANGLES,0, 3000*fabs(sin(global_platform.current_time)));
+    //glDrawArrays(GL_LINES,0, data.model_vertex_count);
     glBindVertexArray(0);
   }
 
@@ -441,7 +441,7 @@ renderer_end_frame(Renderer *rend)
       glDispatchCompute((GLuint)work_groups_x, (GLuint)work_groups_y, 1);
       //synchronize everything
       glMemoryBarrier(GL_ALL_BARRIER_BITS);
-  } 
+  }
 
 
   //then we render to the main fbo
@@ -505,7 +505,7 @@ renderer_end_frame(Renderer *rend)
     glBindVertexArray(0);
   }
     //render lines
-    glLineWidth(5);
+    glLineWidth(1);
     use_shader(&rend->shaders[6]);
     mat4 mvp = mat4_mul(rend->proj, rend->view);
     shader_set_mat4fv(&rend->shaders[6], "MVP", (GLfloat*)mvp.elements);
@@ -521,7 +521,13 @@ renderer_end_frame(Renderer *rend)
    glDrawArraysInstanced(GL_POINTS, 0, 1, rend->point_alloc_pos);
    glBindVertexArray(0);
 
-   if (rend->renderer_settings.light_cull > 0) 
+
+   //if we are in debug mode, draw model normals!!
+      
+   if (rend->renderer_settings.debug_mode)
+       renderer_render_scene3D(rend,&rend->shaders[12]);
+
+   if (rend->renderer_settings.light_cull) 
        renderer_render_scene3D(rend,&rend->shaders[0]);
    else
    {

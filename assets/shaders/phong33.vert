@@ -13,7 +13,9 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
 uniform mat4 light_space_matrix;
-
+out VS_OUT {
+    vec3 normal;
+} vs_out;
 void main()
 {
     gl_Position = vec4(vertex_pos,1.0);
@@ -24,4 +26,6 @@ void main()
 	f_normal = mat3(transpose(inverse(model))) * n;
 	f_frag_pos = vec3(model*vec4(vertex_pos,1.0));
 	f_frag_pos_ls = light_space_matrix * vec4(f_frag_pos, 1.0);
+	
+	vs_out.normal = f_normal;
 }

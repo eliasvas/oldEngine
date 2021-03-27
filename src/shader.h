@@ -26,12 +26,12 @@ internal void use_shader(Shader* shader)
     glUseProgram(shader->ID);
 }
 
-internal GLuint shader_load_from_strings (char * vertex_str,  char * fragment_str)
+internal GLuint shader_load_from_strings(char *vertex_str,  char *fragment_str, char *geometry_str)
 { 
     GLuint ID;
     // 2. compile shaders
-    unsigned int vertex, fragment;
-    int success;
+    GLuint vertex, fragment, geometry;
+    u32 success;
        
     // vertex Shader
     vertex = glCreateShader(GL_VERTEX_SHADER);
@@ -53,12 +53,27 @@ internal GLuint shader_load_from_strings (char * vertex_str,  char * fragment_st
     {
         glGetShaderInfoLog(fragment, 512, NULL, error_log);
     }
+
+    if (geometry_str)
+    {
+        geometry = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geometry, 1, &geometry_str, NULL);
+        glCompileShader(geometry);
+        // print compile errors if any
+        glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
+        if(!success)
+        {
+            glGetShaderInfoLog(geometry, 512, NULL, error_log);
+        }
+    }
       
     
     // shader Program
     ID = glCreateProgram();
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
+    if (geometry_str)
+        glAttachShader(ID, geometry);
     glLinkProgram(ID);
     // print linking errors if any
     glGetProgramiv(ID, GL_LINK_STATUS, &success);
@@ -70,18 +85,36 @@ internal GLuint shader_load_from_strings (char * vertex_str,  char * fragment_st
     // delete the shaders as they're linked into our program now and no longer necessery
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+    if (geometry)
+        glDeleteShader(geometry);
     return ID;
 }
-internal void shader_load (Shader* s, char * vertex_path, char * fragment_path)
+
+internal void shader_load_full(Shader* s, char *vertex_path, char *fragment_path, char *geometry_path)
 {
     s->vertex_str = vertex_path;
     s->fragment_str = fragment_path;
     char* vs = read_whole_file(vertex_path);
     char* fs = read_whole_file(fragment_path); 
-    s->ID = shader_load_from_strings(vs,fs);
+    if (geometry_path)
+    {
+        char* gs = read_whole_file(geometry_path); 
+        s->ID = shader_load_from_strings(vs,fs, gs);
+        FREE(gs);
+    }
+    else
+    {
+        s->ID = shader_load_from_strings(vs,fs, NULL);
+    }
     FREE(vs);
     FREE(fs);
 
+}
+
+
+internal void shader_load (Shader* s, char * vertex_path, char * fragment_path)
+{
+    shader_load_full(s,vertex_path, fragment_path, (char *)NULL);
 }
 internal void shader_load_compute(Shader* s, char * compute_path)
 {
@@ -115,6 +148,55 @@ internal void shader_load_compute(Shader* s, char * compute_path)
 }
 
 
+internal void shader_attach_geometry_shader(Shader *shader, char *geometry_path)
+{
+    u32 success;
+
+    char *gs = read_whole_file(geometry_path);
+    u32 geometry;
+    geometry = glCreateShader(GL_GEOMETRY_SHADER);
+    glShaderSource(geometry, 1, &gs, NULL);
+    glCompileShader(geometry);
+    // print compile errors if any
+    glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
+    if(!success)
+    {
+        glGetShaderInfoLog(geometry, 512, NULL, error_log);
+    }
+    char *vertex_path = shader->vertex_str;
+    char *fragment_path = shader->fragment_str;
+
+    char* vertex_str = read_whole_file(vertex_path);
+    char* fragment_str = read_whole_file(fragment_path); 
+
+    GLuint ID;
+    GLuint vertex, fragment;
+       
+    vertex = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex, 1, &vertex_str, NULL);
+    glCompileShader(vertex);
+    glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+    if(!success) { glGetShaderInfoLog(vertex, 512, NULL, error_log); }
+    fragment = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment, 1, &fragment_str, NULL);
+    glCompileShader(fragment);
+    glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+    if(!success) { glGetShaderInfoLog(fragment, 512, NULL, error_log); }
+    // shader Program
+    ID = glCreateProgram();
+    glAttachShader(ID, vertex);
+    glAttachShader(ID, fragment);
+    glAttachShader(ID, geometry);
+    glLinkProgram(ID);
+    glGetProgramiv(ID, GL_LINK_STATUS, &success);
+    if(!success) { glGetProgramInfoLog(ID, 512, NULL, error_log); }
+      
+    // delete the shaders as they're linked into our program now and no longer necessery
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
+    glDeleteShader(geometry);
+    shader->ID = ID;
+}
 internal void shader_reload_from_files( GLuint* program, char* vertex_shader_filename, char* fragment_shader_filename ) {
   assert( program && vertex_shader_filename && fragment_shader_filename );
   Shader new_shader;

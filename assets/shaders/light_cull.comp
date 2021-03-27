@@ -43,6 +43,7 @@ shared uint max_depth_uint;
 shared uint min_depth_uint;
 shared float min_depth, max_depth;
 shared ivec2 screen_size;
+shared mat4 inv_proj;
 
 shared vec4 frustum_planes[6];
 
@@ -60,6 +61,7 @@ void main()
 	  max_depth_uint = 0;
 	  min_depth_uint = 0xFFFFFFFF;
 	  screen_size = ivec2(window_width, window_height);
+	  inv_proj = inverse(proj);
   }
   barrier();
   
@@ -77,8 +79,8 @@ void main()
 	  
 	min_depth = uintBitsToFloat(min_depth_uint);
 	max_depth = uintBitsToFloat(max_depth_uint);
-	vec4 vs_min_depth = (inverse(proj) * vec4(0,0,2 * min_depth - 1, 1));
-	vec4 vs_max_depth = (inverse(proj) * vec4(0,0,2 * max_depth - 1, 1));
+	vec4 vs_min_depth = (inv_proj * vec4(0,0,2 * min_depth - 1, 1));
+	vec4 vs_max_depth = (inv_proj * vec4(0,0,2 * max_depth - 1, 1));
 	vs_min_depth /= vs_min_depth.w;
 	vs_min_depth /= vs_max_depth.w;
 	min_depth = vs_min_depth.z;

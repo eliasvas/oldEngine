@@ -17,6 +17,7 @@ typedef struct RendererSettings
   b32 motion_blur;
   b32 z_prepass;
   b32 light_cull;
+  b32 debug_mode;
   //multisampling settings
   //depth peeling settings
 }RendererSettings;

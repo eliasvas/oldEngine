@@ -5,7 +5,7 @@ in vec2 f_tex_coord;
 in vec3 f_frag_pos;
 in vec3 f_normal;
 in vec4 f_frag_pos_ls;
-
+in vec4 g_color;
 struct Material {
     sampler2D diffuse;
     sampler2D specular;
@@ -14,7 +14,7 @@ struct Material {
     //vec3 specular;
     float shininess;
 }; 
-  
+
 struct DirLight
 {
    vec3 direction;
