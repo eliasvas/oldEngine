@@ -29,7 +29,6 @@ global EntityManager entity_manager;
 /*
  Engine TODO:
     -[]Fix Timestepping!!!!
-    -[]Normal visualization with a gemoetry shader.
     -[]Light Attenuation and radius stuff
     -[]Material System Overhaul (maybe go the blender route?)
     -[]Physics Engine (Stabilize current version..)

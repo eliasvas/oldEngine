@@ -4,10 +4,11 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
+uniform sampler2D brightTexture;
 uniform sampler2D depthTexture;
 
 uniform float flag;
-float offset = 1.0 / 300.0; //tweak this
+float offset = 1.0 / 1000.0; //tweak this
 
 uniform mat4 proj;
 float linearize_depth(float d)
@@ -50,23 +51,23 @@ void main()
 	);
 	vec3 SampleTex[9];
 	for (int i = 0; i < 9; ++i)
-		SampleTex[i] = vec3(texture(screenTexture, TexCoords.st + offsets[i]));
-	
+		SampleTex[i] = vec3(texture(brightTexture, TexCoords.st + offsets[i]));
+
 	for (int  i = 0; i < 9; ++i)
 		KernelColor += SampleTex[i] * kernel[i];
 	
-	FragColor = vec4(vec3(texture(screenTexture, TexCoords)), 1.0) * (1 - flag) + vec4(KernelColor,1.0) * (flag);
+	//FragColor = vec4(vec4(KernelColor,1.0));
 	//FragColor = vec4(KernelColor,1.0);
-	
+
 	float exposure = 2.0;
 	float gamma = 2.0;
-    //FragColor.rgb = pow(FragColor.rgb, vec3(gamma));
-	
+	//FragColor += vec4(KernelColor,1.0) / 5;
 	// reinhard tone mapping
     vec3 mapped = vec3(1.0) - exp(-FragColor.rgb * exposure);
     // gamma correction 
-    mapped = pow(mapped, vec3(gamma));
+    FragColor = vec4(pow(mapped, vec3(gamma)), 1.0);
 	
-    FragColor = vec4(mapped, 1.0);
+    
+	//FragColor = vec4(KernelColor, 1);
 	gl_FragDepth = linearize_depth(max(0.05,texture(depthTexture, TexCoords).x));
 }
