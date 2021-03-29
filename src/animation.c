@@ -227,6 +227,8 @@ animation_controller_update_works(AnimationController *ac)
 
 
 
+//TODO: integrate the linear blending for animation-to-animation transition
+//keep Additive Blending step for _keyframe_ in-betweening
  void
 animation_controller_update(AnimationController *ac)
 {

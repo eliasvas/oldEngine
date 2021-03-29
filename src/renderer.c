@@ -194,7 +194,7 @@ renderer_init(Renderer *rend)
     }
 
 
-    shader_load(&rend->shaders[0],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
+    shader_load(&rend->shaders[0],"../assets/shaders/blinnphong.vert","../assets/shaders/blinnphong.frag");
     shader_load(&rend->shaders[1],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
     shader_load(&rend->shaders[2],"../assets/shaders/postproc.vert","../assets/shaders/postproc.frag");
     shader_load(&rend->shaders[3],"../assets/shaders/shadowmap.vert","../assets/shaders/shadowmap.frag");
@@ -207,6 +207,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[10],"../assets/shaders/phong33.vert","../assets/shaders/phong33.frag");
     shader_load(&rend->shaders[11],"../assets/shaders/point.vert","../assets/shaders/point.frag");
     shader_load_full(&rend->shaders[12], "../assets/shaders/phong33.vert", "../assets/shaders/red.frag","../assets/shaders/normal_vis.geo");
+    shader_load(&rend->shaders[13],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
 
 
     //misc

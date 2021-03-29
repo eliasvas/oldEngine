@@ -97,10 +97,10 @@ void main()
 	
 	vec3 V = normalize(view_pos - f_frag_pos);
 	vec3 H = normalize(L + V);
-	vec3 R = reflect(-L, N);
+	//vec3 R = reflect(-L, N);
 	
-	//float spec = pow(max(dot(N, H),0.0),4);
-	float spec = pow(max(dot(V,R),0.0),4);
+	float spec = pow(max(dot(N, H),0.0),4);
+	//float spec = pow(max(dot(V,R),0.0),4);
 	vec3 specular = dirlight.specular * spec * vec3(texture(material.specular,f_tex_coord));
 	
 	float shadow = shadow_calc();
@@ -126,15 +126,16 @@ void main()
 			
 		N = normalize(f_normal);
 		L = normalize(current_light.position - f_frag_pos);
-		R = reflect(-L, N);
+		//R = reflect(-L, N);
 		
 		diff = max(dot(N,-L),0.0);
 		diffuse = current_light.diffuse * diff * vec3(texture(material.diffuse,f_tex_coord));
 		
 		V = normalize(view_pos - f_frag_pos);
+		H = normalize(L + V);
 		
-		//spec = pow(max(dot(N, H),0.0),128);
-		float spec = pow(max(dot(V,R),0.0),256);
+		spec = pow(max(dot(N, H),0.0), 256);
+		//spec = pow(max(dot(V,R),0.0),256);
 		specular = current_light.specular * spec * vec3(texture(material.specular,f_tex_coord));
 		
 		float distance = abs(length(current_light.position - f_frag_pos));
@@ -142,7 +143,7 @@ void main()
 		//attenuation = 1.0/(distance);
 		ambient *= attenuation * 1/10;
 		diffuse *= attenuation * 1/10;
-		specular *= attenuation * 1/10;
+		specular *= attenuation * 1/20;
 		color += ((specular + diffuse) + ambient);
 	}
 	

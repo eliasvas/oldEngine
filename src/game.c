@@ -28,12 +28,13 @@ global EntityManager entity_manager;
 
 /*
  Engine TODO:
+    -[]OBJ Loader (add -o support and we'll be mostly complete)
+    -[]Material System Overhaul (maybe go the blender route?)
     -[]Fix Timestepping!!!!
     -[]Light Attenuation and radius stuff
-    -[]Material System Overhaul (maybe go the blender route?)
-    -[]Physics Engine (Stabilize current version..)
+    -[]See how UE4 does their PBR lighting
     -[]Render Settings are real screen coords @fix renderer.c
-    -[]OBJ Loader (add -o support and we'll be mostly complete)
+    -[]Physics Engine (Stabilize current version..)
     -[]IMGUI tweaks (add size member configure events and stuff) 
     -[]2D sprites (projected in 3d space) w/animations
 */
@@ -47,7 +48,7 @@ init(void)
     renderer_init(&rend);
     model_init_cube(&light_cube);
     model_init_sphere(&sphere, 2.f, 50,50);
-    model = model_info_init("../assets/sword/sword.mtl");
+    model = model_info_init("../assets/arena/arena.mtl");
 
     //ac = animation_controller_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
     //animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/run.dae"));
@@ -90,15 +91,13 @@ update(void)
 internal void 
 render(void)
 {
-     sphere.model = mat4_translate(v3(0,0,-10));
+    sphere.model = mat4_mul(mat4_translate(v3(0,0,0)), mat4_scale(v3(0.5,0.5,0.5)));
     renderer_push_model(&rend, &sphere);
-     sphere.model = mat4_translate(v3(0,0,-5));
-    renderer_push_model(&rend, &sphere);
-    sphere.model = mat4_translate(v3(0,0,0));
-    renderer_push_model(&rend, &sphere);
+    model.model = mat4_mul(mat4_translate(v3(0,-2,0)), mat4_scale(v3(0.1,0.1,0.1)));
+    renderer_push_model(&rend, &model);
      
     PointLight pl = point_light_init(v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),v3(6,5,7),v3(9,8,8),v3(9,8,8));
-    for (u32 i = 0;i< 1024; ++i)
+    for (u32 i = 0;i< 1; ++i)
     {
         pl.position.y += 0.5; 
         light_cube.model = mat4_translate(pl.position);
@@ -121,12 +120,12 @@ render(void)
             dui_draw_rect(200, 200, 270, 200, v4(0.1,0.1,0.1,0.9));
             do_slider(GEN_ID, 200 ,300, 4, &rend.multisampling_count);
             do_switch(GEN_ID, (dui_Rect){200,270,20,20}, &rend.renderer_settings.light_cull);
-            do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.z_prepass);
+            do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.debug_mode);
             do_button(GEN_ID, (dui_Rect){260,200,150,30});
             dui_draw_string(260, 370, "options");
             dui_draw_string(190, 330, "multisampling");
             dui_draw_string(215, 275, "light cull");
-            dui_draw_string(230, 240, "z_prepass");
+            dui_draw_string(230, 240, "debug");
             dui_draw_string(280, 210, " PAUSE");
             char ms[64];
             sprintf(ms, "%.4f ms", global_platform.dt);

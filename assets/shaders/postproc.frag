@@ -8,7 +8,7 @@ uniform sampler2D brightTexture;
 uniform sampler2D depthTexture;
 
 uniform float flag;
-float offset = 1.0 / 1000.0; //tweak this
+float offset = 1.0 / 100.0; //tweak this
 
 uniform mat4 proj;
 float linearize_depth(float d)
