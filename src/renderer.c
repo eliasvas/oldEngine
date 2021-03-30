@@ -329,10 +329,10 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     use_shader(&shader[0]);
      glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data.diff->id);
-    shader_set_int(&shader[0], "material.diffuse", 0);
+    shader_set_int(&shader[0], "material.diffuse_map", 0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, data.spec->id);
-    shader_set_int(&shader[0], "material.specular", 1);
+    shader_set_int(&shader[0], "material.specular_map", 1);
 
     //in case we need the skybox's texture for the rendering
     glActiveTexture(GL_TEXTURE3);
@@ -350,7 +350,13 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     shader_set_mat4fv(&shader[0], "light_space_matrix", (GLfloat*)light_space_matrix.elements);
     shader_set_vec3(&shader[0], "view_pos", view_pos);
     //set material properties
-    shader_set_float(&shader[0], "material.shininess", data.material.shininess);
+    shader_set_float(&shader[0], "material.shininess", data.material->shininess);
+    shader_set_int(&shader[0], "material.has_diffuse_map", data.material->has_diffuse_map);
+    shader_set_int(&shader[0], "material.has_specular_map", data.material->has_specular_map);
+    shader_set_vec3(&shader[0], "material.ambient", data.material->ambient);
+    shader_set_vec3(&shader[0], "material.diffuse", data.material->diffuse);
+    shader_set_vec3(&shader[0], "material.specular", data.material->specular);
+    shader_set_vec3(&shader[0], "material.emmisive", data.material->emmisive);
     //light properties
     //renderer_set_light_uniforms(rend, shader);
     i32 work_groups_x = (global_platform.window_width + (global_platform.window_width % 16)) / 16;
@@ -599,7 +605,7 @@ void renderer_push_model(Renderer *rend, Model *m)
     data.model_vertex_count = m->meshes[i].vertices_count;
     data.diff = &m->meshes[i].material.diff;
     data.spec = &m->meshes[i].material.spec;
-    data.material = material_default();
+    data.material = &m->meshes[i].material;
     rend->model_instance_data[rend->model_alloc_pos++] = data;
   }
 

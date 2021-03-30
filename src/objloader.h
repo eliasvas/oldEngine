@@ -15,11 +15,35 @@ typedef struct Vertex
 
 typedef struct MeshMaterial
 {
-  char name[32];
-  Texture diff;
-  Texture spec;
-  f32 shininess;
+    char name[32];
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    vec3 emmisive;
+    f32 shininess;
+    f32 specular_exponent; //how big the specular highlight will be, typically [1,256]
+    f32 IOR; //index of refracion
+    Texture diff;
+    b32 has_diffuse_map;
+    Texture spec;
+    b32 has_specular_map;
 }MeshMaterial;
+internal MeshMaterial 
+mesh_material_default(void)
+{
+  MeshMaterial material = (MeshMaterial){0};
+  material.ambient = v3(0.1f,0.1f,0.1f);
+  material.diffuse = v3(0.7f,0.4f,0.5f);
+  material.specular = v3(0.1f,0.1f,0.1f);
+  material.emmisive = v3(0.3,0.3,0.3);
+  material.shininess = 4.f;
+  material.has_diffuse_map = FALSE;
+  material.has_specular_map = FALSE;
+  material.IOR = 0;
+}
+
+
+
 
 typedef struct MeshInfo
 {
@@ -105,6 +129,8 @@ internal u32 mtl_count(char *mtl_filepath)
   return material_count;
 }
 
+//@TODO: think about this more this ay of doing things is _BAD_
+
 //We fill the material * and return how many materials we read 
 internal void mtl_read(char *mtl_filepath, MeshMaterial *materials)
 {
@@ -124,11 +150,11 @@ internal void mtl_read(char *mtl_filepath, MeshMaterial *materials)
 		i32 res = fscanf(file, "%s", line);
 		if (res == EOF)break;
 	    if (strcmp(line, "newmtl") == 0)
-      {
+       {
         fscanf(file, "%s", line);
         materials[material_offset].shininess = 256.f;
         texture_load(&(materials[material_offset].spec),"../assets/white.tga");
-        //texture_load(&(materials[material_offset].diff),"../assets/arena/main3.tga");
+        materials[material_offset].has_specular_map = TRUE;
  
         memcpy(&materials[material_offset].name, line, str_size(line)+1);
         while (TRUE)
@@ -150,8 +176,37 @@ internal void mtl_read(char *mtl_filepath, MeshMaterial *materials)
               memcpy(diff, mtl_filepath,file_index+1);
               memcpy(diff + file_index+1, line, str_size(line)+1);
               texture_load(&(materials[material_offset].diff),diff);
+              materials[material_offset].has_diffuse_map = TRUE;//!!
               //sprintf(error_log, "%s", diff);
               break;
+            }
+            else if (strcmp(line, "Ka") == 0)
+            {
+               vec3 Ka;
+               fscanf(file, "%f %f %f", &Ka.x, &Ka.y, &Ka.z);
+               materials[material_offset].ambient = Ka; 
+            }
+            else if (strcmp(line, "Kd") == 0)
+            {
+               vec3 Kd;
+               fscanf(file, "%f %f %f", &Kd.x, &Kd.y, &Kd.z);
+               materials[material_offset].diffuse = Kd; 
+            }
+            else if (strcmp(line, "Ks") == 0)
+            {
+               vec3 Ks;
+               fscanf(file, "%f %f %f", &Ks.x, &Ks.y, &Ks.z);
+               materials[material_offset].specular = Ks; 
+            }
+            else if (strcmp(line, "Ke") == 0)
+            {
+               vec3 Ke;
+               fscanf(file, "%f %f %f", &Ke.x, &Ke.y, &Ke.z);
+               materials[material_offset].emmisive = Ke; 
+            }
+            else if (strcmp(line, "Ni") == 0)
+            {
+                fscanf(file, "%f", &materials[material_offset].shininess);
             }
         }
         material_offset++;

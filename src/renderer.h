@@ -4,6 +4,7 @@
 #include "shader.h"
 #include "texture.h"
 #include "skybox.h"
+#include "objloader.h"
 #include "model.h"
 #include "camera.h"
 #include "fbo.h"
@@ -32,9 +33,10 @@ typedef struct RendererModelData
   mat4 model;
   GLuint model_vao;
   u32 model_vertex_count;
-  Material material;
+  MeshMaterial *material;
   Texture *diff;
   Texture *spec;
+  MeshMaterial *mat;
 }RendererModelData;
 
 typedef struct RendererFilledRect

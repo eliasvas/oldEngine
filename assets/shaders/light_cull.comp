@@ -127,7 +127,6 @@ void main()
 		  uint offset = atomicAdd(visible_light_count, 1);
 		  visible_light_indices[offset] = int(light_idx);
 	  }
-	  
   }
   barrier();
   imageStore(debug_image, location, vec4(float(visible_light_count), 0,0,0));

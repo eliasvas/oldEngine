@@ -50,9 +50,10 @@ init(void)
     model_init_sphere(&sphere, 2.f, 50,50);
     model = model_info_init("../assets/arena/arena.mtl");
 
-    //ac = animation_controller_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
-    //animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/run.dae"));
-    //animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/kick.dae"));
+    ac = animation_controller_init(str(&global_platform.frame_storage,"../assets/bender/bender.tga"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"), str(&global_platform.frame_storage,"../assets/bender/bender.dae"));  
+    animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/run.dae"));
+    animation_controller_add_anim(&ac,str(&global_platform.frame_storage,"../assets/bender/kick.dae"));
+    ac.model.model = mat4_translate(v3(2,-1.8,0));
     dui_default();
     {
         co = ALLOC(sizeof(Coroutine));
@@ -66,7 +67,7 @@ internal void
 update(void)
 {
   entity_manager_update(&entity_manager, &rend);
-  //animation_controller_update(&ac);
+  animation_controller_update(&ac);
   renderer_begin_frame(&rend);
   rend.cam.can_rotate = !UI_OPEN;
   if (global_platform.key_pressed[KEY_P])
@@ -134,7 +135,7 @@ render(void)
     }
     entity_manager_render(&entity_manager, &rend);
     do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
-    //renderer_push_animated_model(&rend, &ac.model);
+    renderer_push_animated_model(&rend, &ac.model);
     dui_frame_end();
     renderer_end_frame(&rend);
 }

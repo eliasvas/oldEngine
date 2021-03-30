@@ -27,7 +27,10 @@ typedef struct Material
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+    vec3 emmisive;
     f32 shininess;
+    f32 specular_exponent; //how big the specular highlight will be, typically [1,256]
+    f32 IOR; //index of refracion
 }Material;
 typedef struct Light {
     vec3 position;

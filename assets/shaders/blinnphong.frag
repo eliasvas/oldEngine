@@ -7,11 +7,13 @@ in vec3 f_normal;
 in vec4 f_frag_pos_ls;
 
 struct Material {
-    sampler2D diffuse;
-    sampler2D specular;
-    //vec3 ambient;
-    //vec3 diffuse;
-    //vec3 specular;
+    sampler2D diffuse_map;
+    sampler2D specular_map;
+    int has_specular_map;
+	int has_diffuse_map;
+	vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
     float shininess;
 }; 
   
@@ -87,13 +89,13 @@ float shadow_calc()
 void main()
 {
 
-	vec3 ambient = dirlight.ambient * vec3(texture(material.diffuse,f_tex_coord));
+	vec3 ambient = dirlight.ambient * vec3(texture(material.diffuse_map,f_tex_coord));
 	
 	vec3 N = normalize(f_normal);
 	vec3 L = normalize(-dirlight.direction);
 	
 	float diff = max(dot(N, L), 0.0);
-	vec3 diffuse = dirlight.diffuse * diff * vec3(texture(material.diffuse,f_tex_coord));
+	vec3 diffuse = dirlight.diffuse * diff * vec3(texture(material.diffuse_map,f_tex_coord));
 	
 	vec3 V = normalize(view_pos - f_frag_pos);
 	vec3 H = normalize(L + V);
@@ -101,7 +103,7 @@ void main()
 	
 	float spec = pow(max(dot(N, H),0.0),4);
 	//float spec = pow(max(dot(V,R),0.0),4);
-	vec3 specular = dirlight.specular * spec * vec3(texture(material.specular,f_tex_coord));
+	vec3 specular = dirlight.specular * spec * vec3(texture(material.specular_map,f_tex_coord));
 	
 	float shadow = shadow_calc();
 	
@@ -122,21 +124,21 @@ void main()
 		//PointLight current_light = point_lights[i];
 		uint light_idx = light_index[offset + i].index;
 		PointLight current_light = light_data[light_idx];
-		ambient = current_light.ambient * vec3(texture(material.diffuse,f_tex_coord));	
+		ambient = current_light.ambient * vec3(texture(material.diffuse_map,f_tex_coord));	
 			
 		N = normalize(f_normal);
 		L = normalize(current_light.position - f_frag_pos);
 		//R = reflect(-L, N);
 		
 		diff = max(dot(N,-L),0.0);
-		diffuse = current_light.diffuse * diff * vec3(texture(material.diffuse,f_tex_coord));
+		diffuse = current_light.diffuse * diff * vec3(texture(material.diffuse_map,f_tex_coord));
 		
 		V = normalize(view_pos - f_frag_pos);
 		H = normalize(L + V);
 		
 		spec = pow(max(dot(N, H),0.0), 256);
 		//spec = pow(max(dot(V,R),0.0),256);
-		specular = current_light.specular * spec * vec3(texture(material.specular,f_tex_coord));
+		specular = current_light.specular * spec * vec3(texture(material.specular_map,f_tex_coord));
 		
 		float distance = abs(length(current_light.position - f_frag_pos));
 		float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
