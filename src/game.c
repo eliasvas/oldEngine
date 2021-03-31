@@ -28,8 +28,7 @@ global EntityManager entity_manager;
 
 /*
  Engine TODO:
-    -[]OBJ Loader (add -o support and we'll be mostly complete)
-    -[]Material System Overhaul (maybe go the blender route?)
+    -[]Check Vertex normals for OBJ loading
     -[]Fix Timestepping!!!!
     -[]Light Attenuation and radius stuff
     -[]See how UE4 does their PBR lighting
@@ -37,6 +36,7 @@ global EntityManager entity_manager;
     -[]Physics Engine (Stabilize current version..)
     -[]IMGUI tweaks (add size member configure events and stuff) 
     -[]2D sprites (projected in 3d space) w/animations
+    -[]Collada Parser Overhaul
 */
 internal void 
 init(void)

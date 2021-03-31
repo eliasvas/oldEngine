@@ -61,7 +61,7 @@ renderer_init(Renderer *rend)
 
     char **faces= cubemap_default();
     skybox_init(&rend->skybox, faces);
-    rend->proj = perspective_proj(45.f,global_platform.window_width / (f32)global_platform.window_height, 0.1f,80.f); 
+    rend->proj = perspective_proj(45.f,rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y, 0.1f,80.f); 
 
 
     //initialize postproc VAO
@@ -171,8 +171,8 @@ renderer_init(Renderer *rend)
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->light_buffer);
         glBufferData(GL_SHADER_STORAGE_BUFFER, RENDERER_MAX_POINT_LIGHTS* sizeof(PointLight), 0, GL_DYNAMIC_DRAW);
 
-        u32 work_groups_x = (global_platform.window_width + (global_platform.window_width % 16)) / 16;
-        u32 work_groups_y = (global_platform.window_height + (global_platform.window_height % 16)) / 16;
+        u32 work_groups_x = (rend->renderer_settings.render_dim.x+ (rend->renderer_settings.render_dim.x% 16)) / 16;
+        u32 work_groups_y = (rend->renderer_settings.render_dim.y + (rend->renderer_settings.render_dim.y% 16)) / 16;
         u32 number_of_tiles = work_groups_x* work_groups_y;
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->visible_light_indices_buffer);
@@ -221,7 +221,7 @@ renderer_init(Renderer *rend)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //TODO FIX
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, global_platform.window_width,global_platform.window_height, 0,  GL_RED, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, rend->renderer_settings.render_dim.x,rend->renderer_settings.render_dim.y, 0,  GL_RED, GL_FLOAT, 0);
     glBindImageTexture(0, rend->debug_texture, 0, GL_FALSE, 0,  GL_READ_WRITE, GL_R32F); //maybe its GL_R32F??      
     
 }
@@ -229,12 +229,19 @@ renderer_init(Renderer *rend)
 void
 renderer_begin_frame(Renderer *rend)
 {
-  rend->renderer_settings.render_dim = (ivec2){global_platform.window_width, global_platform.window_height};
+  rend->renderer_settings.render_dim = (ivec2){rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y};
 
   if (global_platform.window_resized)
   {
       fbo_resize(&rend->postproc_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_COLOR_1|FBO_DEPTH);
       fbo_resize(&rend->main_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_COLOR_1|FBO_DEPTH);
+
+        u32 work_groups_x = (rend->renderer_settings.render_dim.x + (rend->renderer_settings.render_dim.x % 16)) / 16;
+        u32 work_groups_y = (rend->renderer_settings.render_dim.y + (rend->renderer_settings.render_dim.y % 16)) / 16;
+        u32 number_of_tiles = work_groups_x* work_groups_y;
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->visible_light_indices_buffer);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, number_of_tiles * sizeof(VisibleIndex) * 1024, 0, GL_DYNAMIC_DRAW);
   }
   fbo_bind(&rend->postproc_fbo);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -359,7 +366,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     shader_set_vec3(&shader[0], "material.emmisive", data.material->emmisive);
     //light properties
     //renderer_set_light_uniforms(rend, shader);
-    i32 work_groups_x = (global_platform.window_width + (global_platform.window_width % 16)) / 16;
+    i32 work_groups_x = (rend->renderer_settings.render_dim.x + (rend->renderer_settings.render_dim.x % 16)) / 16;
     shader_set_int(&shader[0], "number_of_tiles_x", work_groups_x);
     shader_set_vec3(&shader[0], "dirlight.direction", rend->directional_light.direction);
     shader_set_vec3(&shader[0], "dirlight.ambient", rend->directional_light.ambient);
@@ -431,15 +438,15 @@ renderer_end_frame(Renderer *rend)
   //launch compute shader for light culling
   {
       glMemoryBarrier(GL_ALL_BARRIER_BITS);
-      u32 work_groups_x = (global_platform.window_width + (global_platform.window_width % 16)) / 16;
-      u32 work_groups_y = (global_platform.window_height + (global_platform.window_height % 16)) / 16;
+      u32 work_groups_x = (rend->renderer_settings.render_dim.x+ (rend->renderer_settings.render_dim.x % 16)) / 16;
+      u32 work_groups_y = (rend->renderer_settings.render_dim.y + (rend->renderer_settings.render_dim.y % 16)) / 16;
 
       glMemoryBarrier(GL_ALL_BARRIER_BITS);
       use_shader(&rend->shaders[9]);
-      shader_set_int(&rend->shaders[9], "window_width", global_platform.window_width);
+      shader_set_int(&rend->shaders[9], "window_width", rend->renderer_settings.render_dim.x);
       shader_set_mat4fv(&rend->shaders[9], "proj", (GLfloat*)rend->proj.elements);
       shader_set_mat4fv(&rend->shaders[9], "view", (GLfloat*)rend->view.elements);
-      shader_set_int(&rend->shaders[9], "window_height", global_platform.window_height);
+      shader_set_int(&rend->shaders[9], "window_height", rend->renderer_settings.render_dim.y);
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
       shader_set_int(&rend->shaders[9], "depth_map", 0);
