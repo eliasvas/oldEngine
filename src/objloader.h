@@ -13,7 +13,7 @@ typedef struct Vertex
    vec2 tex_coord;
 }Vertex;
 
-typedef struct MeshMaterial
+typedef struct Material
 {
     char name[32];
     vec3 ambient;
@@ -27,11 +27,11 @@ typedef struct MeshMaterial
     b32 has_diffuse_map;
     Texture spec;
     b32 has_specular_map;
-}MeshMaterial;
-internal MeshMaterial 
-mesh_material_default(void)
+}Material;
+internal Material 
+material_default(void)
 {
-  MeshMaterial material = (MeshMaterial){0};
+  Material material = (Material){0};
   material.ambient = v3(0.1f,0.1f,0.1f);
   material.diffuse = v3(0.7f,0.4f,0.5f);
   material.specular = v3(0.1f,0.1f,0.1f);
@@ -53,7 +53,7 @@ typedef struct MeshInfo
     u32 vertices_count;
     b32 indexed;
     //Material m;
-    MeshMaterial material;
+    Material material;
     GLuint vao;
 }MeshInfo;
 
@@ -134,7 +134,7 @@ internal u32 mtl_count(char *mtl_filepath)
 //@TODO: think about this more this ay of doing things is _BAD_
 
 //We fill the material * and return how many materials we read 
-internal void mtl_readfdd(char *mtl_filepath, MeshMaterial *materials)
+internal void mtl_readfdd(char *mtl_filepath, Material *materials)
 {
   u32 material_count = 0;
   FILE* file = fopen(mtl_filepath, "r");
@@ -223,7 +223,7 @@ internal void mtl_readfdd(char *mtl_filepath, MeshMaterial *materials)
   return material_count;
 }
 
-internal void mtl_read(char *mtl_filepath, MeshMaterial *materials)
+internal void mtl_read(char *mtl_filepath, Material *materials)
 {
     u32 material_count = 0;
     FILE* file = fopen(mtl_filepath, "r");
@@ -244,7 +244,7 @@ internal void mtl_read(char *mtl_filepath, MeshMaterial *materials)
             if (strcmp(line, "newmtl") == 0)
             {
                 material_offset++;
-                materials[material_offset] = mesh_material_default();
+                materials[material_offset] = material_default();
                 fscanf(file, "%s", line);
                 memcpy(&materials[material_offset].name, line, str_size(line)+1);
                 texture_load(&(materials[material_offset].spec),"../assets/white.tga");
@@ -345,7 +345,7 @@ mesh_gen_vao(u32 start,u32 end, Vertex *vertices)
 
 
 
-internal MeshInfo *obj_read(char *objpath, MeshMaterial *materials)
+internal MeshInfo *obj_read(char *objpath, Material *materials)
 {
 
   MeshInfo *meshes;
@@ -436,7 +436,7 @@ internal MeshInfo *obj_read(char *objpath, MeshMaterial *materials)
       current_mesh++;
       char mtl_name[32];
       fscanf(file, "%s",mtl_name);
-      MeshMaterial found = {0};
+      Material found = {0};
       for (u32 i = 0; i < 32;++i) //TODO this is BAAAD why 32
        if (strcmp(materials[i].name, mtl_name) == 0)
        {

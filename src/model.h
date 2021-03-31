@@ -22,16 +22,6 @@ typedef struct Model
 }Model;
 
 
-typedef struct Material
-{
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-    vec3 emmisive;
-    f32 shininess;
-    f32 specular_exponent; //how big the specular highlight will be, typically [1,256]
-    f32 IOR; //index of refracion
-}Material;
 typedef struct Light {
     vec3 position;
   
@@ -254,16 +244,9 @@ model_init_sphere(Model* m, f32 radius, u32 sectors, u32 stacks)
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
     texture_load(&(m->meshes[0].material.diff),"../assets/mars.tga");
+    m->meshes[0].material.has_diffuse_map= TRUE;
     texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
-}
-internal Material 
-material_default(void)
-{
-  Material material = (Material){0};
-  material.ambient = v3(0.3f,0.3f,0.3f);
-  material.diffuse = v3(0.5f,0.5f,0.5f);
-  material.specular = v3(0.1f,0.1f,0.1f);
-  material.shininess = 1.f;
+    m->meshes[0].material.has_specular_map= TRUE;
 }
 
 
@@ -273,9 +256,9 @@ model_info_init(char *mtl_filepath)
   Model model_info = {0};
   shader_load(&model_info.s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
   //1. read all different materials
-  MeshMaterial *materials;  
+  Material *materials;  
   u32 materials_count = mtl_count(mtl_filepath);
-  materials = ALLOC(sizeof(MeshMaterial) * materials_count);
+  materials = ALLOC(sizeof(Material) * materials_count);
   mtl_read(mtl_filepath, materials);
   //2. read all different meshes AND their materials and initialize the MeshInfo **mesh
   char objpath[32];

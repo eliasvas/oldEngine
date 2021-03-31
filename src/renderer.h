@@ -33,10 +33,9 @@ typedef struct RendererModelData
   mat4 model;
   GLuint model_vao;
   u32 model_vertex_count;
-  MeshMaterial *material;
   Texture *diff;
   Texture *spec;
-  MeshMaterial *mat;
+  Material *material;
 }RendererModelData;
 
 typedef struct RendererFilledRect
