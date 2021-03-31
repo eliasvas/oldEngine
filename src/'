@@ -39,8 +39,6 @@ mesh_material_default(void)
   material.shininess = 4.f;
   material.has_diffuse_map = FALSE;
   material.has_specular_map = FALSE;
-  material.diff = (Texture){0};
-  material.spec = (Texture){0};
   material.IOR = 0;
 }
 
@@ -239,6 +237,7 @@ internal void mtl_read(char *mtl_filepath, MeshMaterial *materials)
     i32 material_offset = -1;
         while (TRUE)
         {
+          fscanf(file, "%s", line);
           i32 res = fscanf(file, "%s", line);
           if (res == EOF)break;
             if (strcmp(line, "newmtl") == 0)
