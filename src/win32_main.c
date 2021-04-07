@@ -224,7 +224,7 @@ WinMain(HINSTANCE Instance,
         f32 frame_dt = (st.QuadPart - ft.QuadPart)/ (float)fr.QuadPart; //NOTE(ilias): check on actual simulation!!
         update();
         render();
-        SwapBuffers(GetDC(WND));
+        SwapBuffers(DC);
         
         arena_clear(&global_platform.frame_storage);
 

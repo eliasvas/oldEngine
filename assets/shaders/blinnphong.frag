@@ -61,6 +61,10 @@ float shadow_calc()
 	float bias = 0.005;
 	// perform perspective divide
     vec3 proj_coords = f_frag_pos_ls.xyz / f_frag_pos_ls.w;
+	if (abs(proj_coords.x) > 1.0 || abs(proj_coords.y) > 1.0)
+	{
+		return 0;
+	}
     // transform to [0,1] range
     proj_coords = proj_coords * 0.5 + 0.5;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)

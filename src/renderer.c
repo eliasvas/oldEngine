@@ -61,7 +61,7 @@ renderer_init(Renderer *rend)
 
     char **faces= cubemap_default();
     skybox_init(&rend->skybox, faces);
-    rend->proj = perspective_proj(45.f,rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y, 0.1f,80.f); 
+    rend->proj = perspective_proj(45.f,rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y, 0.1f,10000.f); 
 
 
     //initialize postproc VAO
@@ -80,7 +80,7 @@ renderer_init(Renderer *rend)
     }
 
     //initialize filled rect vao
-        {
+    {
         GLuint vbo;
         glGenVertexArrays(1, &rend->filled_rect_vao);
         glGenBuffers(1, &vbo);
@@ -233,6 +233,8 @@ renderer_begin_frame(Renderer *rend)
 
   if (global_platform.window_resized)
   {
+      rend->renderer_settings.render_dim.x = global_platform.window_width;
+      rend->renderer_settings.render_dim.y = global_platform.window_height;
       fbo_resize(&rend->postproc_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_COLOR_1|FBO_DEPTH);
       fbo_resize(&rend->main_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_COLOR_1|FBO_DEPTH);
 
@@ -324,17 +326,19 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
   { 
     RendererModelData data = rend->model_instance_data[i];
     mat4 ortho_proj = orthographic_proj(-30.f, 30.f, -30.f, 30.f, 0.01f, 100.f);
-    //mat4 light_space_matrix = mat4_mul(ortho_proj, mat4_mul(
-     //     mat4_translate(v3(rend->view.elements[3][0],rend->view.elements[3][1] + 10.f,rend->view.elements[3][2])), mat4_rotate(-90.f, v3(1.f,0.f,0.f))));
 
+    //mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(vec3_add(v3(0,10,0), rend->cam.pos), vec3_add(v3(-10,0,0), rend->cam.pos), v3(0,1,0)));
+    //mat4 light_space_matrix = mat4_mul(ortho_proj,get_view_mat(&rend->cam));
+
+    vec3 pos = rend->cam.pos;
     mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,10,0), v3(-10,0,0), v3(0,1,0)));
 
-   if (!rend->renderer_settings.light_cull)
+    if (!rend->renderer_settings.light_cull)
         renderer_set_light_uniforms(rend, shader);
 
 
     use_shader(&shader[0]);
-     glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data.diff->id);
     shader_set_int(&shader[0], "material.diffuse_map", 0);
     glActiveTexture(GL_TEXTURE1);

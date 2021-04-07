@@ -28,14 +28,16 @@ global EntityManager entity_manager;
 
 /*
  Engine TODO:
+    -[]Physics Engine (Stabilize current version..)
+    -[]Cascaded Shadow Maps!!!
     -[]Check Vertex normals for OBJ loading
     -[]Fix Timestepping!!!!
     -[]Light Attenuation and radius stuff
     -[]See how UE4 does their PBR lighting
-    -[]Render Settings are real screen coords @fix renderer.c
-    -[]Physics Engine (Stabilize current version..)
     -[]IMGUI tweaks (add size member configure events and stuff) 
+    -[]Normal visualization is prb wrong, FIX
     -[]2D sprites (projected in 3d space) w/animations
+    -[]Make the engine a LIB file
     -[]Collada Parser Overhaul
 */
 internal void 
@@ -67,7 +69,7 @@ internal void
 update(void)
 {
   entity_manager_update(&entity_manager, &rend);
-  animation_controller_update(&ac);
+  //animation_controller_update(&ac);
   renderer_begin_frame(&rend);
   rend.cam.can_rotate = !UI_OPEN;
   if (global_platform.key_pressed[KEY_P])
@@ -94,7 +96,7 @@ render(void)
 {
     sphere.model = mat4_mul(mat4_translate(v3(0,0,0)), mat4_scale(v3(0.5,0.5,0.5)));
     renderer_push_model(&rend, &sphere);
-    model.model = mat4_mul(mat4_translate(v3(0,-2,0)), mat4_scale(v3(0.1,0.1,0.1)));
+    model.model = mat4_mul(mat4_translate(v3(0,-2,0)), mat4_scale(v3(40,0.1,40)));
     renderer_push_model(&rend, &model);
      
     PointLight pl = point_light_init(v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),v3(6,5,7),v3(9,8,8),v3(9,8,8));
@@ -131,8 +133,13 @@ render(void)
             char ms[64];
             sprintf(ms, "%.4f ms", global_platform.dt);
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
+            sprintf(ms, "permanent %i/%i", global_platform.permanent_storage.current_offset, global_platform.permanent_storage.memory_size);
+            dui_draw_string(380, 310, ms);
+            sprintf(ms, "frame %i/%i", global_platform.frame_storage.current_offset, global_platform.frame_storage.memory_size);
+            dui_draw_string(380, 290, ms);
         }
     }
+
     entity_manager_render(&entity_manager, &rend);
     do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
     renderer_push_animated_model(&rend, &ac.model);
