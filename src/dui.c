@@ -27,7 +27,6 @@ b32 dui_rect_hit(dui_Rect rect)
 {
     if (rect.x > ui.mouse_pos.x || rect.x + rect.w < ui.mouse_pos.x || rect.y > ui.mouse_pos.y || rect.y + rect.h  < ui.mouse_pos.y)
         return 0; 
-    //sprintf(error_log, "collision!!!");
     return 1;
 }
 void dui_frame_begin(void)

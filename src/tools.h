@@ -3,10 +3,25 @@
 //This is the main library of this startup project, it has a couple image libraries, a hash map, a
 //dynamic array sean barrett style, an arena allocator, quaternions, matrices, vectors, all that. Use at your own risk!! :)
 
-#if defined(BUILD_WIN32)
+#define PLATFORM_WINDOWS  1
+#define PLATFORM_MAC      2
+#define PLATFORM_UNIX     3
+
+
+#if defined(_WIN32)
+#define PLATFORM PLATFORM_WINDOWS
+#elif defined(__APPLE__)
+#define PLATFORM PLATFORM_MAC
+#else
+#define PLATFORM PLATFORM_UNIX
+#endif
+
+#if defined(PLATFORM_WINDOWS)
 #include "windows.h"
 #endif
 
+
+//these are universal includes among all platforms
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>

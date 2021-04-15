@@ -312,7 +312,7 @@ internal void physics_manager_update(PhysicsManager *manager)
         pb->collider.box.min = v3(model.elements[3][0] - offset.x/2, model.elements[3][1] - offset.y/2, model.elements[3][2] - offset.z/2);
         pb->collider.box.max = vec3_add(pb->collider.box.min , offset);
         //this should move from here no??
-        pb->velocity.y -= pb->gravity_scale * pb->mass_data.inv_mass *2*global_platform.dt;
+        pb->velocity.y -= pb->gravity_scale * pb->mass_data.inv_mass *global_platform.dt;
     }
     for (u32 i = 0; i < manager->next_index; ++i)
     {
@@ -448,9 +448,13 @@ void scene_init(char *filepath, EntityManager * manager)
 
             m->physics_body->transform = mat4_mul(mat4_translate(pos), mat4_mul(mat4_rotate(0.0, v3(1,1,0)), mat4_scale(scale)));
             if (scale.x * scale.y * scale.z > 5.f)
+            {
                 m->physics_body->mass_data = mass_data_init(0.f);
+            }
             else
-                m->physics_body->mass_data = mass_data_init(1.f);
+            {
+                m->physics_body->mass_data = mass_data_init(2.f);
+            }
         }
         else if (strcmp("SPHERE", str) == 0)
         {

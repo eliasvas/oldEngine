@@ -69,7 +69,7 @@ internal void
 update(void)
 {
   entity_manager_update(&entity_manager, &rend);
-  //animation_controller_update(&ac);
+  animation_controller_update(&ac);
   renderer_begin_frame(&rend);
   rend.cam.can_rotate = !UI_OPEN;
   if (global_platform.key_pressed[KEY_P])
@@ -77,19 +77,7 @@ update(void)
   else if (global_platform.key_pressed[KEY_O])
     scene_init("../assets/scene.txt", &entity_manager);
 
-  /* These dont serve any purpose right now.. TODO make an ASM (animation state machine) for player at least.
-    if (global_platform.key_pressed[KEY_U])
-    {
-        ac.animation_time = 0;
-        animation_controller_play_anim(&ac,1);
-    }
-    if (global_platform.key_pressed[KEY_I])
-    {
-        ac.animation_time = 0;
-        animation_controller_play_anim(&ac,0);
-    }
-    */
-}
+ }
 
 internal void 
 render(void)
@@ -108,9 +96,6 @@ render(void)
         renderer_push_point(&rend, pl.position, v4(1,1,1,1));
         //renderer_push_model(&rend, &light_cube);
     }
-    //sprintf(info_log,"point light count: %i", rend.point_light_count);
-    //sprintf(info_log,"camera pos: %f,%f,%f", rend.cam.pos.x, rend.cam.pos.y, rend.cam.pos.z);
-
     dui_frame_begin();
 
     dui_draw_string(320, 180, info_log);

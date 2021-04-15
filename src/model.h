@@ -118,8 +118,11 @@ model_init_cube(Model* m)
 
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
+    m->meshes[0].material = material_default();
     texture_load(&(m->meshes[0].material.diff),"../assets/texture.tga");
+    m->meshes[0].material.has_diffuse_map = TRUE;
     texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
+    m->meshes[0].material.has_specular_map= TRUE;
       
 }
 
@@ -243,10 +246,13 @@ model_init_sphere(Model* m, f32 radius, u32 sectors, u32 stacks)
 
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
+    m->meshes[0].material = material_default();
     texture_load(&(m->meshes[0].material.diff),"../assets/mars.tga");
-    m->meshes[0].material.has_diffuse_map= TRUE;
+    m->meshes[0].material.has_diffuse_map = TRUE;
     texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
     m->meshes[0].material.has_specular_map= TRUE;
+      
+
 }
 
 
