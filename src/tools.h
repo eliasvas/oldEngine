@@ -53,6 +53,13 @@ typedef char      b8;
 #define global static 
 #define INLINE static inline
 
+#if !defined(TRUE)
+#define TRUE 1
+#endif
+#if !defined(FALSE)
+#define FALSE 0
+#endif
+
 #define kilobytes(val) ((val)*1024LL)
 #define megabytes(val) ((kilobytes(val))*1024LL)
 #define gigabytes(val) ((megabytes(val))*1024LL)
@@ -115,13 +122,14 @@ INLINE f32 sin_32(f32 x)
 }
 #define sinf(x) sin_32(x)
 #define cosf(x) cos_32(x)
-#endif
 INLINE f32 fmodf(f32 a, f32 b)
 {
     f32 div = a/b;
     i32 mod = (i32)div;
     return (f32)mod;
 }
+
+#endif
 
 #define align_pow2(val, align) (((val) + ((align) - 1)) & ~(((val) - (val)) + (align) - 1))
 #define align4(val) (((val) + 3) & ~3)
@@ -158,7 +166,7 @@ INLINE b32 is_pow2(u32 val)
 internal b32
 char_is_alpha(i32 c)
 {
-    return ((c >='A' && c <= 'z') || (c >= 'a' && c <= 'z'));
+    return ((c >='A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
 }
 internal b32 char_is_digit(i32 c)
 {

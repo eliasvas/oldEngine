@@ -39,6 +39,8 @@ global EntityManager entity_manager;
     -[]2D sprites (projected in 3d space) w/animations
     -[]Make the engine a LIB file
     -[]Collada Parser Overhaul
+GAME IDEA: we could have a cube moving through scenes of cubes just by "rotating" gravity on all 
+axes (given that the physics engine is ok), it will always go forward and you will be able to shift gravity by arrow keys!!
 */
 internal void 
 init(void)

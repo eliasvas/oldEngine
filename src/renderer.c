@@ -325,13 +325,17 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];
-    mat4 ortho_proj = orthographic_proj(-30.f, 30.f, -30.f, 30.f, 0.01f, 100.f);
+    mat4 ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, 0.01f, 40.f);
 
     //mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(vec3_add(v3(0,10,0), rend->cam.pos), vec3_add(v3(-10,0,0), rend->cam.pos), v3(0,1,0)));
     //mat4 light_space_matrix = mat4_mul(ortho_proj,get_view_mat(&rend->cam));
 
     vec3 pos = rend->cam.pos;
-    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,10,0), v3(-10,0,0), v3(0,1,0)));
+    //mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,10,0), v3(-10,0,0), v3(0,1,0)));
+    vec3 dir_light_pos = v3(0,10,0);
+    dir_light_pos.x += rend->cam.pos.x;
+    dir_light_pos.z += rend->cam.pos.z;
+    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_add(v3(0.1,-1,0), dir_light_pos), v3(0,1,0)));
 
     if (!rend->renderer_settings.light_cull)
         renderer_set_light_uniforms(rend, shader);
@@ -387,7 +391,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
 
 }
 
-internal void renderer_check_gl_errors()
+internal void renderer_check_gl_errors(void)
 {
     GLenum err;
     while((err = glGetError()) != GL_NO_ERROR)
@@ -511,8 +515,8 @@ renderer_end_frame(Renderer *rend)
     vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
     shader_set_vec3(&rend->shaders[4], "view_pos", view_pos); 
     mat4 ortho_proj = orthographic_proj(-200.f, 200.f, -200.f, 200.f, 0.01f, 200.f);
-    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,100,0), v3(10,0,0), v3(0,1,0)));
-    shader_set_mat4fv(&rend->shaders[4], "light_space_matrix", (GLfloat*)light_space_matrix.elements);
+    //mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,100,0), v3(10,0,0), v3(0,1,0)));
+    //shader_set_mat4fv(&rend->shaders[4], "light_space_matrix", (GLfloat*)light_space_matrix.elements);
 
 
 
