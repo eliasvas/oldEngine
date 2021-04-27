@@ -11,6 +11,7 @@
 #include "animation.h"
 #include "entity.h"
 #include "dui.h"
+#include "phys.h"
 mat4 view,proj;
 
 global Model debug_cube;
@@ -63,6 +64,7 @@ init(void)
         co = ALLOC(sizeof(Coroutine));
         coroutine_init(co);
     }
+    sw_init();
 }
 
 
@@ -70,6 +72,7 @@ init(void)
 internal void 
 update(void)
 {
+  sw_simulate(global_platform.dt);
   entity_manager_update(&entity_manager, &rend);
   animation_controller_update(&ac);
   renderer_begin_frame(&rend);
@@ -85,18 +88,17 @@ internal void
 render(void)
 {
     sphere.model = mat4_mul(mat4_translate(v3(0,0,0)), mat4_scale(v3(0.5,0.5,0.5)));
-    renderer_push_model(&rend, &sphere);
+    //renderer_push_model(&rend, &sphere);
     model.model = mat4_mul(mat4_translate(v3(0,-2,0)), mat4_scale(v3(40,0.1,40)));
-    renderer_push_model(&rend, &model);
+    //renderer_push_model(&rend, &model);
      
     PointLight pl = point_light_init(v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),v3(6,5,7),v3(9,8,8),v3(9,8,8));
     for (u32 i = 0;i< 1; ++i)
     {
         pl.position.y += 0.5; 
         light_cube.model = mat4_translate(pl.position);
-        renderer_push_point_light(&rend,pl);
-        renderer_push_point(&rend, pl.position, v4(1,1,1,1));
-        //renderer_push_model(&rend, &light_cube);
+        //renderer_push_point_light(&rend,pl);
+        //renderer_push_point(&rend, pl.position, v4(1,1,1,1));
     }
     dui_frame_begin();
 
@@ -129,8 +131,9 @@ render(void)
 
     entity_manager_render(&entity_manager, &rend);
     do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
-    renderer_push_animated_model(&rend, &ac.model);
+    //renderer_push_animated_model(&rend, &ac.model);
     dui_frame_end();
+    sw_render();
     renderer_end_frame(&rend);
 }
 
