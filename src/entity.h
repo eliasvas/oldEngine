@@ -1,7 +1,7 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 #include "tools.h"
-#include "physics.h"
+#include "phys.h"
 #include "platform.h"
 
 
@@ -145,15 +145,10 @@ model_manager_reset(ModelManager *manager)
     manager->next_index = 0;
     hashmap_reset(&manager->table);
 }
-typedef struct SimplePhysicsBodyPair
-{
-    SimplePhysicsBody *A;
-    SimplePhysicsBody *B;
-}SimplePhysicsBodyPair;
 
 
 typedef SimplePhysicsBody SimplePhysicsBodyComponent;
-typedef struct PhysicsManager
+typedef struct SimulationWorld
 {
     SimplePhysicsBodyComponent bodies[MAX_COMPONENTS];
     Entity entities[MAX_ENTITY];
@@ -164,10 +159,13 @@ typedef struct PhysicsManager
 
     SimplePhysicsBodyPair pairs[1000];
     u32 pairs_count;
-}PhysicsManager;
+
+    b32 gravity_active;
+    b32 damping_active;
+}SimulationWorld;
 
 internal SimplePhysicsBodyComponent*
-entity_add_body(PhysicsManager *manager, Entity entity)
+entity_add_rigidbody(SimulationWorld *manager, Entity entity)
 {
   assert(entity != INVALID_ENTITY);
   hashmap_insert(&manager->table, entity, manager->next_index);
@@ -177,7 +175,7 @@ entity_add_body(PhysicsManager *manager, Entity entity)
 }
 
 internal void 
-entity_remove_body(PhysicsManager* manager, Entity entity)
+entity_remove_rigidbody(SimulationWorld* manager, Entity entity)
 {
   u32 index = hashmap_lookup(&manager->table, entity);
   if (index != -1)
@@ -197,7 +195,7 @@ entity_remove_body(PhysicsManager* manager, Entity entity)
 
 
 internal SimplePhysicsBodyComponent* 
-entity_get_body(PhysicsManager *manager, Entity entity)
+entity_get_rigidbody(SimulationWorld *manager, Entity entity)
 {
     i32 index = hashmap_lookup(&manager->table, entity);
     if (index != -1)
@@ -209,55 +207,27 @@ entity_get_body(PhysicsManager *manager, Entity entity)
 
 
 internal void
-physics_manager_init(PhysicsManager *manager)
+simworld_init(SimulationWorld *manager)
 {
     manager->table = hashmap_create(20);
-    manager->next_index = 0;
+    manager->next_index = FALSE;
+    manager->damping_active = TRUE;
+    manager->gravity_active = TRUE;
 }
 typedef struct EntityManager
 {
     Entity next_entity;
     PositionManager position_manager;
     ModelManager model_manager;
-    PhysicsManager physics_manager;
+    SimulationWorld simworld;
 }EntityManager;
 
 
-internal void insertion_sort_pairs(SimplePhysicsBodyPair *arr, i32 n)
-{
-    i32 i, j;
-    SimplePhysicsBodyPair key;
-    for (i = 1; i < n; i++) {
-        key = arr[i];
-        j = i - 1;
-
-        while (j >= 0 && (u32)arr[j].A > (u32)key.A) {
-            arr[j + 1] = arr[j];
-            j = j - 1;
-        }
-        arr[j + 1] = key;
-    }
-}
-
-//NOTE: pretty complicated micro optimization, @check
-internal u32 cull_dupe_pairs(SimplePhysicsBodyPair *arr, u32 n)
-{ 
-    if (n ==0)return 0;
-    u32 unique_index = 1;
-    for (u32 i = 1; i < n; ++i)
-    {
-        SimplePhysicsBodyPair curr = arr[i];
-        SimplePhysicsBodyPair prev = arr[i-1];
-        if ((i32)curr.A + (i32)curr.B != (i32)prev.A + (i32)prev.A)
-            arr[unique_index++] = curr; 
-    }
-    return unique_index;
-}
-internal void collision_table_cleanup(PhysicsManager *manager)
+internal void collision_table_cleanup(SimulationWorld *manager)
 {
     manager->pairs_count = 0;
 }
-internal void resolve_collisions(PhysicsManager *manager)
+internal void resolve_collisions(SimulationWorld *manager)
 {
     Manifold m;
     for (u32 i = 0; i < manager->pairs_count; ++i)
@@ -268,13 +238,13 @@ internal void resolve_collisions(PhysicsManager *manager)
         if (test_aabb_aabb_manifold(&m))
             resolve_collision(&m);
 
-        manager->bodies[i].velocity= vec3_divf(manager->bodies[i].velocity, 1.003f);
+        manager->bodies[i].velocity= vec3_divf(manager->bodies[i].velocity, 1.005f);
     }
 
 }
 
 internal void 
-physics_manager_reset(PhysicsManager *manager)
+simworld_reset(SimulationWorld *manager)
 {
     manager->next_index = 0;
     hashmap_reset(&manager->table);
@@ -287,7 +257,7 @@ entity_manager_init(EntityManager *manager)
     manager->next_entity = 0;
     position_manager_init(&manager->position_manager);
     model_manager_init(&manager->model_manager);
-    physics_manager_init(&manager->physics_manager);
+    simworld_init(&manager->simworld);
 }
 internal Entity 
 entity_create(EntityManager *manager)
@@ -298,7 +268,7 @@ entity_create(EntityManager *manager)
 */
 
 internal i32 last_entity_pressed = -1;
-internal void physics_manager_update(PhysicsManager *manager)
+internal void simworld_simulate(SimulationWorld *manager)
 {
     collision_table_cleanup(manager);
     Manifold m;
@@ -312,7 +282,8 @@ internal void physics_manager_update(PhysicsManager *manager)
         pb->collider.box.min = v3(model.elements[3][0] - offset.x/2, model.elements[3][1] - offset.y/2, model.elements[3][2] - offset.z/2);
         pb->collider.box.max = vec3_add(pb->collider.box.min , offset);
         //this should move from here no??
-        pb->velocity.y -= pb->gravity_scale * pb->mass_data.inv_mass *global_platform.dt;
+        if (!equalf(pb->mass_data.inv_mass, 0, 0.001))
+            pb->velocity.y -= pb->gravity_scale * global_platform.dt;
     }
     for (u32 i = 0; i < manager->next_index; ++i)
     {
@@ -332,7 +303,7 @@ internal void physics_manager_update(PhysicsManager *manager)
     manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
     resolve_collisions(manager);
 }
-internal void mouse_pick_phys(PhysicsManager *manager, Renderer *rend)
+internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
 {
 
     Ray r =  (Ray){rend->cam.pos, 1, v3(0,0,0)};
@@ -368,8 +339,8 @@ internal void
 entity_manager_update(EntityManager *manager, Renderer *rend)
 {
 
-    physics_manager_update(&manager->physics_manager);
-    mouse_pick_phys(&manager->physics_manager, rend);
+    simworld_simulate(&manager->simworld);
+    mouse_pick_phys(&manager->simworld, rend);
 
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
     {
@@ -406,7 +377,7 @@ entity_manager_render(EntityManager *manager, Renderer *rend)
 internal void 
 entity_manager_reset(EntityManager *manager)
 {
-    physics_manager_reset(&manager->physics_manager);
+    simworld_reset(&manager->simworld);
     model_manager_reset(&manager->model_manager);
     manager->next_entity = 0;
 }
@@ -441,7 +412,7 @@ void scene_init(char *filepath, EntityManager * manager)
             model_init_cube(m);
             m->model = mat4_mul(mat4_translate(pos), mat4_mul(mat4_rotate(0.0, v3(1,1,0)), mat4_scale(scale)));
            
-            m->physics_body = entity_add_body(&manager->physics_manager,entity_create(manager));
+            m->physics_body = entity_add_rigidbody(&manager->simworld,entity_create(manager));
             *(m->physics_body) = simple_physics_body_default();
             m->physics_body->collider = simple_collider_init(pos,scale);
             m->physics_body->gravity_scale = 1.f;
@@ -453,7 +424,8 @@ void scene_init(char *filepath, EntityManager * manager)
             }
             else
             {
-                m->physics_body->mass_data = mass_data_init(2.f);
+                m->physics_body->mass_data = mass_data_init(1.f);
+                //m->physics_body->mat.restitution = 0.1f;
             }
         }
         else if (strcmp("SPHERE", str) == 0)
@@ -463,7 +435,7 @@ void scene_init(char *filepath, EntityManager * manager)
             m->model = mat4_mul(mat4_translate(pos), mat4_scale(scale));
 
            
-            m->physics_body = entity_add_body(&manager->physics_manager,entity_create(manager));
+            m->physics_body = entity_add_rigidbody(&manager->simworld,entity_create(manager));
             *(m->physics_body) = simple_physics_body_default();
             m->physics_body->collider = simple_collider_default();
             m->physics_body->gravity_scale = 0.f;

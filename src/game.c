@@ -1,7 +1,7 @@
 #include "platform.h"
 #include "tools.h"
 #include "objloader.h"
-#include "physics.h"
+#include "phys.h"
 #include "camera.h"
 #include "model.h"
 #include "quad.h" 
@@ -11,7 +11,6 @@
 #include "animation.h"
 #include "entity.h"
 #include "dui.h"
-#include "phys.h"
 mat4 view,proj;
 
 global Model debug_cube;
@@ -64,7 +63,6 @@ init(void)
         co = ALLOC(sizeof(Coroutine));
         coroutine_init(co);
     }
-    sw_init();
 }
 
 
@@ -72,7 +70,6 @@ init(void)
 internal void 
 update(void)
 {
-  sw_simulate(global_platform.dt);
   entity_manager_update(&entity_manager, &rend);
   animation_controller_update(&ac);
   renderer_begin_frame(&rend);
@@ -133,7 +130,6 @@ render(void)
     do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
     //renderer_push_animated_model(&rend, &ac.model);
     dui_frame_end();
-    sw_render();
     renderer_end_frame(&rend);
 }
 

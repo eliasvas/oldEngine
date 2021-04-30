@@ -719,6 +719,15 @@ void renderer_push_cube_wireframe(Renderer *rend, vec3 min, vec3 max)
     renderer_push_line(rend, v3(max.x,max.y,min.z), v3(max.x,min.y,min.z), v4(0.9,0.2,0.2,1.f));
     renderer_push_line(rend, v3(max.x,min.y,min.z),v3(max.x,min.y,max.z), v4(0.9,0.2,0.2,1.f));
 }
+void renderer_push_quad_wireframe(Renderer *rend, vec3 v0, vec3 v1, vec3 v2, vec3 v3)
+{
+    renderer_push_line(rend, v0, v1, v4(0.8,0.2,0.2,1.f));
+    renderer_push_line(rend, v1, v2, v4(0.8,0.2,0.2,1.f));
+    renderer_push_line(rend, v2, v3, v4(0.8,0.2,0.2,1.f));
+    renderer_push_line(rend, v3, v0, v4(0.8,0.2,0.2,1.f));
+}
+
+
 
 void renderer_push_point(Renderer *rend, RendererPointData point)
 {

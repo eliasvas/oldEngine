@@ -3,7 +3,7 @@
 #include "objloader.h"
 #include "tools.h"
 #include "platform.h"
-#include "physics.h"
+#include "phys.h"
 #include "shader.h"
 #include "texture.h"
 #include "platform.h"
