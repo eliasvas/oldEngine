@@ -4,6 +4,7 @@
 #include "tools.h"
 //TODO check if Z Prepass works correctly
 
+extern char info_log[512]; 
 local_persist char point_attr[4][64] = {
         "point_lights[x].position",
         "point_lights[x].ambient",
@@ -61,7 +62,7 @@ renderer_init(Renderer *rend)
 
     char **faces= cubemap_default();
     skybox_init(&rend->skybox, faces);
-    rend->proj = perspective_proj(45.f,rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y, 0.1f,10000.f); 
+    rend->proj = perspective_proj(45.f,rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y, 0.1f,100.f); 
 
 
     //initialize postproc VAO
@@ -275,6 +276,8 @@ renderer_begin_frame(Renderer *rend)
 
 }
 
+//internal mat4 calc_light_space_matrix(f32 near, f32 far, f32 fov, vec3 dlp, mat4 view, mat4 world) {return m4d(1.f);}
+
 internal void
 renderer_set_light_uniforms(Renderer *rend, Shader *s)
 {
@@ -325,17 +328,65 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];
+
+    mat4 light_space_matrix;
+    vec3 dir_light_pos = v3(0,10,0);
+#if 0
     mat4 ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, 0.01f, 40.f);
-
-    //mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(vec3_add(v3(0,10,0), rend->cam.pos), vec3_add(v3(-10,0,0), rend->cam.pos), v3(0,1,0)));
-    //mat4 light_space_matrix = mat4_mul(ortho_proj,get_view_mat(&rend->cam));
-
     vec3 pos = rend->cam.pos;
     //mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,10,0), v3(-10,0,0), v3(0,1,0)));
-    vec3 dir_light_pos = v3(0,10,0);
     dir_light_pos.x += rend->cam.pos.x;
     dir_light_pos.z += rend->cam.pos.z;
-    mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_add(v3(0.1,-1,0), dir_light_pos), v3(0,1,0)));
+    light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_add(v3(0.1,-1,0), dir_light_pos), v3(0,1,0)));
+#else
+
+    f32 n = 0.1f;
+    f32 f = 100.f;
+    f32 fov = 45.f;
+    //light_space_matrix = calc_light_space_matrix(n, f, fov,dir_light_pos, rend->view, m4d(1.f));
+    mat4 view = get_view_mat(&rend->cam);
+    //we find the inverse view matrix
+    mat4 inv_view = mat4_inv(view);
+    //we get the light space transform matrix
+    mat4 lsm = look_at(v3(0,10,0), v3(-10,0,0), v3(0,1,0));
+
+    f32 aspect_ratio = rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y;
+    f32 tan_half_vfov = tanf(to_radians(fov/2.f));
+    f32 tan_half_hfov = tanf(to_radians(fov * aspect_ratio / 2.f));
+    //we find the extents of the frustum by similar triangle calculations (to get the idea just try to derive it)
+    f32 xn =  n * tan_half_hfov;
+    f32 xf = f * tan_half_hfov;
+    f32 yn = n * tan_half_vfov;
+    f32 yf = f * tan_half_vfov; 
+                                                    //corners of the near plane
+    vec4 frustum_corners[FRUSTUM_CORNERS_COUNT] = {v4(xn,yn,n, 1.f), v4(-xn, yn, n, 1.f), v4(xn,-yn, n, 1.f), v4(-xn, -yn, n, 1.f),
+                                                    //corenders of the far plane
+                                                    v4(xf,yf,f, 1.f), v4(-xf, yf, f, 1.f), v4(xf, -yf, f, 1.f), v4(-xf, -yf, f, 1.f)};
+    vec3 min = v3(FLT_MAX, FLT_MAX, FLT_MAX);
+    vec3 max = v3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    for (u32 i = 0; i < FRUSTUM_CORNERS_COUNT; ++i)
+    {
+        //we transform the frustum corners from view space to __world__ space
+        vec4 vertex_world = mat4_mulv(inv_view, frustum_corners[i]);
+        //we transform the frustum corners from world to light space
+        frustum_corners[i] = mat4_mulv(lsm, vertex_world);
+        //sprintf(info_log, "vertex_world: <%.2f, %.2f, %.2f, %.2f>", vertex_world.x, vertex_world.y, vertex_world.z, vertex_world.w);
+        min.x = minimum(min.x, frustum_corners[i].x);
+        max.x = maximum(max.x, frustum_corners[i].x);
+        min.y = minimum(min.y, frustum_corners[i].y);
+        max.y = maximum(max.y, frustum_corners[i].y);
+        min.z = minimum(min.z, frustum_corners[i].z);
+        max.z = maximum(max.z, frustum_corners[i].z);
+    }
+    sprintf(info_log, "[FRUSTUM]min:<%.2f %.2f %.2f>, max:<%.2f %.2f %.2f>", min.x, min.y, min.z, max.x, max.y, max.z);
+
+
+    //                                  left right bottom top near far
+    mat4 ortho_proj = orthographic_proj(min.x, max.x, min.y,max.y, min.z, max.z);
+    light_space_matrix = mat4_mul(ortho_proj,lsm);
+
+    //now we find the bounding box containing all the frustum coordinates, so that our ortho matrix passes through those points!
+#endif
 
     if (!rend->renderer_settings.light_cull)
         renderer_set_light_uniforms(rend, shader);

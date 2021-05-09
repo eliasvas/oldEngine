@@ -281,9 +281,8 @@ internal void simworld_simulate(SimulationWorld *manager)
         vec3 offset = vec3_sub(pb->collider.box.max, pb->collider.box.min);
         pb->collider.box.min = v3(model.elements[3][0] - offset.x/2, model.elements[3][1] - offset.y/2, model.elements[3][2] - offset.z/2);
         pb->collider.box.max = vec3_add(pb->collider.box.min , offset);
-        //this should move from here no??
-        if (!equalf(pb->mass_data.inv_mass, 0, 0.001))
-            pb->velocity.y -= pb->gravity_scale * global_platform.dt;
+        //if (!equalf(pb->mass_data.inv_mass, 0, 0.001))
+            //pb->velocity.y -= pb->gravity_scale * global_platform.dt;
     }
     for (u32 i = 0; i < manager->next_index; ++i)
     {

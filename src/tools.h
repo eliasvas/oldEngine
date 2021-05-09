@@ -59,6 +59,10 @@ typedef char      b8;
 #if !defined(FALSE)
 #define FALSE 0
 #endif
+#if !defined(FLT_MAX)
+#define FLT_MAX 32767.F
+#endif
+
 
 #define kilobytes(val) ((val)*1024LL)
 #define megabytes(val) ((kilobytes(val))*1024LL)

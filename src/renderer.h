@@ -86,6 +86,7 @@ typedef struct VisibleIndex
 #define RENDERER_MAX_ANIMATED_MODELS 64
 #define RENDERER_MAX_TEXT 512 
 #define RENDERER_MAX_POINTS 1024
+#define FRUSTUM_CORNERS_COUNT 8
 
 typedef struct Renderer
 {
@@ -161,4 +162,5 @@ renderer_begin_frame(Renderer *rend);
 
 void
 renderer_end_frame(Renderer *rend);
+
 #endif

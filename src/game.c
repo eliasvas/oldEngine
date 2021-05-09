@@ -63,6 +63,7 @@ init(void)
         co = ALLOC(sizeof(Coroutine));
         coroutine_init(co);
     }
+    scene_init("../assets/scene_big.txt", &entity_manager);
 }
 
 
@@ -99,7 +100,6 @@ render(void)
     }
     dui_frame_begin();
 
-    dui_draw_string(320, 180, info_log);
     //UI bullshit..
     {
         if (global_platform.key_pressed[KEY_TAB])
@@ -119,10 +119,9 @@ render(void)
             char ms[64];
             sprintf(ms, "%.4f ms", global_platform.dt);
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
-            sprintf(ms, "permanent %i/%i", global_platform.permanent_storage.current_offset, global_platform.permanent_storage.memory_size);
-            dui_draw_string(380, 310, ms);
-            sprintf(ms, "frame %i/%i", global_platform.frame_storage.current_offset, global_platform.frame_storage.memory_size);
-            dui_draw_string(380, 290, ms);
+            //sprintf(ms, "frame %i/%i", global_platform.frame_storage.current_offset, global_platform.frame_storage.memory_size);
+            //dui_draw_string(380, 290, ms);
+            dui_draw_string(320, 180, info_log);
         }
     }
 
