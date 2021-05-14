@@ -440,7 +440,7 @@ INLINE b32 ivec3_equals(ivec3 l, ivec3 r)
     return res;
 }
 
-INLINE f32 to_radians(float degrees)
+INLINE f32 to_radians(f32 degrees)
 {
     f32 res = degrees * (PI / 180.0f);
     return(res);

@@ -62,7 +62,6 @@ renderer_init(Renderer *rend)
 
     char **faces= cubemap_default();
     skybox_init(&rend->skybox, faces);
-    rend->proj = perspective_proj(45.f,rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y, 0.1f,100.f); 
 
 
     //initialize postproc VAO
@@ -230,6 +229,7 @@ renderer_init(Renderer *rend)
 void
 renderer_begin_frame(Renderer *rend)
 {
+  rend->proj = perspective_proj(45.f,rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y, 0.1f,100.f); 
   rend->renderer_settings.render_dim = (ivec2){rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y};
 
   if (global_platform.window_resized)
@@ -340,9 +340,8 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     //light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_normalize(v3(1,0,1)), v3(0,1,0)));
     light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_add(rend->directional_light.direction, dir_light_pos), v3(0,1,0)));
 #else
-
-    f32 n = 0.1f;
-    f32 f = 10.f;
+f32 n = 0.1f;
+    f32 f = 100.f;
     f32 fov = 45.f;
     //we get the light space transform matrix
     //mat4 look_at(vec3 eye, vec3 center, vec3 fake_up)
@@ -366,9 +365,9 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     {
         //we transform the frustum corners from view space to __world__ space
         vec4 vertex_world = mat4_mulv(inv_view, frustum_corners[i]);
+        //vec3 wp = v3(vertex_world.x, vertex_world.y, vertex_world.z);
         vec3 wp = v3(vertex_world.x, vertex_world.y, vertex_world.z);
-        renderer_push_line(rend, wp, vec3_add(wp, v3(0,100,0)), v4(1,1,1,1));
-        renderer_push_line(rend, v3(0,0,0), v3(0,100,0), v4(1,1,1,1));
+        renderer_push_line(rend, wp, vec3_add(v3(0,100,0), wp), v4(1,0,i / (f32)FRUSTUM_CORNERS_COUNT,1));
         //we transform the frustum corners from world to light space
         frustum_corners[i] = mat4_mulv(lsm, vertex_world);
         //frustum_corners[i] = vertex_world;
