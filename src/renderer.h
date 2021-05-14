@@ -163,4 +163,5 @@ renderer_begin_frame(Renderer *rend);
 void
 renderer_end_frame(Renderer *rend);
 
+void renderer_push_line(Renderer *rend, vec3 start, vec3 end, vec4 color);
 #endif

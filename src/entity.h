@@ -360,6 +360,7 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
 internal void 
 entity_manager_render(EntityManager *manager, Renderer *rend)
 {
+    //this is the directional light orientation TODO: stabilize this with real orient
     if (last_entity_pressed >= 0)
     {
         mat4 model = manager->model_manager.models[last_entity_pressed].model;

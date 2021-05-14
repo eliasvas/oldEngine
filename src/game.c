@@ -11,6 +11,7 @@
 #include "animation.h"
 #include "entity.h"
 #include "dui.h"
+#include "net.h"
 mat4 view,proj;
 
 global Model debug_cube;

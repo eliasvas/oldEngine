@@ -100,7 +100,7 @@ void main()
 	vec3 N = normalize(f_normal);
 	vec3 L = normalize(-dirlight.direction);
 	
-	float diff = max(dot(N, L), 0.0);
+	float diff = abs(dot(N, L));
 	vec3 diffuse = dirlight.diffuse * diff * diffuse_color;
 	
 	vec3 V = normalize(view_pos - f_frag_pos);

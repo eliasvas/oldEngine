@@ -325,30 +325,28 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
 {
   mat4 inv_view = mat4_inv(rend->view);
   vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
+  renderer_push_line(rend, v3(0,0,0), rend->directional_light.direction, v4(0.4f,0.4f,0.9f,1.f));
   for(i32 i = 0; i < rend->model_alloc_pos;++i)
   { 
     RendererModelData data = rend->model_instance_data[i];
 
     mat4 light_space_matrix;
-    vec3 dir_light_pos = v3(0,10,0);
+    vec3 dir_light_pos = v3(0,0,0);
 #if 0
-    mat4 ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, 0.01f, 40.f);
+    mat4 ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, -20.f, 140.f);
     vec3 pos = rend->cam.pos;
-    //mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,10,0), v3(-10,0,0), v3(0,1,0)));
-    dir_light_pos.x += rend->cam.pos.x;
-    dir_light_pos.z += rend->cam.pos.z;
-    light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_add(v3(0.1,-1,0), dir_light_pos), v3(0,1,0)));
+    //dir_light_pos.x += rend->cam.pos.x;
+    //dir_light_pos.z += rend->cam.pos.z;
+    //light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_normalize(v3(1,0,1)), v3(0,1,0)));
+    light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_add(rend->directional_light.direction, dir_light_pos), v3(0,1,0)));
 #else
 
     f32 n = 0.1f;
-    f32 f = 100.f;
+    f32 f = 10.f;
     f32 fov = 45.f;
-    //light_space_matrix = calc_light_space_matrix(n, f, fov,dir_light_pos, rend->view, m4d(1.f));
-    mat4 view = get_view_mat(&rend->cam);
-    //we find the inverse view matrix
-    mat4 inv_view = mat4_inv(view);
     //we get the light space transform matrix
-    mat4 lsm = look_at(v3(0,10,0), v3(-10,0,0), v3(0,1,0));
+    //mat4 look_at(vec3 eye, vec3 center, vec3 fake_up)
+    mat4 lsm = look_at(dir_light_pos, rend->directional_light.direction, v3(0,1,0));
 
     f32 aspect_ratio = rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y;
     f32 tan_half_vfov = tanf(to_radians(fov/2.f));
@@ -368,8 +366,12 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     {
         //we transform the frustum corners from view space to __world__ space
         vec4 vertex_world = mat4_mulv(inv_view, frustum_corners[i]);
+        vec3 wp = v3(vertex_world.x, vertex_world.y, vertex_world.z);
+        renderer_push_line(rend, wp, vec3_add(wp, v3(0,100,0)), v4(1,1,1,1));
+        renderer_push_line(rend, v3(0,0,0), v3(0,100,0), v4(1,1,1,1));
         //we transform the frustum corners from world to light space
         frustum_corners[i] = mat4_mulv(lsm, vertex_world);
+        //frustum_corners[i] = vertex_world;
         //sprintf(info_log, "vertex_world: <%.2f, %.2f, %.2f, %.2f>", vertex_world.x, vertex_world.y, vertex_world.z, vertex_world.w);
         min.x = minimum(min.x, frustum_corners[i].x);
         max.x = maximum(max.x, frustum_corners[i].x);
@@ -383,9 +385,8 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
 
     //                                  left right bottom top near far
     mat4 ortho_proj = orthographic_proj(min.x, max.x, min.y,max.y, min.z, max.z);
+    //ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, -20.f, 40.f);
     light_space_matrix = mat4_mul(ortho_proj,lsm);
-
-    //now we find the bounding box containing all the frustum coordinates, so that our ortho matrix passes through those points!
 #endif
 
     if (!rend->renderer_settings.light_cull)
@@ -467,6 +468,14 @@ renderer_end_frame(Renderer *rend)
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); 
   }
+  //first, we render the scene to the depth map
+  fbo_bind(&rend->shadowmap_fbo);
+  //mat4 prev_view = rend->view;
+  //rend->view = mat4_mul(mat4_rotate(to_radians(90.f), v3(-1,0,0)), rend->view);
+  renderer_render_scene3D(rend,&rend->shaders[3]);
+  //rend->view = prev_view;
+  //second we do an (optional) opaque Z Prepass 
+
   //update instance data for filled rect
   glBindBuffer(GL_ARRAY_BUFFER, rend->filled_rect_instance_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererFilledRect) * rend->filled_rect_alloc_pos, &rend->filled_rect_instance_data[0], GL_DYNAMIC_DRAW);
@@ -480,10 +489,6 @@ renderer_end_frame(Renderer *rend)
   glBindBuffer(GL_ARRAY_BUFFER, rend->point_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererPointData) * rend->point_alloc_pos, &rend->point_instance_data[0], GL_DYNAMIC_DRAW);
 
-  //first, we render the scene to the depth map
-  fbo_bind(&rend->shadowmap_fbo);
-  renderer_render_scene3D(rend,&rend->shaders[3]);
-  //second we do an (optional) opaque Z Prepass 
   fbo_bind(&rend->main_fbo);
   if (rend->renderer_settings.z_prepass)
   {
@@ -577,8 +582,12 @@ renderer_end_frame(Renderer *rend)
     //glDrawArrays(GL_LINES,0, 40000);
     glBindVertexArray(0);
   }
+  //update instance data for line 
+  glBindBuffer(GL_ARRAY_BUFFER, rend->line_instance_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(RendererLine) * rend->line_alloc_pos, &rend->line_instance_data[0], GL_DYNAMIC_DRAW);
+
     //render lines
-    glLineWidth(1);
+    glLineWidth(5);
     use_shader(&rend->shaders[6]);
     mat4 mvp = mat4_mul(rend->proj, rend->view);
     shader_set_mat4fv(&rend->shaders[6], "MVP", (GLfloat*)mvp.elements);
