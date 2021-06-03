@@ -1,6 +1,7 @@
 #include "platform.h"
 #include "tools.h"
 #include "objloader.h"
+#include "thread.h"
 #include "phys.h"
 #include "camera.h"
 #include "model.h"
