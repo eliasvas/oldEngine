@@ -48,7 +48,7 @@ internal void
 init(void)
 {
     entity_manager_init(&entity_manager);
-    scene_init("../assets/scene2.txt", &entity_manager);
+    scene_init("../assets/scene.txt", &entity_manager);
 
     model_init_cube(&debug_cube);
     renderer_init(&rend);
@@ -65,7 +65,6 @@ init(void)
         co = ALLOC(sizeof(Coroutine));
         coroutine_init(co);
     }
-    scene_init("../assets/scene_big.txt", &entity_manager);
 }
 
 
