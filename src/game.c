@@ -30,17 +30,18 @@ global EntityManager entity_manager;
 
 /*
  Engine TODO:
-    -[]Physics Engine (Stabilize current version..)
-    -[]Cascaded Shadow Maps!!!
-    -[]Check Vertex normals for OBJ loading
-    -[]Fix Timestepping!!!!
-    -[]Light Attenuation and radius stuff
-    -[]See how UE4 does their PBR lighting
-    -[]IMGUI tweaks (add size member configure events and stuff) 
-    -[]Normal visualization is prb wrong, FIX
-    -[]2D sprites (projected in 3d space) w/animations
-    -[]Make the engine a LIB file
-    -[]Collada Parser Overhaul
+    -Fix Bloom effects
+    -Physics Engine (Stabilize current version..)
+    -Cascaded Shadow Maps!!!
+    -Check Vertex normals for OBJ loading
+    -Fix Timestepping!!!!
+    -Light Attenuation and radius stuff
+    -See how UE4 does their PBR lighting
+    -IMGUI tweaks (add size member configure events and stuff) 
+    -Normal visualization is prb wrong, FIX
+    -2D sprites (projected in 3d space) w/animations
+    -Make the engine a LIB file
+    -Collada Parser Overhaul
 GAME IDEA: we could have a cube moving through scenes of cubes just by "rotating" gravity on all 
 axes (given that the physics engine is ok), it will always go forward and you will be able to shift gravity by arrow keys!!
 */
@@ -77,7 +78,7 @@ update(void)
   renderer_begin_frame(&rend);
   rend.cam.can_rotate = !UI_OPEN;
   if (global_platform.key_pressed[KEY_P])
-    scene_init("../assets/scene2.txt", &entity_manager);
+    scene_init("../assets/scene_big.txt", &entity_manager);
   else if (global_platform.key_pressed[KEY_O])
     scene_init("../assets/scene.txt", &entity_manager);
 
@@ -91,11 +92,11 @@ render(void)
     model.model = mat4_mul(mat4_translate(v3(0,-2,0)), mat4_scale(v3(40,0.1,40)));
     //renderer_push_model(&rend, &model);
      
-    PointLight pl = point_light_init(v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),v3(6,5,7),v3(9,8,8),v3(9,8,8));
+    PointLight pl = point_light_init(v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),v3(0.6,0.5,0.7),v3(9,8,8),v3(9,8,8));
     for (u32 i = 0;i< 1; ++i)
     {
-        pl.position.y += 0.5; 
-        light_cube.model = mat4_translate(pl.position);
+        //pl.position.y += 0.5; 
+        //light_cube.model = mat4_translate(pl.position);
         //renderer_push_point_light(&rend,pl);
         //renderer_push_point(&rend, pl.position, v4(1,1,1,1));
     }

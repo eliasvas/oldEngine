@@ -281,8 +281,8 @@ internal void simworld_simulate(SimulationWorld *manager)
         vec3 offset = vec3_sub(pb->collider.box.max, pb->collider.box.min);
         pb->collider.box.min = v3(model.elements[3][0] - offset.x/2, model.elements[3][1] - offset.y/2, model.elements[3][2] - offset.z/2);
         pb->collider.box.max = vec3_add(pb->collider.box.min , offset);
-        //if (!equalf(pb->mass_data.inv_mass, 0, 0.001))
-            //pb->velocity.y -= pb->gravity_scale * global_platform.dt;
+        if (!equalf(pb->mass_data.inv_mass, 0, 0.001))
+            pb->velocity.y -= pb->gravity_scale * global_platform.dt;
     }
     for (u32 i = 0; i < manager->next_index; ++i)
     {
@@ -298,8 +298,8 @@ internal void simworld_simulate(SimulationWorld *manager)
         
     }
     //TODO here do the test intersections!!
-    insertion_sort_pairs(manager->pairs, manager->pairs_count);
-    manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
+    //insertion_sort_pairs(manager->pairs, manager->pairs_count);
+    //manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
     resolve_collisions(manager);
 }
 internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
@@ -425,7 +425,7 @@ void scene_init(char *filepath, EntityManager * manager)
             else
             {
                 m->physics_body->mass_data = mass_data_init(1.f);
-                //m->physics_body->mat.restitution = 0.1f;
+                //m->physics_body->mat.restitution = 0.2f;
             }
         }
         else if (strcmp("SPHERE", str) == 0)

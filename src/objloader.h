@@ -33,8 +33,8 @@ material_default(void)
 {
   Material material = (Material){0};
   material.ambient = v3(0.1f,0.1f,0.1f);
-  material.diffuse = v3(0.7f,0.4f,0.5f);
-  material.specular = v3(0.1f,0.1f,0.1f);
+  material.diffuse = v3(0.8f,0.8f,0.8f);
+  material.specular = v3(1.0f,1.0f,1.0f);
   material.emmisive = v3(0.3,0.3,0.3);
   material.shininess = 4.f;
   material.has_diffuse_map = FALSE;

@@ -58,7 +58,7 @@ layout(binding = 2, std430) buffer  visible_index_buffer
 };
 float shadow_calc()
 {
-	float bias = 0.005;
+	float bias = 0.0005;
 	// perform perspective divide
     vec3 proj_coords = f_frag_pos_ls.xyz / f_frag_pos_ls.w;
 	if (abs(proj_coords.x) > 1.0 || abs(proj_coords.y) > 1.0)
@@ -107,13 +107,13 @@ void main()
 	vec3 H = normalize(L + V);
 	//vec3 R = reflect(-L, N);
 	
-	float spec = pow(max(dot(N, H),0.0),4);
+	float spec = pow(max(dot(N, H),0.0),8);
 	//float spec = pow(max(dot(V,R),0.0),4);
 	vec3 specular = dirlight.specular * spec * specular_color;
 	
 	float shadow = shadow_calc();
 	
-	vec3 color = (shadow*(specular + diffuse) + ambient)/2;
+	vec3 color = (shadow*(specular + diffuse) + ambient);
 
 	//maybe have them per-light but I dont see the reason tbh..
 	float constant = 1.f;
@@ -148,10 +148,10 @@ void main()
 		
 		float distance = abs(length(current_light.position - f_frag_pos));
 		float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
-		//attenuation = 1.0/(distance);
-		ambient *= attenuation * 1/10;
-		diffuse *= attenuation * 1/10;
-		specular *= attenuation * 1/20;
+		attenuation = 1.0/(distance);
+		ambient *= attenuation;
+		diffuse *= attenuation;
+		specular *= attenuation;
 		color += ((specular + diffuse) + ambient);
 	}
 	
