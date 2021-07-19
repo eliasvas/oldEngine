@@ -369,7 +369,7 @@ entity_manager_render(EntityManager *manager, Renderer *rend)
     }
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
     {
-        renderer_push_model(rend, manager->model_manager.models[i]);
+        renderer_push_model(rend, &manager->model_manager.models[i]);
         renderer_push_cube_wireframe(rend, manager->model_manager.models[i].physics_body->collider.box.min,manager->model_manager.models[i].physics_body->collider.box.max);
     }
 }

@@ -42,7 +42,7 @@ void main()
 	float exposure = 2.0;
 	float gamma = 2.2;
 	blurred_tex = vec4(blurred,1.0);
-	FragColor += vec4(blurred,1.0);
+	//FragColor += vec4(blurred,1.0);
 	// reinhard tone mapping
     vec3 mapped = vec3(1.0) - exp(-FragColor.rgb * exposure);
     // gamma correction 

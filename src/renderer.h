@@ -130,6 +130,7 @@ typedef struct Renderer
   RendererChar text_instance_data[RENDERER_MAX_TEXT];
   u32 text_alloc_pos;
 
+  Model test_sphere;
 
 
   RendererAnimatedModelData animated_model_instance_data[RENDERER_MAX_ANIMATED_MODELS];
@@ -164,4 +165,6 @@ void
 renderer_end_frame(Renderer *rend);
 
 void renderer_push_line(Renderer *rend, vec3 start, vec3 end, vec4 color);
+
+void renderer_push_model(Renderer *rend, Model *m);
 #endif

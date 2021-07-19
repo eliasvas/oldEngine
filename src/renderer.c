@@ -43,6 +43,9 @@ renderer_init(Renderer *rend)
     rend->renderer_settings.z_prepass = TRUE;
     rend->renderer_settings.debug_mode = FALSE;
 
+    //initializing the test sphere
+    model_init_sphere(&rend->test_sphere, 0.1, 8, 8);
+
 
 
     rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_COLOR_1| FBO_DEPTH);
@@ -320,6 +323,7 @@ renderer_set_light_uniforms(Renderer *rend, Shader *s)
 
 
 }
+vec4 global_frustum_corners[FRUSTUM_CORNERS_COUNT];
 //here we put the draw calls for everything that needs shadowmapping!
 renderer_render_scene3D(Renderer *rend,Shader *shader)
 {
@@ -331,24 +335,23 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     RendererModelData data = rend->model_instance_data[i];
 
     mat4 light_space_matrix;
-    vec3 dir_light_pos = v3(0,0,0);
-#if 1
+    vec3 dir_light_pos = vec3_mulf(rend->directional_light.direction, -4);
+    renderer_push_line(rend, dir_light_pos, vec3_normalize(vec3_add(rend->directional_light.direction, dir_light_pos)), v4(1,1,1,1));
+#if 0
     mat4 ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, -20.f, 140.f);
     vec3 pos = rend->cam.pos;
     //dir_light_pos.x += rend->cam.pos.x;
     //dir_light_pos.z += rend->cam.pos.z;
     //light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_normalize(v3(1,0,1)), v3(0,1,0)));
     //light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_normalize(vec3_add(rend->directional_light.direction, dir_light_pos)), v3(0,1,0)));
+    //mat4 look_at(vec3 eye, vec3 center, vec3 fake_up)
     light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_normalize(vec3_add(rend->directional_light.direction, dir_light_pos)), v3(0,1,0)));
 #else
     f32 n = 0.1f;
     f32 f = 20.f;
     f32 fov = 45.f;
     //we get the light space transform matrix
-    //mat4 look_at(vec3 eye, vec3 center, vec3 fake_up)
-    //mat4 lsm = look_at(dir_light_pos, rend->directional_light.direction, v3(0,1,0));
-    mat4 lsm = look_at(dir_light_pos, v3(0.04, -1,0), v3(0,1,0));
-    //lsm = mat4_inv(lsm);
+    mat4 lsm =  look_at(dir_light_pos, vec3_normalize(vec3_add(rend->directional_light.direction, dir_light_pos)), v3(0,1,0));
 
 
     f32 aspect_ratio = rend->renderer_settings.render_dim.y / (f32)rend->renderer_settings.render_dim.x;
@@ -359,23 +362,26 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     f32 xf = f * tan_half_hfov;
     f32 yn = n * tan_half_vfov;
     f32 yf = f * tan_half_vfov; 
-                                                    //corners of the near plane
+                                                    //corners of the near plane (in view space!)
     vec4 frustum_corners[FRUSTUM_CORNERS_COUNT] = {v4(xn,yn,n, 1.f), v4(-xn, yn, n, 1.f), v4(xn,-yn, n, 1.f), v4(-xn, -yn, n, 1.f),
-                                                    //corenders of the far plane
+                                                    //corners of the far plane  (in view space!)
                                                     v4(xf,yf,f, 1.f), v4(-xf, yf, f, 1.f), v4(xf, -yf, f, 1.f), v4(-xf, -yf, f, 1.f)};
+    //min and max corners (in light space!)
     vec3 min = v3(FLT_MAX, FLT_MAX, FLT_MAX);
     vec3 max = v3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    mat4 view_test = look_at(v3(0,4,0),vec3_add(v3(0,4,0), vec3_mulf(rend->directional_light.direction, 1.f)),v3(0,1,0));
     for (u32 i = 0; i < FRUSTUM_CORNERS_COUNT; ++i)
     {
         //we transform the frustum corners from view space to __world__ space
         vec4 vertex_world = mat4_mulv(inv_view, frustum_corners[i]);
-        //vec3 wp = v3(vertex_world.x, vertex_world.y, vertex_world.z);
+        //vec4 vertex_world = mat4_mulv(inv_view, frustum_corners[i]);
         vec3 wp = v3(vertex_world.x, vertex_world.y, vertex_world.z);
-        renderer_push_line(rend, wp, v3(0,0,0), v4(1,0,i / (f32)FRUSTUM_CORNERS_COUNT,1));
+        //renderer_push_line(rend, wp, v3(0,0,0), v4(1,0,i / (f32)FRUSTUM_CORNERS_COUNT,1));
         //we transform the frustum corners from world to light space
-        frustum_corners[i] = mat4_mulv(lsm, vertex_world);
-        //frustum_corners[i] = vertex_world;
-        //sprintf(info_log, "vertex_world: <%.2f, %.2f, %.2f, %.2f>", vertex_world.x, vertex_world.y, vertex_world.z, vertex_world.w);
+        //frustum_corners[i] = mat4_mulv(lsm, vertex_world);
+        frustum_corners[i] = mat4_mulv(view_test, vertex_world);
+        //if (i > 0)renderer_push_line(rend, wp, v3(frustum_corners[i-1].x,frustum_corners[i-1].y,frustum_corners[i-1].z), v4(1,1,1,1));
+        global_frustum_corners[i] = frustum_corners[i];
         min.x = minimum(min.x, frustum_corners[i].x);
         max.x = maximum(max.x, frustum_corners[i].x);
         min.y = minimum(min.y, frustum_corners[i].y);
@@ -389,7 +395,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     //                                  left right bottom top near far
     mat4 ortho_proj = orthographic_proj(min.x, max.x, min.y,max.y, min.z, max.z);
     //ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, -20.f, 40.f);
-    light_space_matrix = mat4_mul(ortho_proj,lsm);
+    light_space_matrix = mat4_mul(ortho_proj,view_test);
 #endif
 
     if (!rend->renderer_settings.light_cull)
@@ -463,6 +469,14 @@ renderer_end_frame(Renderer *rend)
   vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
   //renderer_check_gl_errors();
   
+#if 1
+  for (int i = 0; i < FRUSTUM_CORNERS_COUNT;++i)
+  {
+      rend->test_sphere.model = mat4_translate(v3(global_frustum_corners[i].x,global_frustum_corners[i].y,global_frustum_corners[i].z));
+      renderer_push_model(rend, &rend->test_sphere);
+  }
+#endif
+
   //set light ssbo @check
   {
    	glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->light_buffer);

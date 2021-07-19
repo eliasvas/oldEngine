@@ -58,7 +58,7 @@ layout(binding = 2, std430) buffer  visible_index_buffer
 };
 float shadow_calc()
 {
-	float bias = 0.0005;
+	float bias = 0.005;
 	// perform perspective divide
     vec3 proj_coords = f_frag_pos_ls.xyz / f_frag_pos_ls.w;
 	if (abs(proj_coords.x) > 1.0 || abs(proj_coords.y) > 1.0)
