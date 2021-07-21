@@ -336,27 +336,18 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
 
     mat4 light_space_matrix;
     vec3 dir_light_pos = vec3_mulf(rend->directional_light.direction, -4);
-    renderer_push_line(rend, dir_light_pos, vec3_normalize(vec3_add(rend->directional_light.direction, dir_light_pos)), v4(1,1,1,1));
 #if 0
     mat4 ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, -20.f, 140.f);
     vec3 pos = rend->cam.pos;
-    //dir_light_pos.x += rend->cam.pos.x;
-    //dir_light_pos.z += rend->cam.pos.z;
-    //light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_normalize(v3(1,0,1)), v3(0,1,0)));
-    //light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_normalize(vec3_add(rend->directional_light.direction, dir_light_pos)), v3(0,1,0)));
-    //mat4 look_at(vec3 eye, vec3 center, vec3 fake_up)
     light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_normalize(vec3_add(rend->directional_light.direction, dir_light_pos)), v3(0,1,0)));
 #else
-    f32 n = 0.1f;
-    f32 f = 20.f;
+    f32 n = -0.1f;
+    f32 f = -10.f;
     f32 fov = 45.f;
-    //we get the light space transform matrix
-    mat4 lsm =  look_at(dir_light_pos, vec3_normalize(vec3_add(rend->directional_light.direction, dir_light_pos)), v3(0,1,0));
 
-
-    f32 aspect_ratio = rend->renderer_settings.render_dim.y / (f32)rend->renderer_settings.render_dim.x;
-    f32 tan_half_hfov = tanf(to_radians(fov/2.f));
-    f32 tan_half_vfov = tanf(to_radians(fov * aspect_ratio/ 2.f));
+    f32 aspect_ratio = rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y;
+    f32 tan_half_vfov = tan(to_radians(fov/2.f));
+    f32 tan_half_hfov = tan(to_radians(fov * aspect_ratio/2.f));
     //we find the extents of the frustum by similar triangle calculations (to get the idea just try to derive it)
     f32 xn =  n * tan_half_hfov;
     f32 xf = f * tan_half_hfov;
@@ -369,17 +360,14 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     //min and max corners (in light space!)
     vec3 min = v3(FLT_MAX, FLT_MAX, FLT_MAX);
     vec3 max = v3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-    mat4 view_test = look_at(v3(0,4,0),vec3_add(v3(0,4,0), vec3_mulf(rend->directional_light.direction, 1.f)),v3(0,1,0));
+    mat4 light_matrix= look_at(v3(0,0,0),vec3_normalize(rend->directional_light.direction),v3(0,1,0));
     for (u32 i = 0; i < FRUSTUM_CORNERS_COUNT; ++i)
     {
-        //we transform the frustum corners from view space to __world__ space
-        vec4 vertex_world = mat4_mulv(inv_view, frustum_corners[i]);
+        //we transform the frustum corners from "view" space to __world__ space
         //vec4 vertex_world = mat4_mulv(inv_view, frustum_corners[i]);
-        vec3 wp = v3(vertex_world.x, vertex_world.y, vertex_world.z);
-        //renderer_push_line(rend, wp, v3(0,0,0), v4(1,0,i / (f32)FRUSTUM_CORNERS_COUNT,1));
+        vec4 vertex_world = mat4_mulv(mat4_inv(rend->view), frustum_corners[i]);
         //we transform the frustum corners from world to light space
-        //frustum_corners[i] = mat4_mulv(lsm, vertex_world);
-        frustum_corners[i] = mat4_mulv(view_test, vertex_world);
+        frustum_corners[i] = mat4_mulv(light_matrix, vertex_world);
         //if (i > 0)renderer_push_line(rend, wp, v3(frustum_corners[i-1].x,frustum_corners[i-1].y,frustum_corners[i-1].z), v4(1,1,1,1));
         global_frustum_corners[i] = frustum_corners[i];
         min.x = minimum(min.x, frustum_corners[i].x);
@@ -395,7 +383,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     //                                  left right bottom top near far
     mat4 ortho_proj = orthographic_proj(min.x, max.x, min.y,max.y, min.z, max.z);
     //ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, -20.f, 40.f);
-    light_space_matrix = mat4_mul(ortho_proj,view_test);
+    light_space_matrix = mat4_mul(ortho_proj,light_matrix);
 #endif
 
     if (!rend->renderer_settings.light_cull)
