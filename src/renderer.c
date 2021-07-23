@@ -51,7 +51,9 @@ renderer_init(Renderer *rend)
     rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_COLOR_1| FBO_DEPTH);
     rend->postproc_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 |FBO_COLOR_1| FBO_DEPTH);
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
-    rend->shadowmap_fbo = fbo_init(2048, 2048, FBO_DEPTH);
+    rend->shadowmap_fbo[0] = fbo_init(1024, 1024, FBO_DEPTH);
+    rend->shadowmap_fbo[1] = fbo_init(1024, 1024, FBO_DEPTH);
+    rend->shadowmap_fbo[2] = fbo_init(1024, 1024, FBO_DEPTH);
     //rend->depthpeel_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_COLOR_0 | FBO_DEPTH);
     rend->current_fbo = &rend->main_fbo;
     
@@ -60,7 +62,7 @@ renderer_init(Renderer *rend)
 
     rend->default_material = material_default();
 
-    rend->directional_light = (DirLight){v3(-0.2,-1,-0.3),v3(0.2,0.2,0.1),v3(0.8,0.8,0.8),v3(0.6f,0.6f,0.6f)};
+    rend->directional_light = (DirLight){v3(-0.3,-0.7,-0.3),v3(0.2,0.2,0.1),v3(0.8,0.8,0.8),v3(0.6f,0.6f,0.6f)};
     rend->point_light_count = 0;
 
     char **faces= cubemap_default();
@@ -229,6 +231,61 @@ renderer_init(Renderer *rend)
     
 }
 
+vec4 global_frustum_corners[FRUSTUM_CORNERS_COUNT];
+void renderer_calc_cascades(Renderer * rend, mat4 *light_space_matrix)
+{
+    f32 near_plane = -0.1f;
+    f32 far_plane = -100.f;
+    f32 fov = 45.f;
+    f32 cascade_end[4] = {near_plane, -40.f, -50.f, -100.f};
+    mat4 ortho_proj[RENDERER_CASCADES_COUNT];
+
+    f32 aspect_ratio = rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y;
+    f32 tan_half_vfov = tanf(to_radians(fov/2.f));
+    f32 tan_half_hfov = tanf(to_radians(fov * aspect_ratio/2.f));
+    mat4 light_matrix = mat4_rotate(90.f, v3(1,0,0));
+    //we find the extents of the frustum by trig functions
+    for (u32 c = 0; c < RENDERER_CASCADES_COUNT; ++c)
+    {
+        f32 f = cascade_end[c+1];
+        f32 n = cascade_end[0];
+        f32 xn = n * tan_half_hfov;
+        f32 xf = f * tan_half_hfov;
+        f32 yn = n * tan_half_vfov;
+        f32 yf = f * tan_half_vfov; 
+                                                    //corners of the near plane (in view space!)
+        vec4 frustum_corners[FRUSTUM_CORNERS_COUNT] = {v4(xn,yn,n, 1.f), v4(-xn, yn, n, 1.f), v4(xn,-yn, n, 1.f), v4(-xn, -yn, n, 1.f),
+                                                        //corners of the far plane  (in view space!)
+                                                        v4(xf,yf,f, 1.f), v4(-xf, yf, f, 1.f), v4(xf, -yf, f, 1.f), v4(-xf, -yf, f, 1.f)};
+
+        //min and max corners (in light space!)
+        vec3 min = v3(FLT_MAX, FLT_MAX, FLT_MAX);
+        vec3 max = v3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+        //mat4 light_matrix = look_at(v3(0,0,0),vec3_normalize(rend->directional_light.direction),v3(0,1,0));
+        for (u32 i = 0; i < FRUSTUM_CORNERS_COUNT; ++i)
+        {
+            //we transform the frustum corners from "view" space to __world__ space
+            //vec4 vertex_world = mat4_mulv(inv_view, frustum_corners[i]);
+            vec4 vertex_world = mat4_mulv(mat4_inv(rend->view), frustum_corners[i]);
+            //we transform the frustum corners from world to light space
+            frustum_corners[i] = mat4_mulv(light_matrix, vertex_world);
+            global_frustum_corners[i] = frustum_corners[i];
+            min.x = minimum(min.x, frustum_corners[i].x);
+            max.x = maximum(max.x, frustum_corners[i].x);
+            min.y = minimum(min.y, frustum_corners[i].y);
+            max.y = maximum(max.y, frustum_corners[i].y);
+            min.z = minimum(min.z, frustum_corners[i].z);
+            max.z = maximum(max.z, frustum_corners[i].z);
+        }
+        //sprintf(info_log, "[FRUSTUM]min:<%.2f %.2f %.2f>, max:<%.2f %.2f %.2f>", min.x, min.y, min.z, max.x, max.y, max.z);
+
+        mat4 ortho_proj = orthographic_proj(min.x, max.x, min.y,max.y, min.z, max.z);
+        light_space_matrix[c] = mat4_mul(ortho_proj,light_matrix);
+    }
+
+
+}
+
 void
 renderer_begin_frame(Renderer *rend)
 {
@@ -253,9 +310,12 @@ renderer_begin_frame(Renderer *rend)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0,0,0,0);
 
-  fbo_bind(&rend->shadowmap_fbo);
-  glClear(GL_DEPTH_BUFFER_BIT);
-  //glClearColor(1,1,1,1);
+  for (u32 i = 0; i < RENDERER_CASCADES_COUNT; ++i)
+  {
+      fbo_bind(&rend->shadowmap_fbo[i]);
+      glClear(GL_DEPTH_BUFFER_BIT);
+      //glClearColor(1,1,1,1);
+  }
 
 
 
@@ -323,7 +383,6 @@ renderer_set_light_uniforms(Renderer *rend, Shader *s)
 
 
 }
-vec4 global_frustum_corners[FRUSTUM_CORNERS_COUNT];
 //here we put the draw calls for everything that needs shadowmapping!
 renderer_render_scene3D(Renderer *rend,Shader *shader)
 {
@@ -334,33 +393,42 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
   { 
     RendererModelData data = rend->model_instance_data[i];
 
-    mat4 light_space_matrix;
+    mat4 light_space_matrix[RENDERER_CASCADES_COUNT];
     vec3 dir_light_pos = vec3_mulf(rend->directional_light.direction, -4);
 #if 0
     mat4 ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, -20.f, 140.f);
     vec3 pos = rend->cam.pos;
-    light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_normalize(vec3_add(rend->directional_light.direction, dir_light_pos)), v3(0,1,0)));
+    //light_space_matrix = mat4_mul(ortho_proj,look_at(dir_light_pos, vec3_normalize(vec3_add(rend->directional_light.direction, dir_light_pos)), v3(0,1,0)));
+    light_space_matrix[0] = mat4_mul(ortho_proj,mat4_rotate(90.f, v3(1,0,0)));
+
+    sprintf(info_log, "pos:<%.2f %.2f %.2f>", rend->cam.pos.y, rend->cam.pos.y, rend->cam.pos.z);
+#else
+    renderer_calc_cascades(rend, &light_space_matrix[0]);
+#endif
+   /* 
 #else
     f32 n = -0.1f;
-    f32 f = -10.f;
+    f32 f = -100.f;
     f32 fov = 45.f;
 
     f32 aspect_ratio = rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y;
-    f32 tan_half_vfov = tan(to_radians(fov/2.f));
-    f32 tan_half_hfov = tan(to_radians(fov * aspect_ratio/2.f));
-    //we find the extents of the frustum by similar triangle calculations (to get the idea just try to derive it)
-    f32 xn =  n * tan_half_hfov;
+    f32 tan_half_vfov = tanf(to_radians(fov/2.f));
+    f32 tan_half_hfov = tanf(to_radians(fov * aspect_ratio/2.f));
+    //we find the extents of the frustum by trig functions
+    f32 xn = n * tan_half_hfov;
     f32 xf = f * tan_half_hfov;
     f32 yn = n * tan_half_vfov;
     f32 yf = f * tan_half_vfov; 
-                                                    //corners of the near plane (in view space!)
+                                                //corners of the near plane (in view space!)
     vec4 frustum_corners[FRUSTUM_CORNERS_COUNT] = {v4(xn,yn,n, 1.f), v4(-xn, yn, n, 1.f), v4(xn,-yn, n, 1.f), v4(-xn, -yn, n, 1.f),
                                                     //corners of the far plane  (in view space!)
                                                     v4(xf,yf,f, 1.f), v4(-xf, yf, f, 1.f), v4(xf, -yf, f, 1.f), v4(-xf, -yf, f, 1.f)};
+
     //min and max corners (in light space!)
     vec3 min = v3(FLT_MAX, FLT_MAX, FLT_MAX);
     vec3 max = v3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-    mat4 light_matrix= look_at(v3(0,0,0),vec3_normalize(rend->directional_light.direction),v3(0,1,0));
+    //mat4 light_matrix = look_at(v3(0,0,0),vec3_normalize(rend->directional_light.direction),v3(0,1,0));
+    mat4 light_matrix = mat4_rotate(90.f, v3(1,0,0));
     for (u32 i = 0; i < FRUSTUM_CORNERS_COUNT; ++i)
     {
         //we transform the frustum corners from "view" space to __world__ space
@@ -368,7 +436,6 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
         vec4 vertex_world = mat4_mulv(mat4_inv(rend->view), frustum_corners[i]);
         //we transform the frustum corners from world to light space
         frustum_corners[i] = mat4_mulv(light_matrix, vertex_world);
-        //if (i > 0)renderer_push_line(rend, wp, v3(frustum_corners[i-1].x,frustum_corners[i-1].y,frustum_corners[i-1].z), v4(1,1,1,1));
         global_frustum_corners[i] = frustum_corners[i];
         min.x = minimum(min.x, frustum_corners[i].x);
         max.x = maximum(max.x, frustum_corners[i].x);
@@ -385,6 +452,8 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     //ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, -20.f, 40.f);
     light_space_matrix = mat4_mul(ortho_proj,light_matrix);
 #endif
+*/
+
 
     if (!rend->renderer_settings.light_cull)
         renderer_set_light_uniforms(rend, shader);
@@ -404,14 +473,26 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     shader_set_int(&rend->skybox.shader, "skybox", 3);
 
     glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo.depth_attachment);
-    shader_set_int(&shader[0], "shadow_map", 4);
+    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo[0].depth_attachment);
+    shader_set_int(&shader[0], "shadow_map[0]", 4);
+
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo[1].depth_attachment);
+    shader_set_int(&shader[0], "shadow_map[1]", 5);
+
+
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo[2].depth_attachment);
+    shader_set_int(&shader[0], "shadow_map[2]", 6);
+
 
 
     shader_set_mat4fv(&shader[0], "model", (GLfloat*)data.model.elements);
     shader_set_mat4fv(&shader[0], "view", (GLfloat*)rend->view.elements);
     shader_set_mat4fv(&shader[0], "proj", (GLfloat*)rend->proj.elements);
-    shader_set_mat4fv(&shader[0], "light_space_matrix", (GLfloat*)light_space_matrix.elements);
+    shader_set_mat4fv(&shader[0], "light_space_matrix[0]", (GLfloat*)light_space_matrix[0].elements);
+    shader_set_mat4fv(&shader[0], "light_space_matrix[1]", (GLfloat*)light_space_matrix[1].elements);
+    shader_set_mat4fv(&shader[0], "light_space_matrix[2]", (GLfloat*)light_space_matrix[2].elements);
     shader_set_vec3(&shader[0], "view_pos", view_pos);
     //set material properties
     shader_set_float(&shader[0], "material.shininess", data.material->shininess);
@@ -474,10 +555,13 @@ renderer_end_frame(Renderer *rend)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); 
   }
   //first, we render the scene to the depth map
-  fbo_bind(&rend->shadowmap_fbo);
-  //mat4 prev_view = rend->view;
-  //rend->view = mat4_mul(mat4_rotate(to_radians(90.f), v3(-1,0,0)), rend->view);
+  fbo_bind(&rend->shadowmap_fbo[0]);
   renderer_render_scene3D(rend,&rend->shaders[3]);
+  fbo_bind(&rend->shadowmap_fbo[1]);
+  renderer_render_scene3D(rend,&rend->shaders[3]);
+  fbo_bind(&rend->shadowmap_fbo[2]);
+  renderer_render_scene3D(rend,&rend->shaders[3]);
+
   //rend->view = prev_view;
   //second we do an (optional) opaque Z Prepass 
 
@@ -541,7 +625,7 @@ renderer_end_frame(Renderer *rend)
     glBindTexture(GL_TEXTURE_2D, rend->animated_model_instance_data[i].spec.id);
     shader_set_int(&rend->shaders[4], "material.specular", 1);
     glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo.depth_attachment);
+    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo[0].depth_attachment);
     shader_set_int(&rend->shaders[4], "shadow_map", 4);
 
     if (0){

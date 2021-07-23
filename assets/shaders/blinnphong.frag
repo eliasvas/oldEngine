@@ -1,10 +1,12 @@
 #version 330 core
+#define MAX_POINT_LIGHTS 512
+#define CASCADES 3
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 bright_color;
 in vec2 f_tex_coord;
 in vec3 f_frag_pos;
 in vec3 f_normal;
-in vec4 f_frag_pos_ls;
+in vec4 f_frag_pos_ls[CASCADES];
 
 struct Material {
     sampler2D diffuse_map;
@@ -39,13 +41,13 @@ struct VisibleIndex
 {
 	int index;
 };
-#define MAX_POINT_LIGHTS 512
+
 uniform mat4 proj;
 uniform vec3 view_pos;
 uniform Material material;
 uniform DirLight dirlight;
 uniform int point_light_count;
-uniform sampler2D shadow_map;
+uniform sampler2D shadow_map[CASCADES];
 uniform int number_of_tiles_x;
 
 layout(binding = 1, std430) buffer  light_buffer
@@ -60,33 +62,41 @@ float shadow_calc()
 {
 	float bias = 0.005;
 	// perform perspective divide
-    vec3 proj_coords = f_frag_pos_ls.xyz / f_frag_pos_ls.w;
-	if (abs(proj_coords.x) > 1.0 || abs(proj_coords.y) > 1.0)
+    vec3 proj_coords = f_frag_pos_ls[0].xyz / f_frag_pos_ls[0].w;
+	/*
+	if (abs(proj_coords.z) >= 0.99)
 	{
-		return 0;
+		return 1;
 	}
+	*/
     // transform to [0,1] range
     proj_coords = proj_coords * 0.5 + 0.5;
+	//proj_coords.x = clamp(proj_coords.x, 0.0, 1.0);
+	//proj_coords.y = clamp(proj_coords.y, 0.0, 1.0);
+	//proj_coords.z = clamp(proj_coords.z, 0.0, 1.0);
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closest_depth = texture(shadow_map, proj_coords.xy).r; 
+    float closest_depth = texture(shadow_map[0], proj_coords.xy).r; 
     // get depth of current fragment from light's perspective
     float current_depth = proj_coords.z;
     // check whether current frag pos is in shadow
     //float shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
 	
+	
+	/*
 	float shadow = 0.0;
 	vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
 	for(int x = -1; x <= 1; ++x)
 	{
-    for(int y = -1; y <= 1; ++y)
+    for(int y = -1; y <= 1; ++y) 
 		{
 			float pcf_depth = texture(shadow_map, proj_coords.xy + vec2(x, y) * texel_size).r; 
 			shadow += current_depth - bias > pcf_depth ? 1.0 : 0.0;        
 		}    
 	}
 	shadow /= 9.0;
-
-    return 1.0 - shadow;
+	*/
+	float shadow = current_depth - bias < closest_depth ? 1.0 : 0.0; 
+    return shadow;
 }
 
 

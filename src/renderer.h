@@ -87,6 +87,7 @@ typedef struct VisibleIndex
 #define RENDERER_MAX_TEXT 512 
 #define RENDERER_MAX_POINTS 1024
 #define FRUSTUM_CORNERS_COUNT 8
+#define RENDERER_CASCADES_COUNT 3
 
 typedef struct Renderer
 {
@@ -101,7 +102,7 @@ typedef struct Renderer
   OpenGLFBO postproc_fbo;
   OpenGLFBO main_fbo;
   OpenGLFBO ui_fbo;
-  OpenGLFBO shadowmap_fbo;
+  OpenGLFBO shadowmap_fbo[3];
   OpenGLFBO depthpeel_fbo;
   
 
