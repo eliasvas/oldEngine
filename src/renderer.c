@@ -238,7 +238,7 @@ void renderer_calc_cascades(Renderer * rend, mat4 *light_space_matrix)
     f32 near_plane = -0.1f;
     f32 far_plane = -100.f;
     f32 fov = 45.f;
-    f32 cascade_end[4] = {near_plane, -40.f, -50.f, -100.f};
+    f32 cascade_end[4] = {near_plane, -20.f, -50.f, -100.f};
     mat4 ortho_proj[RENDERER_CASCADES_COUNT];
 
     f32 aspect_ratio = rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y;
@@ -271,6 +271,7 @@ void renderer_calc_cascades(Renderer * rend, mat4 *light_space_matrix)
             //we transform the frustum corners from world to light space
             frustum_corners[i] = mat4_mulv(light_matrix, vertex_world);
             global_frustum_corners[i] = frustum_corners[i];
+            //index 0 is the cascade start, we don't want that as a cascade end!
             min.x = minimum(min.x, frustum_corners[i].x);
             max.x = maximum(max.x, frustum_corners[i].x);
             min.y = minimum(min.y, frustum_corners[i].y);
@@ -282,6 +283,13 @@ void renderer_calc_cascades(Renderer * rend, mat4 *light_space_matrix)
 
         mat4 ortho_proj = orthographic_proj(min.x, max.x, min.y,max.y, min.z, max.z);
         light_space_matrix[c] = mat4_mul(ortho_proj,light_matrix);
+
+        //calculating clip space cascade ends!
+        vec4 vview = v4(0,0,cascade_end[c+1],1);
+        //vec4 vclip = mat4_mulv(mat4_mul(rend->proj, rend->view), vview);
+        vec4 vclip = mat4_mulv(rend->proj, vview);
+        //vclip.z /= vclip.w;
+        rend->cascade_ends_clip_space[c] = vclip.z; 
     }
 
 
@@ -445,6 +453,9 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     shader_set_mat4fv(&shader[0], "light_space_matrix[0]", (GLfloat*)rend->lsms[0].elements);
     shader_set_mat4fv(&shader[0], "light_space_matrix[1]", (GLfloat*)rend->lsms[1].elements);
     shader_set_mat4fv(&shader[0], "light_space_matrix[2]", (GLfloat*)rend->lsms[2].elements);
+    shader_set_float(&shader[0], "cascade_ends_clip_space[0]", rend->cascade_ends_clip_space[0]);
+    shader_set_float(&shader[0], "cascade_ends_clip_space[1]", rend->cascade_ends_clip_space[1]);
+    shader_set_float(&shader[0], "cascade_ends_clip_space[2]", rend->cascade_ends_clip_space[2]);
     shader_set_vec3(&shader[0], "view_pos", view_pos);
     //set material properties
     shader_set_float(&shader[0], "material.shininess", data.material->shininess);

@@ -7,7 +7,7 @@ in vec2 f_tex_coord;
 in vec3 f_frag_pos;
 in vec3 f_normal;
 in vec4 f_frag_pos_ls[CASCADES];
-
+in float clip_space_z;
 struct Material {
     sampler2D diffuse_map;
     sampler2D specular_map;
@@ -48,6 +48,7 @@ uniform Material material;
 uniform DirLight dirlight;
 uniform int point_light_count;
 uniform sampler2D shadow_map[CASCADES];
+uniform float cascade_ends_clip_space[CASCADES];
 uniform int number_of_tiles_x;
 
 layout(binding = 1, std430) buffer  light_buffer
@@ -58,11 +59,11 @@ layout(binding = 2, std430) buffer  visible_index_buffer
 { 
 	VisibleIndex light_index[]; 
 };
-float shadow_calc()
+float shadow_calc(int cascade_index)
 {
-	float bias = 0.005;
-	// perform perspective divide
-	int cascade_index = 0;
+	float bias = 0.001;
+	bias = max(0.05 * (1.0 - dot(f_normal, dirlight.direction)), 0.005);  
+	// perform perspective divide (if ortho everything stays the same!)
     vec3 proj_coords = f_frag_pos_ls[cascade_index].xyz / f_frag_pos_ls[cascade_index].w;
 	/*
 	if (abs(proj_coords.z) >= 0.99)
@@ -122,7 +123,18 @@ void main()
 	//float spec = pow(max(dot(V,R),0.0),4);
 	vec3 specular = dirlight.specular * spec * specular_color;
 	
-	float shadow = shadow_calc();
+	int cascade_index;
+	for (int i = 0; i < CASCADES; ++i)
+	{
+		if (clip_space_z < cascade_ends_clip_space[i])
+		{
+			cascade_index = i;
+			diffuse[i] += 0.1f;
+			break;
+		}
+	}
+	
+	float shadow = shadow_calc(cascade_index);
 	
 	vec3 color = (shadow*(specular + diffuse) + ambient);
 

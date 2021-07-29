@@ -8,6 +8,7 @@ out vec2 f_tex_coord;
 out vec3 f_normal;
 out vec3 f_frag_pos;
 out vec4 f_frag_pos_ls[CASCADES];
+out float clip_space_z;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -27,4 +28,5 @@ void main()
 	{
 		f_frag_pos_ls[i] = light_space_matrix[i] * model*vec4(vertex_pos,1.0);
 	}
+	clip_space_z = gl_Position.z ;/// gl_Position.w;
 }
