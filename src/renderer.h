@@ -19,6 +19,7 @@ typedef struct RendererSettings
   b32 z_prepass;
   b32 light_cull;
   b32 debug_mode;
+  b32 cascaded_render;
   //multisampling settings
   //depth peeling settings
 }RendererSettings;
@@ -150,6 +151,9 @@ typedef struct Renderer
   mat4 view;
   mat4 proj;
 
+
+  mat4 active_lsm; //the lsm that is going to be used for rendering the 'current' FBO (depth map)
+  mat4 lsms[RENDERER_CASCADES_COUNT];
   //forward+ stuff
   GLuint light_buffer;
   GLuint visible_light_indices_buffer;
