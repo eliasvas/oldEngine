@@ -13,6 +13,7 @@ flesh out ideas quickly! It is built from scratch, no  external libraries.
 - Immediate Mode UI Library
 - Full 3D Math Library
 - Crude Physics Engine
+- Cascaded Shadow Maps
 
 ## Building
 To build the engine, you need MSVC.  

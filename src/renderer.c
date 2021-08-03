@@ -52,7 +52,7 @@ renderer_init(Renderer *rend)
     rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_COLOR_1| FBO_DEPTH);
     rend->postproc_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 |FBO_COLOR_1| FBO_DEPTH);
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
-    rend->shadowmap_fbo[0] = fbo_init(1024, 1024, FBO_DEPTH);
+    rend->shadowmap_fbo[0] = fbo_init(1024*2, 1024*2, FBO_DEPTH);
     rend->shadowmap_fbo[1] = fbo_init(1024, 1024, FBO_DEPTH);
     rend->shadowmap_fbo[2] = fbo_init(1024, 1024, FBO_DEPTH);
     //rend->depthpeel_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_COLOR_0 | FBO_DEPTH);
@@ -244,7 +244,7 @@ void renderer_calc_cascades(Renderer * rend, mat4 *light_space_matrix)
     f32 aspect_ratio = rend->renderer_settings.render_dim.x / (f32)rend->renderer_settings.render_dim.y;
     f32 tan_half_vfov = tanf(to_radians(fov/2.f));
     f32 tan_half_hfov = tanf(to_radians(fov * aspect_ratio/2.f));
-    mat4 light_matrix = mat4_rotate(90.f, v3(1,0,0));
+    mat4 light_matrix = mat4_rotate(70.f, vec3_normalize(v3(1,0.2,0.2)));
     //we find the extents of the frustum by trig functions
     for (u32 c = 0; c < RENDERER_CASCADES_COUNT; ++c)
     {
@@ -281,13 +281,16 @@ void renderer_calc_cascades(Renderer * rend, mat4 *light_space_matrix)
         }
         //sprintf(info_log, "[FRUSTUM]min:<%.2f %.2f %.2f>, max:<%.2f %.2f %.2f>", min.x, min.y, min.z, max.x, max.y, max.z);
 
-        mat4 ortho_proj = orthographic_proj(min.x, max.x, min.y,max.y, min.z, max.z);
+        //mat4 ortho_proj = orthographic_proj(min.x, max.x, min.y,max.y, min.z, max.z);
+        mat4 ortho_proj = orthographic_proj(-50,50,-50,50,-50, 50);
         light_space_matrix[c] = mat4_mul(ortho_proj,light_matrix);
 
         //calculating clip space cascade ends!
         vec4 vview = v4(0,0,cascade_end[c+1],1);
         //vec4 vclip = mat4_mulv(mat4_mul(rend->proj, rend->view), vview);
         vec4 vclip = mat4_mulv(rend->proj, vview);
+
+    //mat4 light_matrix = mat4_rotate(80.f, vec3_normalize(v3(1,0.2,0)));
         //vclip.z /= vclip.w;
         rend->cascade_ends_clip_space[c] = vclip.z; 
     }
@@ -631,7 +634,7 @@ renderer_end_frame(Renderer *rend)
     mat4 inv_view = mat4_inv(rend->view);
     vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
     shader_set_vec3(&rend->shaders[4], "view_pos", view_pos); 
-    mat4 ortho_proj = orthographic_proj(-200.f, 200.f, -200.f, 200.f, 0.01f, 200.f);
+    //mat4 ortho_proj = orthographic_proj(-200.f, 200.f, -200.f, 200.f, 0.01f, 200.f);
     //mat4 light_space_matrix = mat4_mul(ortho_proj,look_at(v3(0,100,0), v3(10,0,0), v3(0,1,0)));
     //shader_set_mat4fv(&rend->shaders[4], "light_space_matrix", (GLfloat*)light_space_matrix.elements);
 
@@ -853,6 +856,7 @@ void renderer_push_quad_wireframe(Renderer *rend, vec3 v0, vec3 v1, vec3 v2, vec
 void renderer_push_point(Renderer *rend, RendererPointData point)
 {
     rend->point_instance_data[rend->point_alloc_pos++] = point;
+
 }
 
 
