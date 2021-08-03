@@ -29,6 +29,7 @@ typedef struct RendererPointData
     vec3 pos;
     vec4 color;
 }RendererPointData;
+
 typedef struct RendererModelData
 {
   mat4 model;
@@ -45,6 +46,13 @@ typedef struct RendererFilledRect
     vec2 dim; //width and height of rect
     vec4 color;
 }RendererFilledRect;
+
+typedef struct RendererBillboard
+{
+    vec3 center;
+    vec4 color;
+    //maybe add texture info later :)
+}RendererBillboard;
 
 typedef struct RendererLine
 {
@@ -80,6 +88,7 @@ typedef struct VisibleIndex
 
 
 #define RENDERER_MAX_SHADERS 256
+#define RENDERER_MAX_BILLBOARDS 1024 
 #define RENDERER_MAX_POINT_LIGHTS 1024 
 #define RENDERER_BYTES_PER_MODEL sizeof(RendererModelData)
 #define RENDERER_MAX_MODELS 256
@@ -89,6 +98,13 @@ typedef struct VisibleIndex
 #define RENDERER_MAX_POINTS 1024
 #define FRUSTUM_CORNERS_COUNT 8
 #define RENDERER_CASCADES_COUNT 3
+
+internal f32 billboard_data[] = {
+    -0.5f, -0.5f, 0.0f,
+    0.5f, -0.5f, 0.0f,
+    -0.5f, 0.5f, 0.0f,
+    0.5f, 0.5f, 0.0f,
+};
 
 typedef struct Renderer
 {
@@ -116,6 +132,12 @@ typedef struct Renderer
   GLuint filled_rect_instance_vbo;
   RendererFilledRect filled_rect_instance_data[RENDERER_MAX_RECTS];
   u32 filled_rect_alloc_pos;
+
+  GLuint billboard_vao;
+  GLuint billboard_instance_vbo;
+  RendererBillboard billboard_instance_data[RENDERER_MAX_BILLBOARDS];
+  u32 billboard_alloc_pos;
+
   
   GLuint point_vao;
   GLuint point_vbo;
@@ -175,4 +197,6 @@ renderer_end_frame(Renderer *rend);
 void renderer_push_line(Renderer *rend, vec3 start, vec3 end, vec4 color);
 
 void renderer_push_model(Renderer *rend, Model *m);
+
+void renderer_push_billboard(Renderer *rend, vec3 center, vec4 color);
 #endif

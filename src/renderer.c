@@ -166,6 +166,28 @@ renderer_init(Renderer *rend)
         glVertexAttribDivisor(2,1);
         glVertexAttribDivisor(3,1);
     }
+    //initialize billboard vao
+    {
+        GLuint vbo;
+        glGenVertexArrays(1, &rend->billboard_vao);
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &rend->billboard_instance_vbo);
+        glBindVertexArray(rend->billboard_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(billboard_data), &billboard_data[0], GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0,3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        //this buffer should be updated with the contents of billboard instance data before rendering
+        glBindBuffer(GL_ARRAY_BUFFER, rend->billboard_instance_vbo);
+        glVertexAttribPointer(1,3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(0 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2,4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(3 * sizeof(float)));
+        glVertexAttribDivisor(1,1);
+        glVertexAttribDivisor(2,1);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
 
     //initialize forward+ buffers (if forward+ is ok)
     if (1)//rend->renderer_settings.light_cull)
@@ -214,6 +236,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[11],"../assets/shaders/point.vert","../assets/shaders/point.frag");
     shader_load_full(&rend->shaders[12], "../assets/shaders/phong33.vert", "../assets/shaders/red.frag","../assets/shaders/normal_vis.geo");
     shader_load(&rend->shaders[13],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
+    shader_load(&rend->shaders[14],"../assets/shaders/billboard.vert","../assets/shaders/billboard.frag");
 
 
     //misc
@@ -344,6 +367,7 @@ renderer_begin_frame(Renderer *rend)
   rend->line_alloc_pos = 0;
   rend->point_light_count = 0;
   rend->text_alloc_pos = 0;
+  rend->billboard_alloc_pos = 0;
 
   //update the camera stuff
   camera_update(&rend->cam);
@@ -546,9 +570,13 @@ renderer_end_frame(Renderer *rend)
   //update instance data for text 
   glBindBuffer(GL_ARRAY_BUFFER, rend->text_instance_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererChar) * rend->text_alloc_pos, &rend->text_instance_data[0], GL_DYNAMIC_DRAW);
-  //update point nstance data
+  //update point instance data
   glBindBuffer(GL_ARRAY_BUFFER, rend->point_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererPointData) * rend->point_alloc_pos, &rend->point_instance_data[0], GL_DYNAMIC_DRAW);
+  //update point instance data
+  glBindBuffer(GL_ARRAY_BUFFER, rend->billboard_instance_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(RendererBillboard) * rend->billboard_alloc_pos, &rend->billboard_instance_data[0], GL_DYNAMIC_DRAW);
+
 
   //calculate cascades for the RENDERER_CASCADES_COUNT shadow maps! 
   renderer_calc_cascades(rend, rend->lsms);
@@ -667,6 +695,17 @@ renderer_end_frame(Renderer *rend)
    glDrawArraysInstanced(GL_POINTS, 0, 1, rend->point_alloc_pos);
    glBindVertexArray(0);
 
+    //render billboards 
+    use_shader(&rend->shaders[14]);
+    shader_set_mat4fv(&rend->shaders[14], "view", (GLfloat*)rend->view.elements);
+    shader_set_mat4fv(&rend->shaders[14], "proj", (GLfloat*)rend->proj.elements);
+    shader_set_vec3(&rend->shaders[14], "cam_up", v3(rend->view.elements[0][0],rend->view.elements[1][0],rend->view.elements[2][0]));
+    shader_set_vec3(&rend->shaders[14], "cam_right", v3(rend->view.elements[0][1],rend->view.elements[1][1],rend->view.elements[2][1]));
+    glBindVertexArray(rend->billboard_vao);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, rend->billboard_alloc_pos);
+    glBindVertexArray(0);
+
+
 
    //if we are in debug mode, draw model normals!!
       
@@ -719,6 +758,8 @@ renderer_end_frame(Renderer *rend)
     glBindVertexArray(rend->filled_rect_vao);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, rend->filled_rect_alloc_pos);
     glBindVertexArray(0);
+  
+
 
 
   //at the end we render the skybox
@@ -859,4 +900,11 @@ void renderer_push_point(Renderer *rend, RendererPointData point)
 
 }
 
+void renderer_push_billboard(Renderer *rend, vec3 center, vec4 color)
+{
+    RendererBillboard b;
+    b.center = center;
+    b.color = color;
+    rend->billboard_instance_data[rend->billboard_alloc_pos++] = b;
+}
 

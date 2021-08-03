@@ -82,6 +82,8 @@ update(void)
   else if (global_platform.key_pressed[KEY_O])
     scene_init("../assets/scene.txt", &entity_manager);
 
+  renderer_push_billboard(&rend, v3(0,10,0), v4(1,0,1,1));
+
  }
 
 internal void 
