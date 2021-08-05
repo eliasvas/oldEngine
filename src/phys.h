@@ -146,6 +146,19 @@ typedef struct Manifold
     vec3 normal;
 }Manifold;
 
+internal void positional_correction(Manifold *m)
+{
+  f32 percent = 0.8f; // usually 20% to 80%
+  vec3 correction = vec3_mulf(vec3_divf(m->normal, 1.f), m->penetration / (m->A->mass_data.inv_mass + m->B->mass_data.inv_mass) * percent);
+  m->A->transform.elements[3][0] -= m->A->mass_data.inv_mass * correction.x;
+  m->A->transform.elements[3][1] -= m->A->mass_data.inv_mass * correction.y;
+  m->A->transform.elements[3][2] -= m->A->mass_data.inv_mass * correction.z;
+  m->B->transform.elements[3][0] += m->B->mass_data.inv_mass * correction.x;
+  m->B->transform.elements[3][1] += m->B->mass_data.inv_mass * correction.y;
+  m->B->transform.elements[3][2] += m->B->mass_data.inv_mass * correction.z;
+  
+}
+
 internal b32 test_aabb_aabb_manifold(Manifold *m)
 {
   // Setup a couple pointers to each object
@@ -224,6 +237,8 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
 }
 internal void resolve_collision(Manifold *m)
 {
+  //positional_correction(m);
+
   SimplePhysicsBody *A = m->A;
   SimplePhysicsBody *B = m->B;
  
@@ -295,18 +310,6 @@ get_ray_dir(vec2 screen_coords,f32 ww, f32 wh, mat4 view, mat4 proj)
     vec3 dir = vec3_normalize(v3(ray_world.x,ray_world.y,ray_world.z));
 } 
 
-internal void positional_correction(Manifold *m)
-{
-  f32 percent = 0.2f; // usually 20% to 80%
-  vec3 correction = vec3_mulf(m->normal, m->penetration / (m->A->mass_data.inv_mass + m->B->mass_data.inv_mass) * percent);
-  m->A->transform.elements[3][0] -= m->A->mass_data.inv_mass * correction.x;
-  m->A->transform.elements[3][1] -= m->A->mass_data.inv_mass * correction.y;
-  m->A->transform.elements[3][2] -= m->A->mass_data.inv_mass * correction.z;
-  m->B->transform.elements[3][0] += m->B->mass_data.inv_mass * correction.x;
-  m->B->transform.elements[3][1] += m->B->mass_data.inv_mass * correction.y;
-  m->B->transform.elements[3][2] += m->B->mass_data.inv_mass * correction.z;
-  
-}
 typedef struct SimplePhysicsBodyPair
 {
     SimplePhysicsBody *A;

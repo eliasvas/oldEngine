@@ -298,8 +298,9 @@ internal void simworld_simulate(SimulationWorld *manager)
         
     }
     //TODO here do the test intersections!!
-    //insertion_sort_pairs(manager->pairs, manager->pairs_count);
-    //manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
+    insertion_sort_pairs(manager->pairs, manager->pairs_count);
+    manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
+    sprintf(info_log, "number of pairs %i", manager->pairs_count);
     resolve_collisions(manager);
 }
 internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
