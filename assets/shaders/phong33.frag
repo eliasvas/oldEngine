@@ -76,7 +76,8 @@ float shadow_calc()
 
 void main()
 {
-
+	FragColor = texture(material.diffuse_map, f_tex_coord);
+	return;
 	vec3 ambient = dirlight.ambient * vec3(texture(material.diffuse_map,f_tex_coord));
 	
 	vec3 n = normalize(f_normal);

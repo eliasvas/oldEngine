@@ -63,7 +63,7 @@ float shadow_calc(int cascade_index)
 {
 	float bias = 0.005;
 	cascade_index = 0;
-	//bias = max(0.05 * (1.0 - dot(f_normal, dirlight.direction)), 0.005);  
+	bias = max(0.05 * (1.0 - dot(f_normal, dirlight.direction)), 0.005);  
 	// perform perspective divide (if ortho everything stays the same!)
     vec3 proj_coords = f_frag_pos_ls[cascade_index].xyz / f_frag_pos_ls[cascade_index].w;
 	/*

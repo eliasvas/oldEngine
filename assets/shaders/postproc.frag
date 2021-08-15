@@ -1,5 +1,5 @@
 #version 330 core
-layout (location = 0) out vec4 FragColor;
+layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 blurred_tex; //just for debugging
 in vec2 TexCoords;
 
@@ -28,23 +28,23 @@ void main()
 
 
 	float offset = 1.0 / textureSize(brightTexture, 0).x;
-	FragColor = texture(screenTexture, TexCoords);
+	frag_color = texture(screenTexture, TexCoords);
 	vec3 blurred;
 	for(int i = 1; i < 5; ++i)
     {
        blurred += texture(brightTexture, TexCoords + vec2(offset.x * i, 0.0)).rgb * weight[i];
        blurred += texture(brightTexture, TexCoords - vec2(offset.x * i, 0.0)).rgb * weight[i];
     }
-	
-	FragColor.rgb += blurred;
+	/*
+	frag_color.rgb += blurred;
 	
 	
 
 	float gamma = 2.2;
 	float exposure = 1.0;
-	FragColor.rgb = vec3(1.0) - exp(-FragColor.rgb * exposure);
-	FragColor = vec4(pow(FragColor.xyz, vec3(1.0/gamma)), 1.0);
-	
+	frag_color.rgb = vec3(1.0) - exp(-frag_color.rgb * exposure);
+	frag_color = vec4(pow(frag_color.xyz, vec3(1.0/gamma)), 1.0);
+	*/
 	
 	
 	
@@ -54,7 +54,7 @@ void main()
 	
 	
     
-	//FragColor = vec4(KernelColor, 1);
+	//frag_color = vec4(KernelColor, 1);
 	gl_FragDepth = linearize_depth(max(0.05,texture(depthTexture, TexCoords).x));
 }
 

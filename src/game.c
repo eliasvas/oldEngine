@@ -66,7 +66,7 @@ init(void)
         co = ALLOC(sizeof(Coroutine));
         coroutine_init(co);
     }
-    particle_emitter_init(&pe, v3(0,2,2));
+    particle_emitter_init(&pe, v3(0,2,50));
 }
 
 

@@ -422,7 +422,7 @@ internal MeshInfo *obj_read(char *objpath, Material *materials)
             vertices[vertex_index++] = to_add;
             to_add = vert(positions[positions_index[1]-1], normals[normals_index[1]-1], tex_coords[uvs_index[1]-1]);
             vertices[vertex_index++] = to_add;
-            to_add = vert(positions[positions_index[2]-1], normals[normals_index[2]], tex_coords[uvs_index[2]-1]);
+            to_add = vert(positions[positions_index[2]-1], normals[normals_index[2] - 1], tex_coords[uvs_index[2]-1]);
             vertices[vertex_index++] = to_add;
     }else if (strcmp(line, "usemtl") == 0)
     {
