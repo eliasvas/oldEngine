@@ -63,7 +63,7 @@ renderer_init(Renderer *rend)
 
     rend->default_material = material_default();
 
-    rend->directional_light = (DirLight){v3(-0.3,-0.7,-0.3),v3(0.2,0.2,0.1),v3(0.8,0.8,0.8),v3(0.6f,0.6f,0.6f)};
+    rend->directional_light = (DirLight){v3(-0.3,-0.7,-0.3),v3(0.2,0.2,0.1),v3(0.6,0.6,0.6),v3(0.6f,0.6f,0.6f)};
     rend->point_light_count = 0;
 
     char **faces= cubemap_default();
@@ -180,11 +180,14 @@ renderer_init(Renderer *rend)
         glEnableVertexAttribArray(1);
         //this buffer should be updated with the contents of billboard instance data before rendering
         glBindBuffer(GL_ARRAY_BUFFER, rend->billboard_instance_vbo);
-        glVertexAttribPointer(1,3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(0 * sizeof(float)));
+        glVertexAttribPointer(1,3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(0 * sizeof(float)));
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2,4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void *)(3 * sizeof(float)));
+        glVertexAttribPointer(2,4, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(3 * sizeof(float)));
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3,2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(7 * sizeof(float)));
         glVertexAttribDivisor(1,1);
         glVertexAttribDivisor(2,1);
+        glVertexAttribDivisor(3,1);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
@@ -884,6 +887,40 @@ void renderer_push_cube_wireframe(Renderer *rend, vec3 min, vec3 max)
     renderer_push_line(rend, v3(max.x,max.y,min.z), v3(max.x,min.y,min.z), v4(0.9,0.2,0.2,1.f));
     renderer_push_line(rend, v3(max.x,min.y,min.z),v3(max.x,min.y,max.z), v4(0.9,0.2,0.2,1.f));
 }
+
+//                                              obb center   rot bases  halfwidths 
+void renderer_push_obb_wireframe(Renderer *rend, vec3 center, f32 *u, vec3 e)
+{
+    mat4 rotation_matrix = m4d(1.f);
+    u32 base_index= 0;
+
+    for (u32 i = 0; i < 3; ++i)
+        for (u32 j = 0; j < 3; ++j)
+            rotation_matrix.elements[i][j] = u[base_index++];
+
+    vec3 verts[30] = {
+        v3(e.x,-e.y,-e.z), v3(e.x,e.y,-e.z), v3(e.x,e.y,e.z), v3(e.x,-e.y,e.z),v3(e.x,-e.y,-e.z),
+        v3(-e.x,-e.y,-e.z), v3(-e.x,e.y,-e.z), v3(-e.x,e.y,e.z), v3(-e.x,-e.y,e.z),v3(-e.x,-e.y,-e.z),
+
+        v3(-e.x,e.y,-e.z), v3(e.x,e.y,-e.z), v3(e.x,e.y,e.z), v3(-e.x,e.y,e.z),v3(-e.x,e.y,-e.z),
+        v3(-e.x,-e.y,-e.z), v3(e.x,-e.y,-e.z), v3(e.x,-e.y,e.z), v3(-e.x,-e.y,e.z),v3(-e.x,-e.y,-e.z),
+
+        v3(-e.x,-e.y,e.z), v3(e.x,-e.y,e.z), v3(e.x,e.y,e.z), v3(-e.x,e.y,e.z),v3(-e.x,-e.y,e.z),
+        v3(-e.x,-e.y,-e.z), v3(e.x,-e.y,-e.z), v3(e.x,e.y,-e.z), v3(-e.x,e.y,-e.z),v3(-e.x,-e.y,-e.z),
+    };
+    for (u32 i = 0; i < 30; ++i)
+    {
+        vec4 local_pos = v4(verts[i].x, verts[i].y, verts[i].z,1.f);
+        vec4 rotated_local_pos = mat4_mulv(rotation_matrix, local_pos);
+        vec3 global_pos = vec3_add(center, v3(rotated_local_pos.x, rotated_local_pos.y, rotated_local_pos.z));
+        verts[i] = global_pos;
+    }
+    for (u32 i = 1; i < 30; ++i)
+    {
+        renderer_push_line(rend, verts[i-1], verts[i], v4(0.2,0.4,0.6,1.f));
+    }
+}
+
 void renderer_push_quad_wireframe(Renderer *rend, vec3 v0, vec3 v1, vec3 v2, vec3 v3)
 {
     renderer_push_line(rend, v0, v1, v4(0.8,0.2,0.2,1.f));
@@ -905,6 +942,7 @@ void renderer_push_billboard(Renderer *rend, vec3 center, vec4 color)
     RendererBillboard b;
     b.center = center;
     b.color = color;
+    b.dim = v2(0.05, 0.05);
     rend->billboard_instance_data[rend->billboard_alloc_pos++] = b;
 }
 

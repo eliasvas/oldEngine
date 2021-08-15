@@ -157,7 +157,7 @@ typedef struct SimulationWorld
 
 
 
-    SimplePhysicsBodyPair pairs[1000];
+    SimplePhysicsBodyPair pairs[1024];
     u32 pairs_count;
 
     b32 gravity_active;
@@ -234,11 +234,13 @@ internal void resolve_collisions(SimulationWorld *manager)
     {
         m.A = manager->pairs[i].A;
         m.B = manager->pairs[i].B;
-        //positional_correction(&m);
         if (test_aabb_aabb_manifold(&m))
+        {
             resolve_collision(&m);
+            positional_correction(&m);
+        }
 
-        manager->bodies[i].velocity= vec3_divf(manager->bodies[i].velocity, 1.005f);
+        //manager->bodies[i].velocity= vec3_divf(manager->bodies[i].velocity, 1.005f);
     }
 
 }
@@ -275,21 +277,20 @@ internal void simworld_simulate(SimulationWorld *manager)
     for (u32 i = 0; i < manager->next_index; ++i)
     {
         SimplePhysicsBody *pb = &manager->bodies[i];
-        pb->force = v3(0,0,0);
-        mat4 model =pb->transform;
-        //pb->transform = mat4_translate(v3(model.elements[3][0], model.elements[3][1], model.elements[3][2]));
+
+        //find collider min/max
         vec3 offset = vec3_sub(pb->collider.box.max, pb->collider.box.min);
-        pb->collider.box.min = v3(model.elements[3][0] - offset.x/2, model.elements[3][1] - offset.y/2, model.elements[3][2] - offset.z/2);
+        pb->collider.box.min = v3(pb->position.x - offset.x/2, pb->position.y - offset.y/2, pb->position.z - offset.z/2);
         pb->collider.box.max = vec3_add(pb->collider.box.min , offset);
-        if (!equalf(pb->mass_data.inv_mass, 0, 0.001))
-            pb->velocity.y -= pb->gravity_scale * global_platform.dt;
+        //integrate forces!
+        pb->velocity = vec3_add(pb->velocity, vec3_mulf(vec3_add(vec3_mulf(v3(0,pb->gravity_scale, 0), -100.f), vec3_mulf(pb->force, pb->mass_data.inv_mass)), global_platform.dt));
+        pb->force = v3(0,0,0);
     }
+    //broad phase collision detection
     for (u32 i = 0; i < manager->next_index; ++i)
     {
-        for (u32 j = 0; j < manager->next_index; ++j)
+        for (u32 j = i + 1; j < manager->next_index; ++j)
         {
-            SimplePhysicsBodyComponent *pb = &manager->bodies[i];
-            if (i == j)continue;
             m.A = &manager->bodies[i];
             m.B = &manager->bodies[j];
             if (test_aabb_aabb_manifold(&m))
@@ -297,12 +298,20 @@ internal void simworld_simulate(SimulationWorld *manager)
         }
         
     }
-    //TODO here do the test intersections!!
+    //sort broad phase pairs and cull dupes
     insertion_sort_pairs(manager->pairs, manager->pairs_count);
     manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
+    //integrate velocity
+    for (u32 i = 0; i < manager->next_index; ++i)
+    {
+        SimplePhysicsBodyComponent *pb = &manager->bodies[i];
+        pb->position = vec3_add(pb->position, vec3_mulf(pb->velocity, global_platform.dt));
+    }
     sprintf(info_log, "number of pairs %i", manager->pairs_count);
     resolve_collisions(manager);
 }
+
+
 internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
 {
 
@@ -311,8 +320,7 @@ internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
     for (u32 i = 0; i < manager->next_index; ++i)
     {
         SimplePhysicsBody *pb = &manager->bodies[i];
-        mat4 model = manager->bodies[i].transform;
-        vec3 pos = v3(model.elements[3][0], model.elements[3][1], model.elements[3][2]);
+        vec3 pos = v3(pb->position.x, pb->position.y, pb->position.z);
         i32 collision = intersect_ray_sphere_simple(r, (Sphere){pos, 0.5});
         if (collision && global_platform.right_mouse_down || last_entity_pressed == i)
         {
@@ -320,8 +328,8 @@ internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
             last_entity_pressed = i;
             vec3 right = vec3_normalize(vec3_cross(rend->cam.front,rend->cam.up));
             vec3 up = vec3_normalize(rend->cam.up);
-            pb->velocity.x += vec3_mulf(right, ((-1.f)*(f32)global_platform.mouse_dt.x / global_platform.window_width)).x;
-            pb->velocity.y += vec3_mulf(up,((f32)1.f * global_platform.mouse_dt.y / global_platform.window_height)).y;
+            pb->force.x += vec3_mulf(right, 10000 * ((-1.f)*(f32)global_platform.mouse_dt.x / global_platform.window_width)).x;
+            pb->force.y += vec3_mulf(up,10000 * ((f32)1.f * global_platform.mouse_dt.y / global_platform.window_height)).y;
             //sprintf(error_log, "collision detected!!");
         }
         else if (global_platform.right_mouse_down && last_entity_pressed == i) {
@@ -345,16 +353,11 @@ entity_manager_update(EntityManager *manager, Renderer *rend)
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
     {
         SimplePhysicsBody *current = manager->model_manager.models[i].physics_body;
-        //current->force = vec3_mulf(current->force, global_platform.dt);
-        //current->velocity = vec3_add(current->velocity, vec3_mulf(current->force,global_platform.dt));
-        vec3 transform = current->velocity; //*dt???
-        current->transform.elements[3][0] += transform.x;
-        current->transform.elements[3][1] += transform.y;
-        current->transform.elements[3][2] += transform.z;
+        if (current == NULL)continue;
         //update the _model's_ position
-        manager->model_manager.models[i].model.elements[3][0] = current->transform.elements[3][0];
-        manager->model_manager.models[i].model.elements[3][1] = current->transform.elements[3][1];
-        manager->model_manager.models[i].model.elements[3][2] = current->transform.elements[3][2];
+        manager->model_manager.models[i].model.elements[3][0] = current->position.x;
+        manager->model_manager.models[i].model.elements[3][1] = current->position.y;
+        manager->model_manager.models[i].model.elements[3][2] = current->position.z;
 
     }
 }
@@ -371,7 +374,7 @@ entity_manager_render(EntityManager *manager, Renderer *rend)
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
     {
         renderer_push_model(rend, &manager->model_manager.models[i]);
-        renderer_push_cube_wireframe(rend, manager->model_manager.models[i].physics_body->collider.box.min,manager->model_manager.models[i].physics_body->collider.box.max);
+        //renderer_push_cube_wireframe(rend, manager->model_manager.models[i].physics_body->collider.box.min,manager->model_manager.models[i].physics_body->collider.box.max);
     }
 }
 
@@ -418,10 +421,11 @@ void scene_init(char *filepath, EntityManager * manager)
             m->physics_body->collider = simple_collider_init(pos,scale);
             m->physics_body->gravity_scale = 1.f;
 
-            m->physics_body->transform = mat4_mul(mat4_translate(pos), mat4_mul(mat4_rotate(0.0, v3(1,1,0)), mat4_scale(scale)));
+            m->physics_body->position = pos;
             if (scale.x * scale.y * scale.z > 5.f)
             {
                 m->physics_body->mass_data = mass_data_init(0.f);
+                m->physics_body->gravity_scale = 0.f;
             }
             else
             {
@@ -440,7 +444,7 @@ void scene_init(char *filepath, EntityManager * manager)
             *(m->physics_body) = simple_physics_body_default();
             m->physics_body->collider = simple_collider_default();
             m->physics_body->gravity_scale = 0.f;
-            m->physics_body->transform= mat4_mul(mat4_translate(pos), mat4_scale(scale));
+            m->physics_body->position = pos;
             //sprintf(error_log, "sphere done");
         }
         else

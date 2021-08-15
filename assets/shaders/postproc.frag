@@ -25,29 +25,34 @@ float linearize_depth(float d)
 
 void main()
 {
-    //FragColor = texture(screenTexture, TexCoords);
-	//FragColor = FragColor * (1 - flag) + vec4(vec3(1.0 - texture(screenTexture, TexCoords)), 1.0)* (flag);
-	//enable this ^^^^^^ to get negative color
+
+
 	float offset = 1.0 / textureSize(brightTexture, 0).x;
 	FragColor = texture(screenTexture, TexCoords);
-
-//	/*
 	vec3 blurred;
-	for(int i = 1; i < 8; ++i)
+	for(int i = 1; i < 5; ++i)
     {
        blurred += texture(brightTexture, TexCoords + vec2(offset.x * i, 0.0)).rgb * weight[i];
        blurred += texture(brightTexture, TexCoords - vec2(offset.x * i, 0.0)).rgb * weight[i];
     }
+	
+	FragColor.rgb += blurred;
+	
+	
 
-	float exposure = 2.0;
 	float gamma = 2.2;
-	blurred_tex = vec4(blurred,1.0);
-	//FragColor += vec4(blurred,1.0);
-	// reinhard tone mapping
-    vec3 mapped = vec3(1.0) - exp(-FragColor.rgb * exposure);
-    // gamma correction 
-    FragColor = vec4(pow(mapped, vec3(gamma)), 1.0); //1.0 / gamma if SRGB??
-//	*/
+	float exposure = 1.0;
+	FragColor.rgb = vec3(1.0) - exp(-FragColor.rgb * exposure);
+	FragColor = vec4(pow(FragColor.xyz, vec3(1.0/gamma)), 1.0);
+	
+	
+	
+	
+	
+	
+	
+	
+	
     
 	//FragColor = vec4(KernelColor, 1);
 	gl_FragDepth = linearize_depth(max(0.05,texture(depthTexture, TexCoords).x));

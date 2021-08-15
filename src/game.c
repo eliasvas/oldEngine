@@ -13,6 +13,7 @@
 #include "entity.h"
 #include "dui.h"
 #include "net.h"
+#include "particle_system.h"
 mat4 view,proj;
 
 global Model debug_cube;
@@ -28,6 +29,7 @@ global b32 UI_OPEN;
 global EntityManager entity_manager;
 
 
+global ParticleEmitter pe;
 /*
  Engine TODO:
     -Fix Bloom effects
@@ -42,8 +44,6 @@ global EntityManager entity_manager;
     -2D sprites (projected in 3d space) w/animations
     -Make the engine a LIB file
     -Collada Parser Overhaul
-GAME IDEA: we could have a cube moving through scenes of cubes just by "rotating" gravity on all 
-axes (given that the physics engine is ok), it will always go forward and you will be able to shift gravity by arrow keys!!
 */
 internal void 
 init(void)
@@ -66,6 +66,7 @@ init(void)
         co = ALLOC(sizeof(Coroutine));
         coroutine_init(co);
     }
+    particle_emitter_init(&pe, v3(0,2,2));
 }
 
 
@@ -73,16 +74,19 @@ init(void)
 internal void 
 update(void)
 {
-  entity_manager_update(&entity_manager, &rend);
-  animation_controller_update(&ac);
-  renderer_begin_frame(&rend);
-  rend.cam.can_rotate = !UI_OPEN;
-  if (global_platform.key_pressed[KEY_P])
-    scene_init("../assets/scene_big.txt", &entity_manager);
-  else if (global_platform.key_pressed[KEY_O])
-    scene_init("../assets/scene.txt", &entity_manager);
+    entity_manager_update(&entity_manager, &rend);
+    animation_controller_update(&ac);
+    renderer_begin_frame(&rend);
+    rend.cam.can_rotate = !UI_OPEN;
+    if (global_platform.key_pressed[KEY_1])
+        scene_init("../assets/scene.txt", &entity_manager);
+    else if (global_platform.key_pressed[KEY_2])
+        scene_init("../assets/scene_big.txt", &entity_manager);
+    else if (global_platform.key_pressed[KEY_3])
+        scene_init("../assets/scene2.txt", &entity_manager);
 
-  renderer_push_billboard(&rend, v3(0,10,0), v4(1,0,1,1));
+    //renderer_push_billboard(&rend, v3(0,10,0), v4(1,0,1,1));
+    particle_emitter_simulate(&pe);
 
  }
 
@@ -102,6 +106,25 @@ render(void)
         //renderer_push_point_light(&rend,pl);
         //renderer_push_point(&rend, pl.position, v4(1,1,1,1));
     }
+
+    //NOTE: obb rendering test
+    {
+
+        mat4 rotation_matrix = mat4_rotate(360.f * sin(global_platform.current_time), v3(0.22 * sin(global_platform.current_time * 1.23),1,0.2 * sin(global_platform.current_time * 3.2f)));
+        vec3 axes[9] = {
+            rotation_matrix.elements[0][0],rotation_matrix.elements[0][1],rotation_matrix.elements[0][2],
+            rotation_matrix.elements[1][0],rotation_matrix.elements[1][1],rotation_matrix.elements[1][2],
+            rotation_matrix.elements[2][0],rotation_matrix.elements[2][1],rotation_matrix.elements[2][2]
+        };
+        vec3 center = v3(2,5,3);
+        vec3 hw = v3(0.3f,0.3f,0.3f);
+        renderer_push_obb_wireframe(&rend, center, (f32*)axes, hw);
+        OBB test_obb = obb_init(center, axes, hw);
+        AABB bounding_box = obb_to_aabb(test_obb);
+        renderer_push_cube_wireframe(&rend, bounding_box.min, bounding_box.max);
+    }
+
+    particle_emitter_render(&pe, &rend);
     dui_frame_begin();
 
     //UI bullshit..

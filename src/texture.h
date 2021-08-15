@@ -28,7 +28,7 @@ internal b32 texture_load(Texture* tex,const char *filename)
     TGAInfo *image = tga_load(filename);
     if (image && image->status == TGA_OK)
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->width, image->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->image_data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, image->width, image->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->image_data);
         glGenerateMipmap(GL_TEXTURE_2D);
         result = 1;
     }else

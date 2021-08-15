@@ -41,13 +41,29 @@ internal Sphere sphere_init(vec3 pos, f32 rad)
     return (Sphere){pos, rad};
 }
 
+typedef struct OBB 
+{
+    vec3 center;
+    vec3 u[3]; //local axes
+    vec3 e; //halfwidths along those axes
+}OBB;
+
+internal OBB obb_init(vec3 center, f32 *u, vec3 e)
+{
+    OBB obb;
+    obb.center = center;
+    obb.e = e;
+    for (u32 i = 0; i < 9; ++i)
+        ((f32*)obb.u)[i] = u[i];
+    return obb;
+}
 
 typedef enum ColliderType
 {
    BOX = 1,
    SPHERE = 2,
    TRIANGLE = 3,
-   OBB = 4,
+   ORIENTED_COUNDED_BOX= 4,
    MAX_COLLIDER_TYPES, 
 }ColliderType;
 typedef struct SimpleCollider
@@ -56,6 +72,7 @@ typedef struct SimpleCollider
     {
         AABB box;
         Sphere s;
+        OBB obb;
     };
     ColliderType type;
 }SimpleCollider;
@@ -117,9 +134,9 @@ internal PhysicsMaterial physics_material_init(f32 d, f32 r)
 typedef struct SimplePhysicsBody
 {
     SimpleCollider collider; //TODO: this better be a pointer
-    mat4 transform;
     MassData mass_data;
     PhysicsMaterial mat;
+    vec3 position;
     vec3 velocity;
     vec3 force;
     f32 gravity_scale;
@@ -128,9 +145,9 @@ typedef struct SimplePhysicsBody
 internal SimplePhysicsBody simple_physics_body_default(void)
 {
     SimplePhysicsBody b;
-    b.transform = m4d(1.f); //from this we use only the translation??? i think so 
     b.velocity = v3(0,0,0);
     b.gravity_scale = 1.f;
+    b.position = v3(0,0,0);
     b.force = v3(0,0,0);
     b.mass_data = mass_data_init(1.f);
     b.mat = physics_material_init(0.5f, 0.7f); //@check
@@ -148,14 +165,14 @@ typedef struct Manifold
 
 internal void positional_correction(Manifold *m)
 {
-  f32 percent = 0.8f; // usually 20% to 80%
+  f32 percent = 0.2; // usually 20% to 80%
   vec3 correction = vec3_mulf(vec3_divf(m->normal, 1.f), m->penetration / (m->A->mass_data.inv_mass + m->B->mass_data.inv_mass) * percent);
-  m->A->transform.elements[3][0] -= m->A->mass_data.inv_mass * correction.x;
-  m->A->transform.elements[3][1] -= m->A->mass_data.inv_mass * correction.y;
-  m->A->transform.elements[3][2] -= m->A->mass_data.inv_mass * correction.z;
-  m->B->transform.elements[3][0] += m->B->mass_data.inv_mass * correction.x;
-  m->B->transform.elements[3][1] += m->B->mass_data.inv_mass * correction.y;
-  m->B->transform.elements[3][2] += m->B->mass_data.inv_mass * correction.z;
+  m->A->position.x -= m->A->mass_data.inv_mass * correction.x;
+  m->A->position.y -= m->A->mass_data.inv_mass * correction.y;
+  m->A->position.z -= m->A->mass_data.inv_mass * correction.z;
+  m->B->position.x += m->B->mass_data.inv_mass * correction.x;
+  m->B->position.y += m->B->mass_data.inv_mass * correction.y;
+  m->B->position.z += m->B->mass_data.inv_mass * correction.z;
   
 }
 
@@ -171,8 +188,8 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
   if (A == B)return;
   
   // Vector from A to B
-  vec3 a_pos = v3(A->transform.elements[3][0], A->transform.elements[3][1], A->transform.elements[3][2]);
-  vec3 b_pos = v3(B->transform.elements[3][0], B->transform.elements[3][1], B->transform.elements[3][2]);
+  vec3 a_pos = A->position;
+  vec3 b_pos = B->position;
   vec3 n = vec3_sub(b_pos,a_pos);
 
   AABB a = A->collider.box;
@@ -237,32 +254,31 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
 }
 internal void resolve_collision(Manifold *m)
 {
-  //positional_correction(m);
+    //positional_correction(m);
 
-  SimplePhysicsBody *A = m->A;
-  SimplePhysicsBody *B = m->B;
- 
-  // Calculate relative velocity
-  vec3 rv = vec3_sub(B->velocity, A->velocity);
- 
-  // Calculate relative velocity in terms of the normal direction
-  f32 velAlongNormal = vec3_dot( rv, m->normal );
- 
-  // Do not resolve if velocities are separating
-  if(velAlongNormal > 0.f)
-    return;
- 
-  // Calculate restitution
-  f32 e = minimum( A->mat.restitution, B->mat.restitution);
- 
-  // Calculate impulse scalar
-  f32 j = -(1.f + e) * velAlongNormal;
-  j /= A->mass_data.inv_mass + B->mass_data.inv_mass;
- 
-  // Apply impulse
-  vec3 impulse = vec3_mulf(m->normal,j);
-  A->velocity = vec3_sub(A->velocity, vec3_mulf(impulse,A->mass_data.inv_mass));
-  B->velocity = vec3_add(B->velocity,vec3_mulf(impulse,B->mass_data.inv_mass));
+    SimplePhysicsBody *A = m->A;
+    SimplePhysicsBody *B = m->B;
+
+    // Calculate relative velocity
+    vec3 rv = vec3_sub(B->velocity, A->velocity);
+
+    // Calculate relative velocity in terms of the normal direction
+    f32 velAlongNormal = vec3_dot( rv, m->normal );
+
+    // Do not resolve if velocities are separating
+    if(velAlongNormal > 0.f)return;
+
+    // Calculate restitution
+    f32 e = minimum( A->mat.restitution, B->mat.restitution);
+
+    // Calculate impulse scalar
+    f32 j = -(1.f + e) * velAlongNormal;
+    j /= A->mass_data.inv_mass + B->mass_data.inv_mass;
+
+    // Apply impulse
+    vec3 impulse = vec3_mulf(m->normal,j);
+    A->velocity = vec3_sub(A->velocity, vec3_mulf(impulse,A->mass_data.inv_mass));
+    B->velocity = vec3_add(B->velocity,vec3_mulf(impulse,B->mass_data.inv_mass));
 }
 
 typedef struct Ray
@@ -332,19 +348,67 @@ internal void insertion_sort_pairs(SimplePhysicsBodyPair *arr, i32 n)
     }
 }
 //NOTE: pretty complicated micro optimization, @check
-internal u32 cull_dupe_pairs(SimplePhysicsBodyPair *arr, u32 n)
+internal u32 cull_dupe_pairs(SimplePhysicsBodyPair *pairs, u32 n)
 { 
     if (n==0)return 0;
     u32 unique_index = 0;
-    for (u32 i = 1; i < n; ++i)
+    for (u32 i = 0; i < n; ++i)
     {
-        SimplePhysicsBodyPair curr = arr[i];
-        SimplePhysicsBodyPair prev = arr[i-1];
-        if ((i32)curr.A + (i32)curr.B != (i32)prev.A + (i32)prev.A)
-            arr[unique_index++] = curr; 
+        SimplePhysicsBodyPair curr = pairs[i];
+        b32 unique = TRUE;
+        for (u32 j = 0; j < unique_index; ++j)
+            if ((int)pairs[j].A + (int)pairs[j].B == (int)curr.A + (int)curr.B)
+                unique = FALSE;
+        if (unique)
+            pairs[unique_index++] = curr;
     }
     return unique_index;
 }
+
+internal AABB obb_to_aabb(OBB obb)
+{
+    AABB res;
+    vec3 center = obb.center;
+    vec3 e = obb.e;
+    mat4 rotation_matrix = m4d(1.f);
+    u32 base_index= 0;
+
+    for (u32 i = 0; i < 3; ++i)
+        for (u32 j = 0; j < 3; ++j)
+            rotation_matrix.elements[i][j] = ((f32*)obb.u)[base_index++];
+
+    vec3 verts[30] = {
+        v3(e.x,-e.y,-e.z), v3(e.x,e.y,-e.z), v3(e.x,e.y,e.z), v3(e.x,-e.y,e.z),v3(e.x,-e.y,-e.z),
+        v3(-e.x,-e.y,-e.z), v3(-e.x,e.y,-e.z), v3(-e.x,e.y,e.z), v3(-e.x,-e.y,e.z),v3(-e.x,-e.y,-e.z),
+
+        v3(-e.x,e.y,-e.z), v3(e.x,e.y,-e.z), v3(e.x,e.y,e.z), v3(-e.x,e.y,e.z),v3(-e.x,e.y,-e.z),
+        v3(-e.x,-e.y,-e.z), v3(e.x,-e.y,-e.z), v3(e.x,-e.y,e.z), v3(-e.x,-e.y,e.z),v3(-e.x,-e.y,-e.z),
+
+        v3(-e.x,-e.y,e.z), v3(e.x,-e.y,e.z), v3(e.x,e.y,e.z), v3(-e.x,e.y,e.z),v3(-e.x,-e.y,e.z),
+        v3(-e.x,-e.y,-e.z), v3(e.x,-e.y,-e.z), v3(e.x,e.y,-e.z), v3(-e.x,e.y,-e.z),v3(-e.x,-e.y,-e.z),
+    };
+    for (u32 i = 0; i < 30; ++i)
+    {
+        vec4 local_pos = v4(verts[i].x, verts[i].y, verts[i].z,1.f);
+        vec4 rotated_local_pos = mat4_mulv(rotation_matrix, local_pos);
+        vec3 global_pos = vec3_add(center, v3(rotated_local_pos.x, rotated_local_pos.y, rotated_local_pos.z));
+        verts[i] = global_pos;
+    }
+
+    res.max = v3(-10000.f, -10000.f, -10000.f);
+    res.min = v3(10000.f, 10000.f, 10000.f);
+    for (u32 i = 0; i < 30; ++i)
+    {
+        res.max.x = (res.max.x > verts[i].x) ? res.max.x : verts[i].x;
+        res.max.y = (res.max.y > verts[i].y) ? res.max.y : verts[i].y;
+        res.max.z = (res.max.z > verts[i].z) ? res.max.z : verts[i].z;
+        res.min.x = (res.min.x < verts[i].x) ? res.min.x : verts[i].x;
+        res.min.y = (res.min.y < verts[i].y) ? res.min.y : verts[i].y;
+        res.min.z = (res.min.z < verts[i].z) ? res.min.z : verts[i].z;
+    }
+    return res;
+}
+
 
 
 #endif

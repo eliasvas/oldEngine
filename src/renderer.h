@@ -51,6 +51,7 @@ typedef struct RendererBillboard
 {
     vec3 center;
     vec4 color;
+    vec2 dim;
     //maybe add texture info later :)
 }RendererBillboard;
 
@@ -88,11 +89,11 @@ typedef struct VisibleIndex
 
 
 #define RENDERER_MAX_SHADERS 256
-#define RENDERER_MAX_BILLBOARDS 1024 
+#define RENDERER_MAX_BILLBOARDS 1024 *4
 #define RENDERER_MAX_POINT_LIGHTS 1024 
 #define RENDERER_BYTES_PER_MODEL sizeof(RendererModelData)
 #define RENDERER_MAX_MODELS 256
-#define RENDERER_MAX_RECTS 256
+#define RENDERER_MAX_RECTS 1024 
 #define RENDERER_MAX_ANIMATED_MODELS 64
 #define RENDERER_MAX_TEXT 512 
 #define RENDERER_MAX_POINTS 1024
@@ -199,4 +200,6 @@ void renderer_push_line(Renderer *rend, vec3 start, vec3 end, vec4 color);
 void renderer_push_model(Renderer *rend, Model *m);
 
 void renderer_push_billboard(Renderer *rend, vec3 center, vec4 color);
+
+void renderer_push_obb_wireframe(Renderer *rend, vec3 center, f32 *u, vec3 e);
 #endif
