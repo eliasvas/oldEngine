@@ -11,8 +11,10 @@ in float clip_space_z;
 struct Material {
     sampler2D diffuse_map;
     sampler2D specular_map;
+	sampler2D bump_map;
     int has_specular_map;
 	int has_diffuse_map;
+	int has_bump_map;
 	vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -108,9 +110,16 @@ void main()
 	vec3 diffuse_color = material.diffuse*(1 - material.has_diffuse_map) + material.has_diffuse_map * vec3(texture(material.diffuse_map,f_tex_coord));
 	vec3 specular_color = material.diffuse*(1 - material.has_diffuse_map) +material.has_diffuse_map * vec3(texture(material.specular_map,f_tex_coord));
 	
+	vec3 normal_vector = f_normal;
+	if (material.has_bump_map)
+	{
+		normal_vector = texture(material.bump_map, f_tex_coord).xyz;
+		normal_vector  = normalize(normal_vector * 2.0 - 1.0);
+	}
+	
 	vec3 ambient = dirlight.ambient * diffuse_color;
 	
-	vec3 N = normalize(f_normal);
+	vec3 N = normalize(normal_vector);
 	vec3 L = normalize(-dirlight.direction);
 	
 	float diff = abs(dot(N, L));
@@ -156,7 +165,7 @@ void main()
 		PointLight current_light = light_data[light_idx];
 		ambient = current_light.ambient * diffuse_color;	
 			
-		N = normalize(f_normal);
+		N = normalize(normal_vector);
 		L = normalize(current_light.position - f_frag_pos);
 		//R = reflect(-L, N);
 		

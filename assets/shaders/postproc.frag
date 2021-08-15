@@ -25,8 +25,8 @@ float linearize_depth(float d)
 
 void main()
 {
-
-
+	float gamma = 2.2;
+	float exposure = 1.0;
 	float offset = 1.0 / textureSize(brightTexture, 0).x;
 	frag_color = texture(screenTexture, TexCoords);
 	vec3 blurred;
@@ -35,16 +35,16 @@ void main()
        blurred += texture(brightTexture, TexCoords + vec2(offset.x * i, 0.0)).rgb * weight[i];
        blurred += texture(brightTexture, TexCoords - vec2(offset.x * i, 0.0)).rgb * weight[i];
     }
-	/*
+	///*
 	frag_color.rgb += blurred;
 	
-	
+	frag_color = vec4(pow(frag_color.xyz, vec3(gamma)), 1.0);
 
-	float gamma = 2.2;
-	float exposure = 1.0;
+	
+	
 	frag_color.rgb = vec3(1.0) - exp(-frag_color.rgb * exposure);
 	frag_color = vec4(pow(frag_color.xyz, vec3(1.0/gamma)), 1.0);
-	*/
+	//*/
 	
 	
 	

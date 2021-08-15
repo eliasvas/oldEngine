@@ -27,6 +27,8 @@ typedef struct Material
     b32 has_diffuse_map;
     Texture spec;
     b32 has_specular_map;
+    Texture bump;
+    b32 has_bump_map;
 }Material;
 internal Material 
 material_default(void)
@@ -39,6 +41,7 @@ material_default(void)
   material.shininess = 4.f;
   material.has_diffuse_map = FALSE;
   material.has_specular_map = FALSE;
+  material.has_bump_map = FALSE;
   material.diff = (Texture){0};
   material.spec = (Texture){0};
   material.IOR = 0;
@@ -214,6 +217,25 @@ internal void mtl_readfdd(char *mtl_filepath, Material *materials)
             {
                 fscanf(file, "%f", &materials[material_offset].shininess);
             }
+            else if (strcmp(line, "map_Bump") == 0)
+            {
+              fscanf(file, "%s", line);
+              char bump[64];
+              u32 file_index = 0;
+              for (u32 i = str_size(mtl_filepath); i>=0;--i)
+              {
+                if (mtl_filepath[i] == '/')
+                {
+                  file_index = i; 
+                  break;
+                }
+              }
+              memcpy(bump, mtl_filepath,file_index+1);
+              memcpy(bump, file_index+1, line, str_size(line)+1);
+              texture_load(&(materials[material_offset].bump),bump);
+              materials[material_offset].has_bump_map = TRUE;//!!
+            }
+
         }
         material_offset++;
       }  
@@ -248,7 +270,7 @@ internal void mtl_read(char *mtl_filepath, Material *materials)
                 fscanf(file, "%s", line);
                 memcpy(&materials[material_offset].name, line, str_size(line)+1);
                 texture_load(&(materials[material_offset].spec),"../assets/white.tga");
-                materials[material_offset].has_specular_map = TRUE;
+                materials[material_offset].has_specular_map = FALSE;
             }
             else if (strcmp(line, "Ka") == 0)
             {
@@ -278,7 +300,7 @@ internal void mtl_read(char *mtl_filepath, Material *materials)
             {
                 fscanf(file, "%f", &materials[material_offset].shininess);
             }
-            else   if (strcmp(line, "map_Kd") == 0)
+            else if (strcmp(line, "map_Kd") == 0)
             {
               fscanf(file, "%s", line);
               char diff[64];
@@ -297,6 +319,25 @@ internal void mtl_read(char *mtl_filepath, Material *materials)
               materials[material_offset].has_diffuse_map = TRUE;//!!
               //sprintf(error_log, "%s", diff);
             }
+            else if (strcmp(line, "map_Bump") == 0)
+            {
+              fscanf(file, "%s", line);
+              char bump[64];
+              u32 file_index = 0;
+              for (u32 i = str_size(mtl_filepath); i>=0;--i)
+              {
+                if (mtl_filepath[i] == '/')
+                {
+                  file_index = i; 
+                  break;
+                }
+              }
+              memcpy(bump, mtl_filepath,file_index+1);
+              memcpy(bump + file_index+1, line, str_size(line)+1);
+              texture_load(&(materials[material_offset].bump),bump);
+              materials[material_offset].has_bump_map = FALSE;//!!
+            }
+
 }
 return material_count;
 }

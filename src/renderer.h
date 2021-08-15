@@ -37,6 +37,7 @@ typedef struct RendererModelData
   u32 model_vertex_count;
   Texture *diff;
   Texture *spec;
+  Texture *bump;
   Material *material;
 }RendererModelData;
 

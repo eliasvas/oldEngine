@@ -455,6 +455,11 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, data.spec->id);
     shader_set_int(&shader[0], "material.specular_map", 1);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, data.bump->id);
+    shader_set_int(&shader[0], "material.bump_map", 2);
+
+
 
     //in case we need the skybox's texture for the rendering
     glActiveTexture(GL_TEXTURE3);
@@ -491,6 +496,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     shader_set_float(&shader[0], "material.shininess", data.material->shininess);
     shader_set_int(&shader[0], "material.has_diffuse_map", data.material->has_diffuse_map);
     shader_set_int(&shader[0], "material.has_specular_map", data.material->has_specular_map);
+    shader_set_int(&shader[0], "material.has_bump_map", data.material->has_bump_map);
     shader_set_vec3(&shader[0], "material.ambient", data.material->ambient);
     shader_set_vec3(&shader[0], "material.diffuse", data.material->diffuse);
     shader_set_vec3(&shader[0], "material.specular", data.material->specular);
@@ -788,6 +794,7 @@ void renderer_push_model(Renderer *rend, Model *m)
     data.model_vertex_count = m->meshes[i].vertices_count;
     data.diff = &m->meshes[i].material.diff;
     data.spec = &m->meshes[i].material.spec;
+    data.bump = &m->meshes[i].material.bump;
     data.material = &m->meshes[i].material;
     rend->model_instance_data[rend->model_alloc_pos++] = data;
   }
