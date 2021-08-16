@@ -2,7 +2,7 @@
 #define PARTICLE_SYSTEM_H
 #include "renderer.h"
 
-#define MAX_PARTICLES 1024 * 4
+#define MAX_PARTICLES 200 
 typedef struct Particle
 {
     vec3 pos, speed;
@@ -26,6 +26,7 @@ internal Particle particle_default(void)
     //p.color = v4(random01(), random01(), random01(), 1.f);
     p.color = v4(random01()+0.5, random01()+0.5, random01()+0.5, 1.f);
     p.speed = v3(random01()*2.f - 1, random01() * 2.f - 1, random01() * 2.f - 1);
+    p.speed = vec3_mulf(p.speed, 2.f);
     p.weight = 0.1f;
     p.life = random01()*3;
     return p;
@@ -38,7 +39,7 @@ internal void particle_emitter_init(ParticleEmitter *emitter, vec3 pos)
 
 internal void particle_emitter_add_particle(ParticleEmitter *emitter, Particle p)
 {
-    if (emitter->next_index > MAX_PARTICLES)return;
+    if (emitter->next_index >= MAX_PARTICLES)return;
     emitter->particles[emitter->next_index++] = p;
 }
 

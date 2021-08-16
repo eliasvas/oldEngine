@@ -62,7 +62,7 @@ typedef struct MeshInfo
 
 
 
-static Vertex
+internal Vertex
 vert(vec3 p, vec3 n, vec2 t)
 {
     Vertex v;
@@ -71,6 +71,7 @@ vert(vec3 p, vec3 n, vec2 t)
     v.tex_coord = t;
     return v;
 }
+
 
 static u32 count_vertices(char *filename)
 {
@@ -134,116 +135,6 @@ internal u32 mtl_count(char *mtl_filepath)
   return material_count;
 }
 
-//@TODO: think about this more this ay of doing things is _BAD_
-
-//We fill the material * and return how many materials we read 
-internal void mtl_readfdd(char *mtl_filepath, Material *materials)
-{
-  u32 material_count = 0;
-  FILE* file = fopen(mtl_filepath, "r");
-	if (file == NULL)
-	{
-        if (mtl_filepath)
-            sprintf(error_log, "cant find mrl: %s", mtl_filepath);
-        return 0;
-	}
-	
-  char line[128];
-  //we populate our array with the material info!
-  u32 material_offset = 0;
-	while(TRUE)
-	{
-		i32 res = fscanf(file, "%s", line);
-		if (res == EOF)break;
-	    if (strcmp(line, "newmtl") == 0)
-       {
-        fscanf(file, "%s", line);
-        materials[material_offset].shininess = 256.f;
-        texture_load(&(materials[material_offset].spec),"../assets/white.tga");
-        materials[material_offset].has_specular_map = TRUE;
- 
-        memcpy(&materials[material_offset].name, line, str_size(line)+1);
-        while (TRUE)
-        {
-          fscanf(file, "%s", line);
-		i32 res = fscanf(file, "%s", line);
-		if (res == EOF)break;
-
-            if (strcmp(line, "map_Kd") == 0)
-            {
-              fscanf(file, "%s", line);
-              char diff[64];
-              u32 file_index = 0;
-              for (u32 i = str_size(mtl_filepath); i>=0;--i)
-              {
-                if (mtl_filepath[i] == '/')
-                {
-                  file_index = i; 
-                  break;
-                }
-              }
-              memcpy(diff, mtl_filepath,file_index+1);
-              memcpy(diff + file_index+1, line, str_size(line)+1);
-              texture_load(&(materials[material_offset].diff),diff);
-              materials[material_offset].has_diffuse_map = TRUE;//!!
-              //sprintf(error_log, "%s", diff);
-              break;
-            }
-            else if (strcmp(line, "Ka") == 0)
-            {
-               vec3 Ka;
-               fscanf(file, "%f %f %f", &Ka.x, &Ka.y, &Ka.z);
-               materials[material_offset].ambient = Ka; 
-            }
-            else if (strcmp(line, "Kd") == 0)
-            {
-               vec3 Kd;
-               fscanf(file, "%f %f %f", &Kd.x, &Kd.y, &Kd.z);
-               materials[material_offset].diffuse = Kd; 
-            }
-            else if (strcmp(line, "Ks") == 0)
-            {
-               vec3 Ks;
-               fscanf(file, "%f %f %f", &Ks.x, &Ks.y, &Ks.z);
-               materials[material_offset].specular = Ks; 
-            }
-            else if (strcmp(line, "Ke") == 0)
-            {
-               vec3 Ke;
-               fscanf(file, "%f %f %f", &Ke.x, &Ke.y, &Ke.z);
-               materials[material_offset].emmisive = Ke; 
-            }
-            else if (strcmp(line, "Ni") == 0)
-            {
-                fscanf(file, "%f", &materials[material_offset].shininess);
-            }
-            else if (strcmp(line, "map_Bump") == 0)
-            {
-              fscanf(file, "%s", line);
-              char bump[64];
-              u32 file_index = 0;
-              for (u32 i = str_size(mtl_filepath); i>=0;--i)
-              {
-                if (mtl_filepath[i] == '/')
-                {
-                  file_index = i; 
-                  break;
-                }
-              }
-              memcpy(bump, mtl_filepath,file_index+1);
-              memcpy(bump, file_index+1, line, str_size(line)+1);
-              texture_load(&(materials[material_offset].bump),bump);
-              materials[material_offset].has_bump_map = TRUE;//!!
-            }
-
-        }
-        material_offset++;
-      }  
-  }
-
-
-  return material_count;
-}
 
 internal void mtl_read(char *mtl_filepath, Material *materials)
 {
@@ -335,7 +226,7 @@ internal void mtl_read(char *mtl_filepath, Material *materials)
               memcpy(bump, mtl_filepath,file_index+1);
               memcpy(bump + file_index+1, line, str_size(line)+1);
               texture_load(&(materials[material_offset].bump),bump);
-              materials[material_offset].has_bump_map = FALSE;//!!
+              materials[material_offset].has_bump_map = TRUE;//!!
             }
 
 }
@@ -363,13 +254,14 @@ internal u32 obj_count_meshes(char *objpath)
   return meshes_count;
 }
 internal GLuint 
-mesh_gen_vao(u32 start,u32 end, Vertex *vertices)
+mesh_gen_vao(u32 start,u32 end, Vertex *vertices, vec3 *tangents)
 {
     GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao); 
-    GLuint VBO;
+    GLuint VBO,VBO2;
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &VBO2);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * ((end - start)*3), &vertices[start*3], GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
@@ -378,6 +270,12 @@ mesh_gen_vao(u32 start,u32 end, Vertex *vertices)
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 3));
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 6));
+
+    //put the tangents in (with separate VBO)
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec3) * ((end - start)*3), &tangents[start*3], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
     glBindVertexArray(0);
 
       
@@ -385,6 +283,22 @@ mesh_gen_vao(u32 start,u32 end, Vertex *vertices)
 }
 
 
+internal vec3 calc_tangent(Vertex v1, Vertex v2, Vertex v3)
+{
+    vec3 tangent;
+    vec3 edge1 = vec3_sub(v2.position, v1.position);
+    vec3 edge2 = vec3_sub(v3.position, v1.position);
+    vec2 dUV1 = vec2_sub(v2.tex_coord, v1.tex_coord);
+    vec2 dUV2 = vec2_sub(v3.tex_coord, v1.tex_coord);
+
+    f32 f = 1.f / (dUV1.x * dUV2.y - dUV2.x * dUV1.y);
+    tangent.x = f * (dUV2.y * edge1.x - dUV1.y * edge2.x);
+    tangent.y = f * (dUV2.y * edge1.y - dUV1.y * edge2.y);
+    tangent.z = f * (dUV2.y * edge1.z - dUV1.y * edge2.z);
+    tangent = vec3_normalize(tangent);
+
+    return tangent;
+}
 
 internal MeshInfo *obj_read(char *objpath, Material *materials)
 {
@@ -397,6 +311,9 @@ internal MeshInfo *obj_read(char *objpath, Material *materials)
   //change this to PERMANENT STORAGE in case we need the vertices for more than one frame
   Vertex *vertices = (Vertex*)arena_alloc(&global_platform.frame_storage, sizeof(Vertex) * vertices_count);
   u32 vertex_index = 0;
+  vec3 *tangents = (Vertex*)arena_alloc(&global_platform.frame_storage, sizeof(vec3) * vertices_count);
+  u32 tangent_index = 0;
+
 
   //at most they will have vertices_count vec3's 
   vec3 *positions = (vec3*)arena_alloc(&global_platform.frame_storage, sizeof(vec3) * vertices_count);
@@ -423,14 +340,14 @@ internal MeshInfo *obj_read(char *objpath, Material *materials)
 		i32 res = fscanf(file, "%s", line);
     //which means there is a mesh that has just finished giving its faces, we construct it
 		if (res == EOF && faces_count != faces_start)
-    {
-        meshes[current_mesh].vertices_count = (faces_count- faces_start) *3;
-        meshes[current_mesh].vertices = &vertices[faces_start];
-        meshes[current_mesh].vao = mesh_gen_vao(faces_start,faces_count, vertices);
-        faces_start = faces_count*3+1;
-        break;
+        {
+            meshes[current_mesh].vertices_count = (faces_count- faces_start) *3;
+            meshes[current_mesh].vertices = &vertices[faces_start];
+            meshes[current_mesh].vao = mesh_gen_vao(faces_start,faces_count, vertices, tangents);
+            faces_start = faces_count*3+1;
+            break;
 
-    }
+        }
 		if (res == EOF)break;
 		
 		if (strcmp(line, "v") == 0)
@@ -465,13 +382,31 @@ internal MeshInfo *obj_read(char *objpath, Material *materials)
             vertices[vertex_index++] = to_add;
             to_add = vert(positions[positions_index[2]-1], normals[normals_index[2] - 1], tex_coords[uvs_index[2]-1]);
             vertices[vertex_index++] = to_add;
+
+            /*
+            vec3 tangent = calc_tangent(vertices[vertex_index - 1], vertices[vertex_index - 2], vertices[vertex_index - 3]);
+            tangents[tangent_index++] = tangent;
+            tangent = calc_tangent(vertices[vertex_index - 3], vertices[vertex_index - 1], vertices[vertex_index - 2]);
+            tangents[tangent_index++] = tangent;
+            tangent = calc_tangent(vertices[vertex_index - 2], vertices[vertex_index - 3], vertices[vertex_index - 1]);
+            tangents[tangent_index++] = tangent;
+            */
+
+
+            vec3 tangent = calc_tangent(vertices[vertex_index - 3], vertices[vertex_index - 2], vertices[vertex_index - 1]);
+            tangents[tangent_index++] = tangent;
+            tangent = calc_tangent(vertices[vertex_index - 2], vertices[vertex_index - 1], vertices[vertex_index - 3]);
+            tangents[tangent_index++] = tangent;
+            tangent = calc_tangent(vertices[vertex_index - 1], vertices[vertex_index - 3], vertices[vertex_index - 2]);
+            tangents[tangent_index++] = tangent;
+
     }else if (strcmp(line, "usemtl") == 0)
     {
       if (faces_count != 0)
       {
         meshes[current_mesh].vertices_count = (faces_count- faces_start) *3;
         meshes[current_mesh].vertices = &vertices[faces_start*3];
-        meshes[current_mesh].vao = mesh_gen_vao(faces_start,faces_count, vertices);
+        meshes[current_mesh].vao = mesh_gen_vao(faces_start,faces_count, vertices, tangents);
         faces_start = faces_count;
       }
       current_mesh++;

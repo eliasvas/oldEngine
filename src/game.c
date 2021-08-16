@@ -66,7 +66,7 @@ init(void)
         co = ALLOC(sizeof(Coroutine));
         coroutine_init(co);
     }
-    particle_emitter_init(&pe, v3(0,2,50));
+    particle_emitter_init(&pe, v3(0,1,-2));
 }
 
 
@@ -75,9 +75,11 @@ internal void
 update(void)
 {
     entity_manager_update(&entity_manager, &rend);
-    animation_controller_update(&ac);
+    animation_controller_update_works(&ac);
     renderer_begin_frame(&rend);
     rend.cam.can_rotate = !UI_OPEN;
+    if (global_platform.key_pressed[KEY_0])
+        scene_init("../assets/empty_scene.txt", &entity_manager);
     if (global_platform.key_pressed[KEY_1])
         scene_init("../assets/scene.txt", &entity_manager);
     else if (global_platform.key_pressed[KEY_2])
@@ -88,6 +90,21 @@ update(void)
     //renderer_push_billboard(&rend, v3(0,10,0), v4(1,0,1,1));
     particle_emitter_simulate(&pe);
 
+    if (global_platform.key_pressed[KEY_U])
+    {
+        animation_controller_play_anim(&ac,1);
+    }
+
+    if (global_platform.key_pressed[KEY_I])
+    {
+        animation_controller_play_anim(&ac,0);
+    }
+
+
+
+
+
+
  }
 
 internal void 
@@ -97,16 +114,21 @@ render(void)
     //renderer_push_model(&rend, &sphere);
     model.model = mat4_mul(mat4_translate(v3(0,-2,0)), mat4_scale(v3(40,0.1,40)));
     //renderer_push_model(&rend, &model);
-     
+    
+    /*
     PointLight pl = point_light_init(v3(3*sin(global_platform.current_time),0,3*cos(global_platform.current_time)),v3(0.6,0.5,0.7),v3(9,8,8),v3(9,8,8));
-    for (u32 i = 0;i< 1; ++i)
+    for (u32 i = 0;i< 200; ++i)
     {
-        //pl.position.y += 0.5; 
-        //light_cube.model = mat4_translate(pl.position);
-        //renderer_push_point_light(&rend,pl);
+
+        RendererBillboard b = rend.billboard_instance_data[i];
+        pl.diffuse = v3(b.color.x, b.color.y, b.color.z);
+        pl.specular= v3(b.color.x, b.color.y, b.color.z);
+        pl.position = b.center;
+        renderer_push_point_light(&rend,pl);
         //renderer_push_point(&rend, pl.position, v4(1,1,1,1));
     }
-
+    */
+   
     //NOTE: obb rendering test
     {
 
@@ -153,8 +175,8 @@ render(void)
     }
 
     entity_manager_render(&entity_manager, &rend);
-    do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
-    //renderer_push_animated_model(&rend, &ac.model);
+    //do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
+    renderer_push_animated_model(&rend, &ac.model);
     dui_frame_end();
     renderer_end_frame(&rend);
 }

@@ -8,7 +8,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Bump 01_St_kp-bump.tga
+map_Bump 01_St_kp-normal.tga
 map_Kd 01_ST_KP.tga
 
 newmtl sp_00_luk_mali
@@ -20,7 +20,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Bump sp_luk-bump.tga
+map_Bump sp_luk-normal.tga
 map_Kd SP_LUK.tga
 
 newmtl sp_00_pod
@@ -32,7 +32,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Bump KAMEN-bump.tga
+map_Bump KAMEN-normal.tga
 map_Kd KAMEN.tga
 
 newmtl sp_00_prozor
@@ -56,7 +56,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Bump 01_STUB-bump.tga
+map_Bump 01_STUB-normal.tga
 map_Kd 01_STUB.tga
 
 newmtl sp_00_svod
@@ -104,7 +104,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Bump KAMEN-bump.tga
+map_Bump KAMEN-normal.tga
 map_Kd KAMEN.tga
 
 newmtl sp_01_luk_a
@@ -116,7 +116,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Bump sp_luk-bump.tga
+map_Bump sp_luk-normal.tga
 map_Kd SP_LUK.tga
 
 newmtl sp_01_stub
@@ -128,7 +128,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Bump 01_STUB-bump.tga
+map_Bump 01_STUB-normal.tga
 map_Kd 01_STUB.tga
 
 newmtl sp_01_stub_baza
@@ -162,7 +162,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Bump 01_STUB-bump.tga
+map_Bump 01_STUB-normal.tga
 map_Kd 01_STUB.tga
 
 newmtl sp_01_stup
@@ -197,7 +197,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Bump reljef-bump.tga
+map_Bump reljef-normal.tga
 map_Kd RELJEF.tga
 
 newmtl sp_svod_kapitel
@@ -233,5 +233,5 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Bump KAMEN-bump.tga
+map_Bump KAMEN-normal.tga
 map_Kd KAMEN.tga

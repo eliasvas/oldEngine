@@ -8,6 +8,7 @@ in vec3 f_frag_pos;
 in vec3 f_normal;
 in vec4 f_frag_pos_ls[CASCADES];
 in float clip_space_z;
+in mat3 f_TBN;
 struct Material {
     sampler2D diffuse_map;
     sampler2D specular_map;
@@ -65,7 +66,7 @@ float shadow_calc(int cascade_index)
 {
 	float bias = 0.005;
 	cascade_index = 0;
-	bias = max(0.05 * (1.0 - dot(f_normal, dirlight.direction)), 0.005);  
+	//bias = max(0.05 * (1.0 - dot(f_normal, dirlight.direction)), 0.005);  
 	// perform perspective divide (if ortho everything stays the same!)
     vec3 proj_coords = f_frag_pos_ls[cascade_index].xyz / f_frag_pos_ls[cascade_index].w;
 	/*
@@ -89,7 +90,7 @@ float shadow_calc(int cascade_index)
 	
 	///*
 	float shadow = 0.0;
-	vec2 texel_size = 1.0 / textureSize(shadow_map[cascade_index], 0);
+	vec2 texel_size = 2.0 / textureSize(shadow_map[cascade_index], 0);
 	for(int x = -1; x <= 1; ++x)
 	{
     for(int y = -1; y <= 1; ++y) 
@@ -111,10 +112,11 @@ void main()
 	vec3 specular_color = material.diffuse*(1 - material.has_diffuse_map) +material.has_diffuse_map * vec3(texture(material.specular_map,f_tex_coord));
 	
 	vec3 normal_vector = f_normal;
-	if (material.has_bump_map)
+	if (material.has_bump_map > 9392)
 	{
 		normal_vector = texture(material.bump_map, f_tex_coord).xyz;
-		normal_vector  = normalize(normal_vector * 2.0 - 1.0);
+		//normal_vector  = normalize(normal_vector * 2.0 - 1.0);
+		normal_vector = normalize(f_TBN * normal_vector);
 	}
 	
 	vec3 ambient = dirlight.ambient * diffuse_color;
@@ -164,7 +166,9 @@ void main()
 		uint light_idx = light_index[offset + i].index;
 		PointLight current_light = light_data[light_idx];
 		ambient = current_light.ambient * diffuse_color;	
-			
+		diffuse_color = current_light.diffuse;
+		specular_color = current_light.specular;
+		
 		N = normalize(normal_vector);
 		L = normalize(current_light.position - f_frag_pos);
 		//R = reflect(-L, N);
@@ -175,13 +179,13 @@ void main()
 		V = normalize(view_pos - f_frag_pos);
 		H = normalize(L + V);
 		
-		spec = pow(max(dot(N, H),0.0), 256);
+		spec = pow(max(dot(N, H),0.0), 128);
 		//spec = pow(max(dot(V,R),0.0),256);
 		specular = current_light.specular * spec * specular_color;
 		
 		float distance = abs(length(current_light.position - f_frag_pos));
 		float attenuation = 1.0/(constant + linear * distance + quadratic*(distance*distance));
-		attenuation = 1.0/(distance);
+		attenuation = 1.0/(distance * distance * distance * 32);
 		ambient *= attenuation;
 		diffuse *= attenuation;
 		specular *= attenuation;

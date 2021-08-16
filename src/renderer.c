@@ -52,7 +52,7 @@ renderer_init(Renderer *rend)
     rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_COLOR_1| FBO_DEPTH);
     rend->postproc_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 |FBO_COLOR_1| FBO_DEPTH);
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
-    rend->shadowmap_fbo[0] = fbo_init(1024*2, 1024*2, FBO_DEPTH);
+    rend->shadowmap_fbo[0] = fbo_init(1024*8, 1024*8, FBO_DEPTH);
     rend->shadowmap_fbo[1] = fbo_init(1024, 1024, FBO_DEPTH);
     rend->shadowmap_fbo[2] = fbo_init(1024, 1024, FBO_DEPTH);
     //rend->depthpeel_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_COLOR_0 | FBO_DEPTH);
@@ -63,7 +63,7 @@ renderer_init(Renderer *rend)
 
     rend->default_material = material_default();
 
-    rend->directional_light = (DirLight){v3(-0.3,-0.7,-0.3),v3(0.2,0.2,0.1),v3(0.6,0.6,0.6),v3(0.6f,0.6f,0.6f)};
+    rend->directional_light = (DirLight){v3(-0.3,-0.7,-0.3),v3(0.2,0.2,0.1),v3(0.8,0.8,0.8),v3(0.8f,0.8f,0.8f)};
     rend->point_light_count = 0;
 
     char **faces= cubemap_default();
@@ -229,7 +229,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[1],"../assets/shaders/skybox_reflect.vert","../assets/shaders/skybox_reflect.frag");
     shader_load(&rend->shaders[2],"../assets/shaders/postproc.vert","../assets/shaders/postproc.frag");
     shader_load(&rend->shaders[3],"../assets/shaders/shadowmap.vert","../assets/shaders/shadowmap.frag");
-    shader_load(&rend->shaders[4],"../assets/shaders/animated3d.vert","../assets/shaders/phong.frag");
+    shader_load(&rend->shaders[4],"../assets/shaders/animated3d.vert","../assets/shaders/phong33.frag");
     shader_load(&rend->shaders[5],"../assets/shaders/filled_rect.vert","../assets/shaders/filled_rect.frag");
     shader_load(&rend->shaders[6],"../assets/shaders/line.vert","../assets/shaders/line.frag");
     shader_load(&rend->shaders[7],"../assets/shaders/text.vert","../assets/shaders/text.frag");
