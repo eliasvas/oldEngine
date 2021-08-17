@@ -66,7 +66,7 @@ init(void)
         co = ALLOC(sizeof(Coroutine));
         coroutine_init(co);
     }
-    particle_emitter_init(&pe, v3(0,1,-2));
+    particle_emitter_init(&pe, v3(0,1,-200));
 }
 
 
@@ -99,12 +99,6 @@ update(void)
     {
         animation_controller_play_anim(&ac,0);
     }
-
-
-
-
-
-
  }
 
 internal void 

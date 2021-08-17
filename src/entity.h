@@ -430,7 +430,7 @@ void scene_init(char *filepath, EntityManager * manager)
             else
             {
                 m->physics_body->mass_data = mass_data_init(1.f);
-                //m->physics_body->mat.restitution = 0.2f;
+                //m->physics_body->mat.restitution = 0.9f;
             }
         }
         else if (strcmp("SPHERE", str) == 0)

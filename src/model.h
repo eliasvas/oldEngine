@@ -119,11 +119,11 @@ model_init_cube(Model* m)
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
     m->meshes[0].material = material_default();
-    texture_load(&(m->meshes[0].material.diff),"../assets/mars.tga");
+    texture_load_default(&(m->meshes[0].material.diff));
     m->meshes[0].material.has_diffuse_map = TRUE;
     //texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
     texture_load(&(m->meshes[0].material.spec),"../assets/mars.tga");
-    m->meshes[0].material.has_specular_map= TRUE;
+    m->meshes[0].material.has_specular_map= FALSE;
       
 }
 

@@ -90,7 +90,7 @@ float shadow_calc(int cascade_index)
 	
 	///*
 	float shadow = 0.0;
-	vec2 texel_size = 2.0 / textureSize(shadow_map[cascade_index], 0);
+	vec2 texel_size = 1.0 / textureSize(shadow_map[cascade_index], 0);
 	for(int x = -1; x <= 1; ++x)
 	{
     for(int y = -1; y <= 1; ++y) 
@@ -99,7 +99,7 @@ float shadow_calc(int cascade_index)
 			shadow += current_depth - bias > pcf_depth ? 0.0 : 1.0;        
 		}    
 	}
-	shadow /= 9.0;
+	shadow /= 10.0;
 	//*/
 	//float shadow = current_depth - bias >closest_depth ? 0.0 : 1.0; 
     return shadow;
