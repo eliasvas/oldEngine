@@ -63,7 +63,7 @@ typedef enum ColliderType
    BOX = 1,
    SPHERE = 2,
    TRIANGLE = 3,
-   ORIENTED_COUNDED_BOX= 4,
+   ORIENTED_BOUNDED_BOX= 4,
    MAX_COLLIDER_TYPES, 
 }ColliderType;
 typedef struct SimpleCollider
@@ -176,6 +176,8 @@ internal void positional_correction(Manifold *m)
   
 }
 
+
+
 internal b32 test_aabb_aabb_manifold(Manifold *m)
 {
   // Setup a couple pointers to each object
@@ -225,7 +227,7 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
                       m->normal = v3(1,0,0);
                   else 
                       m->normal = v3(-1,0,0);
-                  //m->penetration = x_overlap;
+                  m->penetration = x_overlap;
               }
               else if (z_overlap < y_overlap && z_overlap < x_overlap)
               {
@@ -233,7 +235,7 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
                       m->normal = v3(0,0,1);
                   else 
                       m->normal = v3(0,0,-1);
-                  //m->penetration = z_overlap;
+                  m->penetration = z_overlap;
               }
               else if (y_overlap < x_overlap && y_overlap < z_overlap)
               {
@@ -241,10 +243,8 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
                       m->normal = v3(0,1,0);
                   else 
                       m->normal = v3(0,-1,0);
-                  //m->penetration = y_overlap;
+                  m->penetration = y_overlap;
               }
-              //n.z = 0;
-              //m->normal = vec3_normalize(n); 
               return TRUE;
           }
       }
@@ -252,6 +252,7 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
 
   return FALSE;
 }
+
 internal void resolve_collision(Manifold *m)
 {
     //positional_correction(m);
@@ -409,6 +410,24 @@ internal AABB obb_to_aabb(OBB obb)
     return res;
 }
 
-
+internal test_collision_manifold(Manifold *m)
+{
+    SimplePhysicsBody *A = m->A;
+    SimplePhysicsBody *B = m->B;
+ 
+    if (A->collider.type == BOX)
+    {
+        if (B->collider.type == BOX)
+            return test_aabb_aabb_manifold(m);
+        else if (B->collider.type == ORIENTED_BOUNDED_BOX)
+        {
+            OBB obb = B->collider.obb;
+            AABB b2 = obb_to_aabb(B->collider.obb);
+            B->collider.box = b2;
+            B->collider.type = BOX; 
+            return test_aabb_aabb_manifold(m);
+        }
+    }
+}
 
 #endif

@@ -234,13 +234,13 @@ internal void resolve_collisions(SimulationWorld *manager)
     {
         m.A = manager->pairs[i].A;
         m.B = manager->pairs[i].B;
-        if (test_aabb_aabb_manifold(&m))
+        if (test_collision_manifold(&m))
         {
             resolve_collision(&m);
             positional_correction(&m);
         }
 
-        //manager->bodies[i].velocity= vec3_divf(manager->bodies[i].velocity, 1.005f);
+        manager->bodies[i].velocity= vec3_divf(manager->bodies[i].velocity, 1.005f);
     }
 
 }
@@ -328,8 +328,8 @@ internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
             last_entity_pressed = i;
             vec3 right = vec3_normalize(vec3_cross(rend->cam.front,rend->cam.up));
             vec3 up = vec3_normalize(rend->cam.up);
-            pb->force.x += vec3_mulf(right, 10000 * ((-1.f)*(f32)global_platform.mouse_dt.x / global_platform.window_width)).x;
-            pb->force.y += vec3_mulf(up,10000 * ((f32)1.f * global_platform.mouse_dt.y / global_platform.window_height)).y;
+            pb->force.x += vec3_mulf(right, 13000 * ((-1.f)*(f32)global_platform.mouse_dt.x / global_platform.window_width)).x;
+            pb->force.y += vec3_mulf(up,13000 * ((f32)1.f * global_platform.mouse_dt.y / global_platform.window_height)).y;
             //sprintf(error_log, "collision detected!!");
         }
         else if (global_platform.right_mouse_down && last_entity_pressed == i) {

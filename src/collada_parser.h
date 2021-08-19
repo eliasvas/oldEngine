@@ -745,7 +745,7 @@ animation_controller_init(String diffuse_texture, String collada_model, String c
         ac.anims_count = 0;
         ac.anims[ac.anims_count++] = animation_to_play; 
         ac.current_animation = NULL; //it will go to default animation -> index 0
-        ac.blend_percentage = 0.1f;
+        ac.blend_percentage = 0.f;
         ac.blend_animation = NULL;
 
         return ac;
