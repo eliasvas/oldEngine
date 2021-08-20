@@ -409,8 +409,20 @@ internal AABB obb_to_aabb(OBB obb)
     }
     return res;
 }
+internal OBB aabb_to_obb(AABB box)
+{
+    OBB obb;
+    obb.center = vec3_add(box.min, vec3_divf(vec3_sub(box.max, box.min), 2.f));
+    obb.e = vec3_mulf(vec3_sub(box.max, box.min), 1/2.f);
+    vec3 arr[3] = {1,0,0,0,1,0,0,0,1};
+    for (u32 i = 0; i < 3; ++i)
+    {
+        obb.u[i] = arr[i];
+    }
+    return obb;
+}
 
-internal test_collision_manifold(Manifold *m)
+internal b32 test_collision_manifold(Manifold *m)
 {
     SimplePhysicsBody *A = m->A;
     SimplePhysicsBody *B = m->B;
@@ -423,11 +435,14 @@ internal test_collision_manifold(Manifold *m)
         {
             OBB obb = B->collider.obb;
             AABB b2 = obb_to_aabb(B->collider.obb);
-            B->collider.box = b2;
-            B->collider.type = BOX; 
-            return test_aabb_aabb_manifold(m);
+            if (test_aabb_aabb(b2, A->collider.box))
+                exit(1);
+            //B->collider.box = b2;
+            //B->collider.type = BOX; 
+            //return test_aabb_aabb_manifold(m);
         }
     }
+    return FALSE;
 }
 
 #endif

@@ -280,8 +280,15 @@ internal void simworld_simulate(SimulationWorld *manager)
 
         //find collider min/max
         vec3 offset = vec3_sub(pb->collider.box.max, pb->collider.box.min);
-        pb->collider.box.min = v3(pb->position.x - offset.x/2, pb->position.y - offset.y/2, pb->position.z - offset.z/2);
-        pb->collider.box.max = vec3_add(pb->collider.box.min , offset);
+        if (pb->collider.type == BOX)
+        {
+            pb->collider.box.min = v3(pb->position.x - offset.x/2, pb->position.y - offset.y/2, pb->position.z - offset.z/2);
+            pb->collider.box.max = vec3_add(pb->collider.box.min , offset);
+        }
+        else if (pb->collider.type == ORIENTED_BOUNDED_BOX)
+        {
+            pb->collider.obb.center = pb->position;
+        }
         //integrate forces!
         pb->velocity = vec3_add(pb->velocity, vec3_mulf(vec3_add(vec3_mulf(v3(0,pb->gravity_scale, 0), -100.f), vec3_mulf(pb->force, pb->mass_data.inv_mass)), global_platform.dt));
         pb->force = v3(0,0,0);
@@ -374,7 +381,19 @@ entity_manager_render(EntityManager *manager, Renderer *rend)
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
     {
         renderer_push_model(rend, &manager->model_manager.models[i]);
-        //renderer_push_cube_wireframe(rend, manager->model_manager.models[i].physics_body->collider.box.min,manager->model_manager.models[i].physics_body->collider.box.max);
+        SimplePhysicsBody *pb = manager->model_manager.models[i].physics_body;
+        if (pb->collider.type == BOX)
+        {
+            renderer_push_cube_wireframe(rend, manager->model_manager.models[i].physics_body->collider.box.min,manager->model_manager.models[i].physics_body->collider.box.max);
+            //OBB obb = aabb_to_obb(manager->model_manager.models[i].physics_body->collider.box);
+            //renderer_push_obb_wireframe(rend, obb.center, obb.u, obb.e);
+        }
+        else if (pb->collider.type == ORIENTED_BOUNDED_BOX)
+        {
+            renderer_push_obb_wireframe(rend, pb->collider.obb.center, pb->collider.obb.u, pb->collider.obb.e);
+            AABB bounded = obb_to_aabb(pb->collider.obb);
+            renderer_push_cube_wireframe(rend, bounded.min, bounded.max);
+        }
     }
 }
 
@@ -433,6 +452,42 @@ void scene_init(char *filepath, EntityManager * manager)
                 //m->physics_body->mat.restitution = 0.9f;
             }
         }
+        else if (strcmp("OBB", str) == 0)
+        {
+            fscanf(file,"%f", &angle);
+            fscanf(file,"%f %f %f", &axis.x, &axis.y, &axis.z);
+            m = entity_add_model(&manager->model_manager,entity_create(manager));
+            model_init_cube(m);
+            m->model = mat4_mul(mat4_translate(pos),mat4_mul(mat4_rotate(angle, axis), mat4_scale(scale)));
+           
+            m->physics_body = entity_add_rigidbody(&manager->simworld,entity_create(manager));
+            *(m->physics_body) = simple_physics_body_default();
+            //OBB initialization
+            {
+                mat4 rotation_matrix = mat4_rotate(angle, vec3_normalize(axis));
+                mat3 axes = mat4_extract_rotation(rotation_matrix);
+
+                vec3 center = pos;
+                vec3 hw = v3(scale.x,scale.y,scale.z);
+                OBB test_obb = obb_init(pos, (f32*)axes.elements, hw);
+                m->physics_body->collider.obb = test_obb; 
+                m->physics_body->collider.type = ORIENTED_BOUNDED_BOX;
+            }
+            m->physics_body->gravity_scale = 0.f;
+
+            m->physics_body->position = pos;
+            if (scale.x * scale.y * scale.z > 5.f)
+            {
+                m->physics_body->mass_data = mass_data_init(0.f);
+                m->physics_body->gravity_scale = 0.f;
+            }
+            else
+            {
+                m->physics_body->mass_data = mass_data_init(1.f);
+                //m->physics_body->mat.restitution = 0.9f;
+            }
+        }
+
         else if (strcmp("SPHERE", str) == 0)
         {
             m = entity_add_model(&manager->model_manager,entity_create(manager));

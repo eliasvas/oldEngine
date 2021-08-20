@@ -381,6 +381,13 @@ typedef union vec4
 typedef vec4 color4;
 typedef vec4 float4;
 
+typedef union mat3
+{
+    f32 elements[3][3];//{x.x,x.y,x.z,0,y.x,y.y,y.z,0,z.x,z.y,z.z,0,p.x,p.y,p.z,1} 
+
+    f32 raw[9]; //{x.x,x.y,x.z,0,y.x,y.y,y.z,0,z.x,z.y,z.z,0,p.x,p.y,p.z,1} 
+}mat3;
+
 typedef union mat4
 {
     f32 elements[4][4];//{x.x,x.y,x.z,0,y.x,y.y,y.z,0,z.x,z.y,z.z,0,p.x,p.y,p.z,1} 
@@ -1109,6 +1116,17 @@ INLINE mat4 mat4_inv(mat4 m)
         inv_out.raw[i] = inv.raw[i] * det;
 
     return inv_out;
+}
+
+
+INLINE mat3 mat4_extract_rotation(mat4 rotation_matrix)
+{
+       mat3 axes = {
+            rotation_matrix.elements[0][0],rotation_matrix.elements[0][1],rotation_matrix.elements[0][2],
+            rotation_matrix.elements[1][0],rotation_matrix.elements[1][1],rotation_matrix.elements[1][2],
+            rotation_matrix.elements[2][0],rotation_matrix.elements[2][1],rotation_matrix.elements[2][2]
+        };
+        return axes;
 }
 
 INLINE mat4 orthographic_proj(f32 l, f32 r, f32 b, f32 t, f32 n, f32 f)

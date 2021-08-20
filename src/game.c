@@ -127,15 +127,12 @@ render(void)
     {
 
         mat4 rotation_matrix = mat4_rotate(360.f * sin(global_platform.current_time), v3(0.22 * sin(global_platform.current_time * 1.23),1,0.2 * sin(global_platform.current_time * 3.2f)));
-        vec3 axes[9] = {
-            rotation_matrix.elements[0][0],rotation_matrix.elements[0][1],rotation_matrix.elements[0][2],
-            rotation_matrix.elements[1][0],rotation_matrix.elements[1][1],rotation_matrix.elements[1][2],
-            rotation_matrix.elements[2][0],rotation_matrix.elements[2][1],rotation_matrix.elements[2][2]
-        };
+        mat3 axes = mat4_extract_rotation(rotation_matrix);
+
         vec3 center = v3(2,5,3);
         vec3 hw = v3(0.3f,0.3f,0.3f);
-        renderer_push_obb_wireframe(&rend, center, (f32*)axes, hw);
-        OBB test_obb = obb_init(center, axes, hw);
+        renderer_push_obb_wireframe(&rend, center, (f32*)axes.elements, hw);
+        OBB test_obb = obb_init(center, (f32*)axes.elements, hw);
         AABB bounding_box = obb_to_aabb(test_obb);
         renderer_push_cube_wireframe(&rend, bounding_box.min, bounding_box.max);
     }
