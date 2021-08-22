@@ -289,6 +289,7 @@ internal void simworld_simulate(SimulationWorld *manager)
         {
             pb->collider.obb.center = pb->position;
         }
+
         //integrate forces!
         pb->velocity = vec3_add(pb->velocity, vec3_mulf(vec3_add(vec3_mulf(v3(0,pb->gravity_scale, 0), -100.f), vec3_mulf(pb->force, pb->mass_data.inv_mass)), global_platform.dt));
         pb->force = v3(0,0,0);
@@ -300,7 +301,7 @@ internal void simworld_simulate(SimulationWorld *manager)
         {
             m.A = &manager->bodies[i];
             m.B = &manager->bodies[j];
-            if (test_aabb_aabb_manifold(&m))
+            if (test_broad_collision_manifold(&m))
                 manager->pairs[manager->pairs_count++] = (SimplePhysicsBodyPair){m.A, m.B};
         }
         
@@ -382,6 +383,7 @@ entity_manager_render(EntityManager *manager, Renderer *rend)
     {
         renderer_push_model(rend, &manager->model_manager.models[i]);
         SimplePhysicsBody *pb = manager->model_manager.models[i].physics_body;
+        if(pb == NULL)continue;
         if (pb->collider.type == BOX)
         {
             renderer_push_cube_wireframe(rend, manager->model_manager.models[i].physics_body->collider.box.min,manager->model_manager.models[i].physics_body->collider.box.max);
@@ -470,8 +472,8 @@ void scene_init(char *filepath, EntityManager * manager)
                 vec3 center = pos;
                 vec3 hw = v3(scale.x,scale.y,scale.z);
                 OBB test_obb = obb_init(pos, (f32*)axes.elements, hw);
-                m->physics_body->collider.obb = test_obb; 
                 m->physics_body->collider.type = ORIENTED_BOUNDED_BOX;
+                m->physics_body->collider.obb = test_obb; 
             }
             m->physics_body->gravity_scale = 0.f;
 
@@ -479,13 +481,13 @@ void scene_init(char *filepath, EntityManager * manager)
             if (scale.x * scale.y * scale.z > 5.f)
             {
                 m->physics_body->mass_data = mass_data_init(0.f);
-                m->physics_body->gravity_scale = 0.f;
             }
             else
             {
                 m->physics_body->mass_data = mass_data_init(1.f);
                 //m->physics_body->mat.restitution = 0.9f;
             }
+            m->physics_body->collider.type = ORIENTED_BOUNDED_BOX;
         }
 
         else if (strcmp("SPHERE", str) == 0)

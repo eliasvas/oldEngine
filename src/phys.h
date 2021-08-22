@@ -14,7 +14,6 @@ test_aabb_aabb(AABB a, AABB b)
     if (a.max.x < b.min.x || a.min.x > b.max.x) return FALSE;
     if (a.max.y < b.min.y || a.min.y > b.max.y) return FALSE;
     if (a.max.z < b.min.z || a.min.z > b.max.z) return FALSE;
-    //sprintf(error_log, "collision");
     return TRUE;
 }
 internal AABB aabb_init(vec3 min, vec3 max)
@@ -63,7 +62,7 @@ typedef enum ColliderType
    BOX = 1,
    SPHERE = 2,
    TRIANGLE = 3,
-   ORIENTED_BOUNDED_BOX= 4,
+   ORIENTED_BOUNDED_BOX = 4,
    MAX_COLLIDER_TYPES, 
 }ColliderType;
 typedef struct SimpleCollider
@@ -165,7 +164,7 @@ typedef struct Manifold
 
 internal void positional_correction(Manifold *m)
 {
-  f32 percent = 0.2; // usually 20% to 80%
+  f32 percent = 0.6; // usually 20% to 80%
   vec3 correction = vec3_mulf(vec3_divf(m->normal, 1.f), m->penetration / (m->A->mass_data.inv_mass + m->B->mass_data.inv_mass) * percent);
   m->A->position.x -= m->A->mass_data.inv_mass * correction.x;
   m->A->position.y -= m->A->mass_data.inv_mass * correction.y;
@@ -253,10 +252,10 @@ internal b32 test_aabb_aabb_manifold(Manifold *m)
   return FALSE;
 }
 
-internal void resolve_collision(Manifold *m)
-{
-    //positional_correction(m);
 
+//resolves AABB to AABB collsions (updates pos/vel/acc)
+internal void resolve_collision_aabb(Manifold *m)
+{
     SimplePhysicsBody *A = m->A;
     SimplePhysicsBody *B = m->B;
 
@@ -281,6 +280,15 @@ internal void resolve_collision(Manifold *m)
     A->velocity = vec3_sub(A->velocity, vec3_mulf(impulse,A->mass_data.inv_mass));
     B->velocity = vec3_add(B->velocity,vec3_mulf(impulse,B->mass_data.inv_mass));
 }
+
+internal void resolve_collision(Manifold *m)
+{
+    if (m->A->collider.type == BOX && m->B->collider.type == BOX)
+        resolve_collision_aabb(m);
+    else
+        resolve_collision_aabb(m);
+}
+
 
 typedef struct Ray
 {
@@ -436,12 +444,57 @@ internal b32 test_collision_manifold(Manifold *m)
             OBB obb = B->collider.obb;
             AABB b2 = obb_to_aabb(B->collider.obb);
             if (test_aabb_aabb(b2, A->collider.box))
-                exit(1);
-            //B->collider.box = b2;
-            //B->collider.type = BOX; 
-            //return test_aabb_aabb_manifold(m);
+                return TRUE;
         }
     }
+    else if (A->collider.type == ORIENTED_BOUNDED_BOX)
+    {
+        if (B->collider.type == BOX)
+        {
+            if (test_aabb_aabb(B->collider.box, obb_to_aabb(A->collider.obb)))
+                return TRUE;
+        }
+        else if (B->collider.type == ORIENTED_BOUNDED_BOX)
+        {
+            if (test_aabb_aabb(obb_to_aabb(A->collider.obb), obb_to_aabb(B->collider.obb)))
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+internal b32 test_broad_collision_manifold(Manifold *m)
+{
+    SimplePhysicsBody *A = m->A;
+    SimplePhysicsBody *B = m->B;
+ 
+    if (A->collider.type == BOX)
+    {
+        if (B->collider.type == BOX)
+            return test_aabb_aabb_manifold(m);
+        else if (B->collider.type == ORIENTED_BOUNDED_BOX)
+        {
+            OBB obb = B->collider.obb;
+            AABB b2 = obb_to_aabb(B->collider.obb);
+            if (test_aabb_aabb(b2, A->collider.box))
+                return TRUE;
+        }
+    }
+    else if (A->collider.type == ORIENTED_BOUNDED_BOX)
+    {
+        if (B->collider.type == BOX)
+        {
+            if (test_aabb_aabb(B->collider.box, obb_to_aabb(A->collider.obb)))
+                return TRUE;
+        }
+        else if (B->collider.type == ORIENTED_BOUNDED_BOX)
+        {
+            if (test_aabb_aabb(obb_to_aabb(A->collider.obb), obb_to_aabb(B->collider.obb)))
+                return TRUE;
+        }
+    }
+
     return FALSE;
 }
 

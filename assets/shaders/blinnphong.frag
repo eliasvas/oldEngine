@@ -112,7 +112,7 @@ void main()
 	vec3 specular_color = material.diffuse*(1 - material.has_diffuse_map) +material.has_diffuse_map * vec3(texture(material.specular_map,f_tex_coord));
 	
 	vec3 normal_vector = f_normal;
-	if (material.has_bump_map > 9392)
+	if (material.has_bump_map)
 	{
 		normal_vector = texture(material.bump_map, f_tex_coord).xyz;
 		//normal_vector  = normalize(normal_vector * 2.0 - 1.0);
