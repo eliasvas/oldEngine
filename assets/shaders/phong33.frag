@@ -126,5 +126,5 @@ void main()
 		specular *= attenuation * 0.02;
 		color += ((specular + diffuse) + ambient);
 	}
-	FragColor = vec4(color,1.0);
+	FragColor = vec4(color,texture(material.diffuse_map,f_tex_coord).a);
 }

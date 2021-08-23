@@ -119,7 +119,7 @@ model_init_cube(Model* m)
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
     m->meshes[0].material = material_default();
-    texture_load_default(&(m->meshes[0].material.diff));
+    texture_load_default(&(m->meshes[0].material.diff), v4(0.95,0.95,0.95,1));
     m->meshes[0].material.has_diffuse_map = TRUE;
     //texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
     texture_load(&(m->meshes[0].material.spec),"../assets/mars.tga");
@@ -128,8 +128,8 @@ model_init_cube(Model* m)
 }
 
 
-internal Vertex *
-gen_sphere_data(f32 radius, u32 sector_count, u32 stack_count)
+internal Vertex * //                                                V  final vertex count!
+gen_sphere_data(f32 radius, u32 sector_count, u32 stack_count, u32 *vc)
 {
     //Vertex *res = malloc(sizeof(Vertex) * sectors * stacks * 3);
     u32 vertices_count = sector_count * stack_count * 3 * 2;
@@ -216,7 +216,7 @@ gen_sphere_data(f32 radius, u32 sector_count, u32 stack_count)
         }
     }
     //sprintf(error_log, "%i vertices", vertex_count);
-
+    *vc = vertex_count;
     return res;
 }
 
@@ -226,10 +226,11 @@ model_init_sphere(Model* m, f32 radius, u32 sectors, u32 stacks)
     //f32 radius = 2.f;
     //u32 sectors = 20;
     //u32 stacks = 10;
-    Vertex *sphere_data = gen_sphere_data(radius, sectors, stacks);
+    u32 vertices_count;
+    Vertex *sphere_data = gen_sphere_data(radius, sectors, stacks, &vertices_count);
     m->meshes = ALLOC(sizeof(MeshInfo));
     m->mesh_count = 1;
-    m->meshes[0].vertices_count = 6 * sectors * stacks;
+    m->meshes[0].vertices_count = vertices_count;
     m->model = mat4_translate(v3(0,0,0));
     glGenVertexArrays(1, &m->meshes[0].vao);
     glBindVertexArray(m->meshes[0].vao); 
@@ -248,10 +249,10 @@ model_init_sphere(Model* m, f32 radius, u32 sectors, u32 stacks)
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
     m->meshes[0].material = material_default();
-    texture_load(&(m->meshes[0].material.diff),"../assets/mars.tga");
+    //texture_load(&(m->meshes[0].material.diff),"../assets/mars.tga");
+    texture_load_default(&(m->meshes[0].material.diff), v4(random01()*2,random01()*2,random01()*2,random01()));
     m->meshes[0].material.has_diffuse_map = TRUE;
-    texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
-    m->meshes[0].material.has_specular_map= TRUE;
+    m->meshes[0].material.has_specular_map= FALSE;
       
 
 }

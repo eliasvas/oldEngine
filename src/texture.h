@@ -39,7 +39,7 @@ internal b32 texture_load(Texture* tex,const char *filename)
     return result;
 }
 
-internal b32 texture_load_default(Texture* tex)
+internal b32 texture_load_default(Texture* tex, vec4 color)
 {
     b32 result = 0;
     glGenTextures(1, &tex->id);
@@ -57,9 +57,9 @@ internal b32 texture_load_default(Texture* tex)
     {
         for (u32 j = 0; j < 512; ++j)
         {
-            data[i + j * 512] = v4(0.95,0.95,0.95,1.0);
+            data[i + j * 512] = color;
             if (i < (512/30) || j < (512/30) || i > (512/30)*29 || j > (512/30)*29)
-                data[i + j * 512] = v4(0.1,0.1,0.1,1.0);
+                data[i + j * 512] = v4(0.1,0.1,0.1,1.f);
 
         }
     }

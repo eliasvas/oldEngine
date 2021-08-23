@@ -545,6 +545,7 @@ renderer_end_frame(Renderer *rend)
   }
 #endif
 
+
   //set light ssbo @check
   {
    	glBindBuffer(GL_SHADER_STORAGE_BUFFER, rend->light_buffer);

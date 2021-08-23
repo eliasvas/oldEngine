@@ -35,8 +35,6 @@ global ParticleEmitter pe;
     -Fix Bloom effects
     -Physics Engine (Stabilize current version..)
     -Cascaded Shadow Maps!!!
-    -Check Vertex normals for OBJ loading
-    -Fix Timestepping!!!!
     -Light Attenuation and radius stuff
     -See how UE4 does their PBR lighting
     -IMGUI tweaks (add size member configure events and stuff) 
@@ -49,7 +47,7 @@ internal void
 init(void)
 {
     entity_manager_init(&entity_manager);
-    scene_init("../assets/scene.txt", &entity_manager);
+    scene_init("../assets/base.txt", &entity_manager);
 
     model_init_cube(&debug_cube);
     renderer_init(&rend);
@@ -81,11 +79,13 @@ update(void)
     if (global_platform.key_pressed[KEY_0])
         scene_init("../assets/empty_scene.txt", &entity_manager);
     if (global_platform.key_pressed[KEY_1])
-        scene_init("../assets/scene.txt", &entity_manager);
+        scene_init("../assets/base.txt", &entity_manager);
     else if (global_platform.key_pressed[KEY_2])
-        scene_init("../assets/scene_big.txt", &entity_manager);
+        scene_init("../assets/csm_test.txt", &entity_manager);
     else if (global_platform.key_pressed[KEY_3])
-        scene_init("../assets/scene2.txt", &entity_manager);
+        scene_init("../assets/pbr_test.txt", &entity_manager);
+    else if (global_platform.key_pressed[KEY_4])
+        scene_init("../assets/oit_test.txt", &entity_manager);
 
     //renderer_push_billboard(&rend, v3(0,10,0), v4(1,0,1,1));
     particle_emitter_simulate(&pe);
@@ -151,11 +151,11 @@ render(void)
             do_switch(GEN_ID, (dui_Rect){200,270,20,20}, &rend.renderer_settings.light_cull);
             do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.debug_mode);
             do_button(GEN_ID, (dui_Rect){260,200,150,30});
-            dui_draw_string(260, 370, "options");
-            dui_draw_string(190, 330, "multisampling");
+            dui_draw_string(280, 370, "options");
+            dui_draw_string(200, 330, "multisampling");
             dui_draw_string(215, 275, "light cull");
-            dui_draw_string(230, 240, "debug");
-            dui_draw_string(280, 210, " PAUSE");
+            dui_draw_string(220, 240, "debug");
+            dui_draw_string(290, 210, " PAUSE");
             char ms[64];
             sprintf(ms, "%.4f ms", global_platform.dt);
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);

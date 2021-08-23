@@ -26,12 +26,12 @@ void dui_draw_char2(f32 x, f32 y,f32 w, f32 h, char ch)
 b32 dui_rect_hit(dui_Rect rect)
 {
     if (rect.x > ui.mouse_pos.x || rect.x + rect.w < ui.mouse_pos.x || rect.y > ui.mouse_pos.y || rect.y + rect.h  < ui.mouse_pos.y)
-        return 0; 
-    return 1;
+        return FALSE; 
+    return TRUE;
 }
 void dui_frame_begin(void)
 {
-    ui.hot = 0;
+    ui.hot = FALSE;
     ui.mouse_pos = v2(global_platform.mouse_x, global_platform.window_height - global_platform.mouse_y);
     ui.mouse_down = global_platform.left_mouse_down;
 }
@@ -129,7 +129,7 @@ void dui_draw_string(i32 x, i32 y, char *string)
     while(*string)
     {
         dui_draw_char(x, y, *string);
-        x+=12;
+        x+=10;
         ++string;
     }
 }
