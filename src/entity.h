@@ -308,7 +308,7 @@ internal void simworld_simulate(SimulationWorld *manager)
     }
     //sort broad phase pairs and cull dupes
     insertion_sort_pairs(manager->pairs, manager->pairs_count);
-    manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count);
+    //manager->pairs_count = cull_dupe_pairs(manager->pairs, manager->pairs_count); //TODO(ilias): improve the culling part :((((
     //integrate velocity
     for (u32 i = 0; i < manager->next_index; ++i)
     {

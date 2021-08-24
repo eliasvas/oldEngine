@@ -430,6 +430,96 @@ internal OBB aabb_to_obb(AABB box)
     return obb;
 }
 
+internal b32 
+test_obb_obb(OBB a, OBB b)
+{
+    b32 collide = TRUE;
+    //do collision stuff
+    f32 ra, rb;
+    mat3 R, absR;
+
+
+    //1.) Compute rotation matrix expressing b in a's coordinate frame!!
+    for (u32 i = 0; i < 3; ++i)
+        for (u32 j = 0; j < 3; ++j)
+            R.elements[i][j] = vec3_dot(a.u[i], b.u[j]);
+
+    //2.) Compute translate t into a's coordinate system
+    vec3 t = vec3_sub(b.center, a.center);
+    t = v3(vec3_dot(t, a.u[0]), vec3_dot(t, a.u[1]), vec3_dot(t, a.u[2]));
+
+    //3.) Compute common subexpressions?????? wtf mr. Ericson???
+    for (u32 i = 0; i < 3; ++i)
+        for (u32 j = 0; j < 3; ++j)
+            absR.elements[i][j] = fabs(R.elements[i][j]) + 0.00001;
+
+    //4.) Test axes L = A0, L = A1, L = A2
+    for (u32 i = 0; i < 3; ++i)
+    {
+        ra = a.e.elements[i];
+        rb = b.e.x * absR.elements[i][0] + b.e.y * absR.elements[i][1] + b.e.z * absR.elements[i][2];
+        if (fabs(t.elements[i]) > ra + rb)
+            collide = FALSE;
+    }
+    //5.) Test axes L = B0, L = B1, L = B2
+    for (u32 i = 0; i < 3; ++i)
+    {
+        rb = b.e.elements[i];
+        ra = a.e.x * absR.elements[0][i] + a.e.y * absR.elements[1][i] + a.e.z * absR.elements[2][i];
+        if (fabs(t.elements[0] * R.elements[0][i] + t.elements[1] * R.elements[1][i] + t.elements[2] * R.elements[2][i]) > ra + rb)
+            collide = FALSE;
+    }
+    //Test L = A0 x B0
+    ra = a.e.elements[1] * absR.elements[2][0] + a.e.elements[2] * absR.elements[1][0];
+    rb = b.e.elements[1] * absR.elements[0][2] + b.e.elements[2] * absR.elements[0][1];
+    if (fabs(t.elements[2] * R.elements[1][0] - t.elements[1] * R.elements[2][0]) > ra + rb)
+        collide = FALSE;
+    //Test L = A0 x B1
+    ra = a.e.elements[1] * absR.elements[2][1] + a.e.elements[2] * absR.elements[1][1];
+    rb = b.e.elements[0] * absR.elements[0][2] + b.e.elements[2] * absR.elements[0][0];
+    if (fabs(t.elements[2] * R.elements[1][1] - t.elements[1] * R.elements[2][1]) > ra + rb)
+        collide = FALSE;
+    //Test L = A0 x B2
+    ra = a.e.elements[1] * absR.elements[2][2] + a.e.elements[2] * absR.elements[1][2];
+    rb = b.e.elements[0] * absR.elements[0][1] + b.e.elements[1] * absR.elements[0][0];
+    if (fabs(t.elements[2] * R.elements[1][2] - t.elements[1] * R.elements[2][2]) > ra + rb)
+        collide = FALSE;
+    //Test L = A1 x B0
+    ra = a.e.elements[0] * absR.elements[2][0] + a.e.elements[2] * absR.elements[0][0];
+    rb = b.e.elements[1] * absR.elements[1][2] + b.e.elements[2] * absR.elements[1][1];
+    if (fabs(t.elements[0] * R.elements[2][0] - t.elements[2] * R.elements[0][0]) > ra + rb)
+        collide = FALSE;
+    //Test L = A1 x B1
+    ra = a.e.elements[0] * absR.elements[2][1] + a.e.elements[2] * absR.elements[0][1];
+    rb = b.e.elements[0] * absR.elements[1][2] + b.e.elements[2] * absR.elements[1][0];
+    if (fabs(t.elements[0] * R.elements[2][1] - t.elements[2] * R.elements[0][1]) > ra + rb)
+        collide = FALSE;
+    //Test L = A1 x B2
+    ra = a.e.elements[0] * absR.elements[2][2] + a.e.elements[2] * absR.elements[0][2];
+    rb = b.e.elements[0] * absR.elements[1][1] + b.e.elements[1] * absR.elements[1][0];
+    if (fabs(t.elements[0] * R.elements[2][2] - t.elements[2] * R.elements[0][2]) > ra + rb)
+        collide = FALSE;
+    //Test L = A2 x B0
+    ra = a.e.elements[0] * absR.elements[1][0] + a.e.elements[1] * absR.elements[0][0];
+    rb = b.e.elements[1] * absR.elements[2][2] + b.e.elements[2] * absR.elements[2][1];
+    if (fabs(t.elements[1] * R.elements[0][0] - t.elements[0] * R.elements[1][0]) > ra + rb)
+        collide = FALSE;
+    //Test L = A2 x B1
+    ra = a.e.elements[0] * absR.elements[1][1] + a.e.elements[1] * absR.elements[0][1];
+    rb = b.e.elements[0] * absR.elements[2][2] + b.e.elements[2] * absR.elements[2][0];
+    if (fabs(t.elements[1] * R.elements[0][1] - t.elements[0] * R.elements[1][1]) > ra + rb)
+        collide = FALSE;
+    //Test L = A2 x B2
+    ra = a.e.elements[0] * absR.elements[1][2] + a.e.elements[1] * absR.elements[0][2];
+    rb = b.e.elements[0] * absR.elements[2][1] + b.e.elements[1] * absR.elements[2][0];
+    if (fabs(t.elements[1] * R.elements[0][2] - t.elements[0] * R.elements[1][2]) > ra + rb)
+        collide = FALSE;
+
+    //if (collide) exit(23);
+    return collide;
+}
+
+
 internal b32 test_collision_manifold(Manifold *m)
 {
     SimplePhysicsBody *A = m->A;
@@ -441,23 +531,37 @@ internal b32 test_collision_manifold(Manifold *m)
             return test_aabb_aabb_manifold(m);
         else if (B->collider.type == ORIENTED_BOUNDED_BOX)
         {
-            OBB obb = B->collider.obb;
-            AABB b2 = obb_to_aabb(B->collider.obb);
-            if (test_aabb_aabb(b2, A->collider.box))
+            OBB obb2 = B->collider.obb;
+            OBB obb1 = aabb_to_obb(A->collider.box);
+            if (test_obb_obb(obb1, obb2))
+            {
+                m->normal = vec3_normalize(vec3_sub(obb2.center, obb1.center));
+                m->penetration = 0.1f;
                 return TRUE;
+            }
         }
     }
     else if (A->collider.type == ORIENTED_BOUNDED_BOX)
     {
         if (B->collider.type == BOX)
         {
-            if (test_aabb_aabb(B->collider.box, obb_to_aabb(A->collider.obb)))
+            OBB obb1 = A->collider.obb;
+            OBB obb2 = aabb_to_obb(B->collider.box);
+            if (test_obb_obb(obb1, obb2))
+            {
+                m->normal = vec3_normalize(vec3_sub(obb2.center, obb1.center));
+                m->penetration = 0.1f;
                 return TRUE;
-        }
+            }
+          }
         else if (B->collider.type == ORIENTED_BOUNDED_BOX)
         {
-            if (test_aabb_aabb(obb_to_aabb(A->collider.obb), obb_to_aabb(B->collider.obb)))
+            if (test_obb_obb(A->collider.obb, B->collider.obb))
+            {
+                m->normal = vec3_sub(B->collider.obb.center, A->collider.obb.center);
+                m->penetration = 0.1f;
                 return TRUE;
+            }
         }
     }
 
