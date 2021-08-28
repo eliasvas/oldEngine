@@ -109,7 +109,7 @@ float shadow_calc(int cascade_index)
 void main()
 {
 	vec3 diffuse_color = material.diffuse*(1 - material.has_diffuse_map) + material.has_diffuse_map * vec3(texture(material.diffuse_map,f_tex_coord));
-	vec3 specular_color = material.diffuse*(1 - material.has_diffuse_map) +material.has_diffuse_map * vec3(texture(material.specular_map,f_tex_coord));
+	vec3 specular_color = material.diffuse*(1 - material.has_specular_map) +material.has_specular_map * vec3(texture(material.specular_map,f_tex_coord));
 	
 	vec3 normal_vector = f_normal;
 	if (material.has_bump_map)

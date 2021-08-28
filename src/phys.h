@@ -430,94 +430,259 @@ internal OBB aabb_to_obb(AABB box)
     return obb;
 }
 
+
 internal b32 
-test_obb_obb(OBB a, OBB b)
+test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
 {
     b32 collide = TRUE;
     //do collision stuff
     f32 ra, rb;
     mat3 R, absR;
 
+    vec3 separation_axis = vec3_normalize(vec3_sub(b.center, a.center));
+    f32 min_overlap = FLT_MAX;
 
-    //1.) Compute rotation matrix expressing b in a's coordinate frame!!
+    /*
+    if (overlap < min_overlap)
+    {
+        min_overlap = overlap;
+        separation_axis = v3(0,1,0)
+    }
+    */
+    //Compute rotation matrix expressing b in a's coordinate frame!!
     for (u32 i = 0; i < 3; ++i)
         for (u32 j = 0; j < 3; ++j)
             R.elements[i][j] = vec3_dot(a.u[i], b.u[j]);
 
-    //2.) Compute translate t into a's coordinate system
+    //Compute and transform t into a's coordinate system
     vec3 t = vec3_sub(b.center, a.center);
     t = v3(vec3_dot(t, a.u[0]), vec3_dot(t, a.u[1]), vec3_dot(t, a.u[2]));
 
-    //3.) Compute common subexpressions?????? wtf mr. Ericson???
+    //Compute common subexpressions?????? wtf mr. Ericson???
     for (u32 i = 0; i < 3; ++i)
         for (u32 j = 0; j < 3; ++j)
             absR.elements[i][j] = fabs(R.elements[i][j]) + 0.00001;
 
-    //4.) Test axes L = A0, L = A1, L = A2
+    //m->normal = vec3_sub(b.center, a.center);
+    m->normal = v3(0,0,0);
+    m->penetration = 0.3f;
+
+
+    f32 overlap;
+
+
+    //Test axes L = A0, L = A1, L = A2
     for (u32 i = 0; i < 3; ++i)
     {
         ra = a.e.elements[i];
         rb = b.e.x * absR.elements[i][0] + b.e.y * absR.elements[i][1] + b.e.z * absR.elements[i][2];
-        if (fabs(t.elements[i]) > ra + rb)
+        overlap = fabs(t.elements[i]) - ra - rb;
+        if (overlap > 0)
             collide = FALSE;
     }
-    //5.) Test axes L = B0, L = B1, L = B2
+
+
+    // Test axes L = B0, L = B1, L = B2
     for (u32 i = 0; i < 3; ++i)
     {
         rb = b.e.elements[i];
         ra = a.e.x * absR.elements[0][i] + a.e.y * absR.elements[1][i] + a.e.z * absR.elements[2][i];
-        if (fabs(t.elements[0] * R.elements[0][i] + t.elements[1] * R.elements[1][i] + t.elements[2] * R.elements[2][i]) > ra + rb)
+        overlap = fabs(t.elements[0] * R.elements[0][i] + t.elements[1] * R.elements[1][i] + t.elements[2] * R.elements[2][i]) - ra - rb;
+        if (overlap > 0)
             collide = FALSE;
     }
+
+
     //Test L = A0 x B0
     ra = a.e.elements[1] * absR.elements[2][0] + a.e.elements[2] * absR.elements[1][0];
     rb = b.e.elements[1] * absR.elements[0][2] + b.e.elements[2] * absR.elements[0][1];
-    if (fabs(t.elements[2] * R.elements[1][0] - t.elements[1] * R.elements[2][0]) > ra + rb)
+    overlap = fabs(t.elements[2] * R.elements[1][0] - t.elements[1] * R.elements[2][0]) - ra - rb;
+    if (overlap > 0)
         collide = FALSE;
+  
     //Test L = A0 x B1
     ra = a.e.elements[1] * absR.elements[2][1] + a.e.elements[2] * absR.elements[1][1];
     rb = b.e.elements[0] * absR.elements[0][2] + b.e.elements[2] * absR.elements[0][0];
-    if (fabs(t.elements[2] * R.elements[1][1] - t.elements[1] * R.elements[2][1]) > ra + rb)
+    overlap = fabs(t.elements[2] * R.elements[1][1] - t.elements[1] * R.elements[2][1])- ra - rb;
+    if (overlap > 0)
         collide = FALSE;
     //Test L = A0 x B2
     ra = a.e.elements[1] * absR.elements[2][2] + a.e.elements[2] * absR.elements[1][2];
     rb = b.e.elements[0] * absR.elements[0][1] + b.e.elements[1] * absR.elements[0][0];
-    if (fabs(t.elements[2] * R.elements[1][2] - t.elements[1] * R.elements[2][2]) > ra + rb)
+    overlap = fabs(t.elements[2] * R.elements[1][2] - t.elements[1] * R.elements[2][2])- ra - rb;
+    if (overlap > 0)
         collide = FALSE;
+
     //Test L = A1 x B0
     ra = a.e.elements[0] * absR.elements[2][0] + a.e.elements[2] * absR.elements[0][0];
     rb = b.e.elements[1] * absR.elements[1][2] + b.e.elements[2] * absR.elements[1][1];
-    if (fabs(t.elements[0] * R.elements[2][0] - t.elements[2] * R.elements[0][0]) > ra + rb)
+    overlap =fabs(t.elements[0] * R.elements[2][0] - t.elements[2] * R.elements[0][0]) - ra - rb;
+    if (overlap > 0)
         collide = FALSE;
     //Test L = A1 x B1
     ra = a.e.elements[0] * absR.elements[2][1] + a.e.elements[2] * absR.elements[0][1];
     rb = b.e.elements[0] * absR.elements[1][2] + b.e.elements[2] * absR.elements[1][0];
-    if (fabs(t.elements[0] * R.elements[2][1] - t.elements[2] * R.elements[0][1]) > ra + rb)
+    overlap =fabs(t.elements[0] * R.elements[2][1] - t.elements[2] * R.elements[0][1]) - ra - rb;
+    if (overlap > 0)
         collide = FALSE;
     //Test L = A1 x B2
     ra = a.e.elements[0] * absR.elements[2][2] + a.e.elements[2] * absR.elements[0][2];
     rb = b.e.elements[0] * absR.elements[1][1] + b.e.elements[1] * absR.elements[1][0];
-    if (fabs(t.elements[0] * R.elements[2][2] - t.elements[2] * R.elements[0][2]) > ra + rb)
+    overlap =fabs(t.elements[0] * R.elements[2][2] - t.elements[2] * R.elements[0][2]) - ra - rb;
+    if (overlap > 0)
         collide = FALSE;
     //Test L = A2 x B0
     ra = a.e.elements[0] * absR.elements[1][0] + a.e.elements[1] * absR.elements[0][0];
     rb = b.e.elements[1] * absR.elements[2][2] + b.e.elements[2] * absR.elements[2][1];
-    if (fabs(t.elements[1] * R.elements[0][0] - t.elements[0] * R.elements[1][0]) > ra + rb)
+    overlap =fabs(t.elements[1] * R.elements[0][0] - t.elements[0] * R.elements[1][0]) - ra - rb;
+    if (overlap > 0)
         collide = FALSE;
     //Test L = A2 x B1
     ra = a.e.elements[0] * absR.elements[1][1] + a.e.elements[1] * absR.elements[0][1];
     rb = b.e.elements[0] * absR.elements[2][2] + b.e.elements[2] * absR.elements[2][0];
-    if (fabs(t.elements[1] * R.elements[0][1] - t.elements[0] * R.elements[1][1]) > ra + rb)
+    overlap =fabs(t.elements[1] * R.elements[0][1] - t.elements[0] * R.elements[1][1]) - ra - rb;
+    if (overlap > 0)
         collide = FALSE;
     //Test L = A2 x B2
     ra = a.e.elements[0] * absR.elements[1][2] + a.e.elements[1] * absR.elements[0][2];
     rb = b.e.elements[0] * absR.elements[2][1] + b.e.elements[1] * absR.elements[2][0];
-    if (fabs(t.elements[1] * R.elements[0][2] - t.elements[0] * R.elements[1][2]) > ra + rb)
+    overlap =fabs(t.elements[1] * R.elements[0][2] - t.elements[0] * R.elements[1][2]) - ra - rb;
+    if (overlap > 0)
         collide = FALSE;
+
+    m->normal = separation_axis;
 
     //if (collide) exit(23);
     return collide;
 }
+
+
+internal b32 
+test_obb_obb_manifold_works(OBB a, OBB b, Manifold *m)
+{
+    b32 collide = TRUE;
+    //do collision stuff
+    f32 ra, rb;
+    mat3 R, absR;
+
+    vec3 separation_axis = vec3_normalize(vec3_sub(b.center, a.center));
+    f32 min_overlap = FLT_MAX;
+
+    /*
+    if (overlap < min_overlap)
+    {
+        min_overlap = overlap;
+        separation_axis = v3(0,1,0)
+    }
+    */
+    //Compute rotation matrix expressing b in a's coordinate frame!!
+    for (u32 i = 0; i < 3; ++i)
+        for (u32 j = 0; j < 3; ++j)
+            R.elements[i][j] = vec3_dot(a.u[i], b.u[j]);
+
+    //Compute and transform t into a's coordinate system
+    vec3 t = vec3_sub(b.center, a.center);
+    t = v3(vec3_dot(t, a.u[0]), vec3_dot(t, a.u[1]), vec3_dot(t, a.u[2]));
+
+    //Compute common subexpressions?????? wtf mr. Ericson???
+    for (u32 i = 0; i < 3; ++i)
+        for (u32 j = 0; j < 3; ++j)
+            absR.elements[i][j] = fabs(R.elements[i][j]) + 0.00001;
+
+    //m->normal = vec3_sub(b.center, a.center);
+    m->normal = v3(0,0,0);
+    m->penetration = 0.3f;
+
+
+    f32 overlap;
+
+
+    //Test axes L = A0, L = A1, L = A2
+    for (u32 i = 0; i < 3; ++i)
+    {
+        ra = a.e.elements[i];
+        rb = b.e.x * absR.elements[i][0] + b.e.y * absR.elements[i][1] + b.e.z * absR.elements[i][2];
+        overlap = fabs(t.elements[i]) - ra - rb;
+        if (overlap > 0)
+            collide = FALSE;
+    }
+
+
+    // Test axes L = B0, L = B1, L = B2
+    for (u32 i = 0; i < 3; ++i)
+    {
+        rb = b.e.elements[i];
+        ra = a.e.x * absR.elements[0][i] + a.e.y * absR.elements[1][i] + a.e.z * absR.elements[2][i];
+        overlap = fabs(t.elements[0] * R.elements[0][i] + t.elements[1] * R.elements[1][i] + t.elements[2] * R.elements[2][i]) - ra - rb;
+        if (overlap > 0)
+            collide = FALSE;
+    }
+
+
+    //Test L = A0 x B0
+    ra = a.e.elements[1] * absR.elements[2][0] + a.e.elements[2] * absR.elements[1][0];
+    rb = b.e.elements[1] * absR.elements[0][2] + b.e.elements[2] * absR.elements[0][1];
+    overlap = fabs(t.elements[2] * R.elements[1][0] - t.elements[1] * R.elements[2][0]) - ra - rb;
+    if (overlap > 0)
+        collide = FALSE;
+  
+    //Test L = A0 x B1
+    ra = a.e.elements[1] * absR.elements[2][1] + a.e.elements[2] * absR.elements[1][1];
+    rb = b.e.elements[0] * absR.elements[0][2] + b.e.elements[2] * absR.elements[0][0];
+    overlap = fabs(t.elements[2] * R.elements[1][1] - t.elements[1] * R.elements[2][1])- ra - rb;
+    if (overlap > 0)
+        collide = FALSE;
+    //Test L = A0 x B2
+    ra = a.e.elements[1] * absR.elements[2][2] + a.e.elements[2] * absR.elements[1][2];
+    rb = b.e.elements[0] * absR.elements[0][1] + b.e.elements[1] * absR.elements[0][0];
+    overlap = fabs(t.elements[2] * R.elements[1][2] - t.elements[1] * R.elements[2][2])- ra - rb;
+    if (overlap > 0)
+        collide = FALSE;
+
+    //Test L = A1 x B0
+    ra = a.e.elements[0] * absR.elements[2][0] + a.e.elements[2] * absR.elements[0][0];
+    rb = b.e.elements[1] * absR.elements[1][2] + b.e.elements[2] * absR.elements[1][1];
+    overlap =fabs(t.elements[0] * R.elements[2][0] - t.elements[2] * R.elements[0][0]) - ra - rb;
+    if (overlap > 0)
+        collide = FALSE;
+    //Test L = A1 x B1
+    ra = a.e.elements[0] * absR.elements[2][1] + a.e.elements[2] * absR.elements[0][1];
+    rb = b.e.elements[0] * absR.elements[1][2] + b.e.elements[2] * absR.elements[1][0];
+    overlap =fabs(t.elements[0] * R.elements[2][1] - t.elements[2] * R.elements[0][1]) - ra - rb;
+    if (overlap > 0)
+        collide = FALSE;
+    //Test L = A1 x B2
+    ra = a.e.elements[0] * absR.elements[2][2] + a.e.elements[2] * absR.elements[0][2];
+    rb = b.e.elements[0] * absR.elements[1][1] + b.e.elements[1] * absR.elements[1][0];
+    overlap =fabs(t.elements[0] * R.elements[2][2] - t.elements[2] * R.elements[0][2]) - ra - rb;
+    if (overlap > 0)
+        collide = FALSE;
+    //Test L = A2 x B0
+    ra = a.e.elements[0] * absR.elements[1][0] + a.e.elements[1] * absR.elements[0][0];
+    rb = b.e.elements[1] * absR.elements[2][2] + b.e.elements[2] * absR.elements[2][1];
+    overlap =fabs(t.elements[1] * R.elements[0][0] - t.elements[0] * R.elements[1][0]) - ra - rb;
+    if (overlap > 0)
+        collide = FALSE;
+    //Test L = A2 x B1
+    ra = a.e.elements[0] * absR.elements[1][1] + a.e.elements[1] * absR.elements[0][1];
+    rb = b.e.elements[0] * absR.elements[2][2] + b.e.elements[2] * absR.elements[2][0];
+    overlap =fabs(t.elements[1] * R.elements[0][1] - t.elements[0] * R.elements[1][1]) - ra - rb;
+    if (overlap > 0)
+        collide = FALSE;
+    //Test L = A2 x B2
+    ra = a.e.elements[0] * absR.elements[1][2] + a.e.elements[1] * absR.elements[0][2];
+    rb = b.e.elements[0] * absR.elements[2][1] + b.e.elements[1] * absR.elements[2][0];
+    overlap =fabs(t.elements[1] * R.elements[0][2] - t.elements[0] * R.elements[1][2]) - ra - rb;
+    if (overlap > 0)
+        collide = FALSE;
+
+    m->normal = separation_axis;
+
+    //if (collide) exit(23);
+    return collide;
+}
+
+
 
 
 internal b32 test_collision_manifold(Manifold *m)
@@ -533,12 +698,8 @@ internal b32 test_collision_manifold(Manifold *m)
         {
             OBB obb2 = B->collider.obb;
             OBB obb1 = aabb_to_obb(A->collider.box);
-            if (test_obb_obb(obb1, obb2))
-            {
-                m->normal = vec3_normalize(vec3_sub(obb2.center, obb1.center));
-                m->penetration = 0.1f;
+            if (test_obb_obb_manifold(obb1, obb2, m))
                 return TRUE;
-            }
         }
     }
     else if (A->collider.type == ORIENTED_BOUNDED_BOX)
@@ -547,21 +708,13 @@ internal b32 test_collision_manifold(Manifold *m)
         {
             OBB obb1 = A->collider.obb;
             OBB obb2 = aabb_to_obb(B->collider.box);
-            if (test_obb_obb(obb1, obb2))
-            {
-                m->normal = vec3_normalize(vec3_sub(obb2.center, obb1.center));
-                m->penetration = 0.1f;
+            if (test_obb_obb_manifold(obb1, obb2, m))
                 return TRUE;
-            }
           }
         else if (B->collider.type == ORIENTED_BOUNDED_BOX)
         {
-            if (test_obb_obb(A->collider.obb, B->collider.obb))
-            {
-                m->normal = vec3_sub(B->collider.obb.center, A->collider.obb.center);
-                m->penetration = 0.1f;
-                return TRUE;
-            }
+            if (test_obb_obb_manifold(A->collider.obb, B->collider.obb, m))
+               return TRUE;
         }
     }
 

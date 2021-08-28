@@ -123,6 +123,7 @@ render(void)
     }
     */
    
+    /*
     //NOTE: obb rendering test
     {
 
@@ -136,6 +137,7 @@ render(void)
         AABB bounding_box = obb_to_aabb(test_obb);
         renderer_push_cube_wireframe(&rend, bounding_box.min, bounding_box.max);
     }
+    */
 
     particle_emitter_render(&pe, &rend);
     dui_frame_begin();

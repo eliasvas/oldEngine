@@ -122,7 +122,7 @@ model_init_cube(Model* m)
     texture_load_default(&(m->meshes[0].material.diff), v4(0.95,0.95,0.95,1));
     m->meshes[0].material.has_diffuse_map = TRUE;
     //texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
-    texture_load(&(m->meshes[0].material.spec),"../assets/mars.tga");
+    texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
     m->meshes[0].material.has_specular_map= FALSE;
       
 }
