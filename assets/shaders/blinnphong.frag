@@ -65,7 +65,7 @@ layout(binding = 2, std430) buffer  visible_index_buffer
 float shadow_calc(int cascade_index)
 {
 	float bias = 0.005;
-	cascade_index = 0;
+	//cascade_index = 0;
 	//bias = max(0.05 * (1.0 - dot(f_normal, dirlight.direction)), 0.005);  
 	// perform perspective divide (if ortho everything stays the same!)
     vec3 proj_coords = f_frag_pos_ls[cascade_index].xyz / f_frag_pos_ls[cascade_index].w;
@@ -77,9 +77,6 @@ float shadow_calc(int cascade_index)
 	*/
     // transform to [0,1] range
     proj_coords = proj_coords * 0.5 + 0.5;
-	//proj_coords.x = clamp(proj_coords.x, 0.0, 1.0);
-	//proj_coords.y = clamp(proj_coords.y, 0.0, 1.0);
-	//proj_coords.z = clamp(proj_coords.z, 0.0, 1.0);
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
     float closest_depth = texture(shadow_map[cascade_index], proj_coords.xy).r; 
     // get depth of current fragment from light's perspective
@@ -93,15 +90,13 @@ float shadow_calc(int cascade_index)
 	vec2 texel_size = 1.0 / textureSize(shadow_map[cascade_index], 0);
 	for(int x = -1; x <= 1; ++x)
 	{
-    for(int y = -1; y <= 1; ++y) 
+    for(int y = -1; y <= 1; ++y)
 		{
 			float pcf_depth = texture(shadow_map[cascade_index], proj_coords.xy + vec2(x, y) * texel_size).r; 
 			shadow += current_depth - bias > pcf_depth ? 0.0 : 1.0;        
 		}    
 	}
-	shadow /= 10.0;
-	//*/
-	//float shadow = current_depth - bias >closest_depth ? 0.0 : 1.0; 
+	shadow /= 9.0; 
     return shadow;
 }
 
@@ -140,8 +135,8 @@ void main()
 	{
 		if (clip_space_z < cascade_ends_clip_space[i])
 		{
-			cascade_index = i;
-			//diffuse[i] += 0.1f;
+			cascade_index = i; 
+			diffuse[i] += 0.1f;
 			break;
 		}
 	}

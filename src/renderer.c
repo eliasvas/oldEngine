@@ -54,7 +54,7 @@ renderer_init(Renderer *rend)
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
     rend->shadowmap_fbo[0] = fbo_init(1024*2, 1024*2, FBO_DEPTH);
     rend->shadowmap_fbo[1] = fbo_init(1024, 1024, FBO_DEPTH);
-    rend->shadowmap_fbo[2] = fbo_init(1024, 1024, FBO_DEPTH);
+    rend->shadowmap_fbo[2] = fbo_init(512, 512, FBO_DEPTH);
     //rend->depthpeel_fbo = fbo_init(rend->renderer_settings.render_dim.x * 2, rend->renderer_settings.render_dim.y * 2, FBO_COLOR_0 | FBO_DEPTH);
     rend->current_fbo = &rend->main_fbo;
     
@@ -288,7 +288,6 @@ void renderer_calc_cascades(Renderer * rend, mat4 *light_space_matrix)
         //min and max corners (in light space!)
         vec3 min = v3(FLT_MAX, FLT_MAX, FLT_MAX);
         vec3 max = v3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-        //mat4 light_matrix = look_at(v3(0,0,0),vec3_normalize(rend->directional_light.direction),v3(0,1,0));
         for (u32 i = 0; i < FRUSTUM_CORNERS_COUNT; ++i)
         {
             //we transform the frustum corners from "view" space to __world__ space
@@ -316,7 +315,6 @@ void renderer_calc_cascades(Renderer * rend, mat4 *light_space_matrix)
         //vec4 vclip = mat4_mulv(mat4_mul(rend->proj, rend->view), vview);
         vec4 vclip = mat4_mulv(rend->proj, vview);
 
-    //mat4 light_matrix = mat4_rotate(80.f, vec3_normalize(v3(1,0.2,0)));
         //vclip.z /= vclip.w;
         rend->cascade_ends_clip_space[c] = vclip.z; 
     }
@@ -432,8 +430,6 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
   { 
     RendererModelData data = rend->model_instance_data[i];
 
-    mat4 light_space_matrix[RENDERER_CASCADES_COUNT];
-    vec3 dir_light_pos = vec3_mulf(rend->directional_light.direction, -4);
 #if 0
     mat4 ortho_proj = orthographic_proj(-20.f, 20.f, -20.f, 20.f, -20.f, 140.f);
     vec3 pos = rend->cam.pos;
@@ -558,6 +554,10 @@ renderer_end_frame(Renderer *rend)
   fbo_bind(&rend->shadowmap_fbo[0]);
   rend->active_lsm = rend->lsms[0];
   renderer_render_scene3D(rend,&rend->shaders[3]);
+
+  //calculate cascades for the RENDERER_CASCADES_COUNT shadow maps! 
+  renderer_calc_cascades(rend, rend->lsms);
+
   if (rend->renderer_settings.cascaded_render)
   {
       fbo_bind(&rend->shadowmap_fbo[1]);
@@ -588,8 +588,7 @@ renderer_end_frame(Renderer *rend)
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererBillboard) * rend->billboard_alloc_pos, &rend->billboard_instance_data[0], GL_DYNAMIC_DRAW);
 
 
-  //calculate cascades for the RENDERER_CASCADES_COUNT shadow maps! 
-  renderer_calc_cascades(rend, rend->lsms);
+
 
   fbo_bind(&rend->main_fbo);
   if (rend->renderer_settings.z_prepass)

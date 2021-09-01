@@ -154,9 +154,9 @@ render(void)
             do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.debug_mode);
             do_button(GEN_ID, (dui_Rect){260,200,150,30});
             dui_draw_string(280, 370, "options");
-            dui_draw_string(200, 330, "multisampling");
-            dui_draw_string(215, 275, "light cull");
-            dui_draw_string(220, 240, "debug");
+            dui_draw_string(200, 330, "anti-aliasing");
+            dui_draw_string(215, 275, "blinn");
+            dui_draw_string(220, 240, "normals");
             dui_draw_string(290, 210, " PAUSE");
             char ms[64];
             sprintf(ms, "%.4f ms", global_platform.dt);
