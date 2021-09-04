@@ -374,6 +374,33 @@ internal u32 cull_dupe_pairs(SimplePhysicsBodyPair *pairs, u32 n)
     return unique_index;
 }
 
+internal void 
+obb_get_points(OBB obb, vec3 *arr)
+{
+    AABB res;
+    vec3 center = obb.center;
+    vec3 e = obb.e;
+    mat4 rotation_matrix = m4d(1.f);
+    u32 base_index= 0;
+
+    for (u32 i = 0; i < 3; ++i)
+        for (u32 j = 0; j < 3; ++j)
+            rotation_matrix.elements[i][j] = ((f32*)obb.u)[base_index++];
+
+    vec3 verts[8] = {
+        v3(e.x,e.y,e.z), v3(e.x,e.y,-e.z), v3(e.x,-e.y,e.z), v3(e.x,-e.y,-e.z),
+        v3(e.x,e.y,e.z), v3(-e.x,e.y,e.z), v3(e.x,e.y,-e.z), v3(-e.x,e.y,-e.z),
+    };
+
+    for (u32 i = 0; i < 8; ++i)
+    {
+        vec4 local_pos = v4(verts[i].x, verts[i].y, verts[i].z,1.f);
+        vec4 rotated_local_pos = mat4_mulv(rotation_matrix, local_pos);
+        vec3 global_pos = vec3_add(center, v3(rotated_local_pos.x, rotated_local_pos.y, rotated_local_pos.z));
+        verts[i] = global_pos;
+    }
+}
+
 internal AABB obb_to_aabb(OBB obb)
 {
     AABB res;
@@ -436,246 +463,194 @@ internal f32 project(vec3 v, vec3 axis)
     return vec3_dot(v, axis);
 }
 
+//                   axis type (a/b/e)| (1-15) | overlap | max distance SAT |  L, test axis | where to put L          
+internal b32 track_face_axis(i32 *axis, i32 n, f32 overlap, f32 *min_overlap, vec3 normal, vec3 *axis_normal)
+{
+    if (overlap > 0.f)
+        return TRUE;
+
+    if (overlap > *min_overlap)
+    {
+        *min_overlap = overlap;
+        *axis = n;
+        *axis_normal = normal;
+    }
+    return FALSE;
+}
+
+//                   axis type (a/b/e)| (1-15) | overlap | max distance SAT |  L, test axis | where to put L          
+internal b32 track_edge_axis(i32 *axis, i32 n, f32 overlap, f32 *min_overlap, vec3 normal, vec3 *axis_normal)
+{
+    if (overlap > 0.f)
+        return TRUE;
+
+    f32 l = 1.f / vec3_length(normal);
+    overlap *= l; //we bring the overlap length to unit distance
+
+    if (overlap > *min_overlap)
+    {
+        *min_overlap = overlap;
+        *axis = n;
+        *axis_normal = vec3_mulf(normal, l); //also the normal!
+    }
+    return FALSE;
+}
+
+
+extern char info_log[512]; 
+
 internal b32 
 test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
 {
     b32 collide = TRUE;
-    //do collision stuff
-    f32 ra, rb;
-    mat3 R, absR;
-
-    vec3 axis_of_min_overlap;
     f32 min_overlap = FLT_MAX;
+    vec3 axis_of_min_penetration;
+
+    vec3 nA;//normal in OBB A (from face tests)
+    vec3 nB;//normal in OBB B (from face tests)
+    vec3 nE;//normal in some edge (from edge tests)
+
+    i32 aMax = -FLT_MAX; //overlap with OBB A (from face tests)
+    i32 bMax = -FLT_MAX; //overlap with OBB B (from face tests)
+    i32 eMax = -FLT_MAX; //overlap with some edge (from edge tests)
+
+    i32 aAxis = 0; //Axis of overlap for OBB A (from face tests)
+    i32 bAxis = 0; //Axis of overlap for OBB B (from face tests)
+    i32 eAxis = 0; //Axis of overlap for some edge (from edge tests)
 
 
-    //Compute rotation matrix expressing b in a's coordinate frame!!
-    for (u32 i = 0; i < 3; ++i)
-        for (u32 j = 0; j < 3; ++j)
-            R.elements[i][j] = vec3_dot(a.u[i], b.u[j]);
 
-    //Compute and transform t into a's coordinate system
     vec3 t = vec3_sub(b.center, a.center);
-    //t = v3(vec3_dot(t, a.u[0]), vec3_dot(t, a.u[1]), vec3_dot(t, a.u[2]));
 
 
-    m->normal = vec3_normalize(vec3_sub(b.center, a.center));
-    //m->normal = v3(0,0,0);
-    m->penetration = 0.3f;
 
 
     f32 overlap;
-
     vec3 L; //axis to test collision
 
     //L = Ax
     L = a.u[0];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
-        collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
+    if (track_edge_axis(&aAxis, 1, overlap, &aMax, L, &nA))
+        collide = FALSE;
 
     //L = Ay
     L = a.u[1];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&aAxis, 2, overlap, &aMax, L, &nA))
         collide = FALSE;
-     else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
+
 
 
     //L = Az
     L = a.u[2];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&aAxis, 3, overlap, &aMax, L, &nA))
         collide = FALSE;
-     else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
+
 
 
     //L = Bx
     L = b.u[0];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&bAxis, 4, overlap, &bMax, L, &nB))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
 
     //L = By
     L = b.u[1];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&bAxis, 5, overlap, &bMax, L, &nB))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
 
     //L = Bz
     L = b.u[2];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&bAxis, 6, overlap, &bMax, L, &nB))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
     //L = Ax X Bx 
     L = vec3_cross(a.u[0], b.u[0]);
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&eAxis, 7, overlap, &eMax, L, &nE))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
 
     //L = Ax X By 
     L = vec3_cross(a.u[0], b.u[1]);
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&eAxis, 8, overlap, &eMax, L, &nE))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
     //L = Ax X Bz 
     L = vec3_cross(a.u[0], b.u[2]);
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&eAxis, 9, overlap, &eMax, L, &nE))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
-
 
     //L = Ay X Bx 
     L = vec3_cross(a.u[1], b.u[0]);
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&eAxis, 10, overlap, &eMax, L, &nE))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
     //L = Ay X By 
     L = vec3_cross(a.u[1], b.u[1]);
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&eAxis, 11, overlap, &eMax, L, &nE))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
 
     //L = Ay X Bz 
     L = vec3_cross(a.u[1], b.u[2]);
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&eAxis, 12, overlap, &eMax, L, &nE))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
    //L = Az X Bx 
     L = vec3_cross(a.u[2], b.u[0]);
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&eAxis, 13, overlap, &eMax, L, &nE))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
 
    //L = Az X By 
     L = vec3_cross(a.u[2], b.u[1]);
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&eAxis, 14, overlap, &eMax, L, &nE))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
 
 
    //L = Az X Bz 
     L = vec3_cross(a.u[2], b.u[2]);
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (overlap > 0)
+    if (track_edge_axis(&eAxis, 15, overlap, &eMax, L, &nE))
         collide = FALSE;
-    else
-        if (fabs(overlap) < min_overlap)
-        {
-            min_overlap = overlap;
-            axis_of_min_overlap = L;
-        }
+
+    sprintf(info_log, "edge axis: %d", eAxis);
 
 
 
 
-    //m->penetration = fabs(min_overlap);
+    m->normal = vec3_normalize(t);
+    m->penetration = 0.1f;
 
     return collide;
 }

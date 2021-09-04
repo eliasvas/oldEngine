@@ -315,7 +315,7 @@ internal void simworld_simulate(SimulationWorld *manager)
         SimplePhysicsBodyComponent *pb = &manager->bodies[i];
         pb->position = vec3_add(pb->position, vec3_mulf(pb->velocity, global_platform.dt));
     }
-    sprintf(info_log, "number of pairs %i", manager->pairs_count);
+    //sprintf(info_log, "number of pairs %i", manager->pairs_count);
     resolve_collisions(manager);
 }
 
@@ -351,12 +351,43 @@ internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
 
 }
 
+internal void mouse_pick(ModelManager *model_manager, Renderer *rend)
+{
+
+    Ray r =  (Ray){rend->cam.pos, 1, v3(0,0,0)};
+    r.d = get_ray_dir(v2(global_platform.mouse_x, global_platform.mouse_y),global_platform.window_width, global_platform.window_height, rend->view, rend->proj);//(Ray){v3(0,0,0), 1, v3(0,0,-1)};
+    for (u32 i = 0; i < model_manager->next_index; ++i)
+    {
+        vec3 pos = v3(model_manager->models[i].model.elements[3][0], model_manager->models[i].model.elements[3][1], model_manager->models[i].model.elements[3][2]);
+        i32 collision = intersect_ray_sphere_simple(r, (Sphere){pos, 5.f});
+        if (collision && global_platform.right_mouse_down|| last_entity_pressed == i)
+        {
+            //sprintf(error_log, "good collision, mouse_dt = %f, %f", global_platform.mouse_dt.x, global_platform.mouse_dt.y);
+            last_entity_pressed = i;
+            vec3 right = vec3_normalize(vec3_cross(rend->cam.front,rend->cam.up));
+            vec3 up = vec3_normalize(rend->cam.up);
+            model_manager->models[i].model.elements[3][0] += vec3_mulf(right, 100 * ((-1.f)*(f32)global_platform.mouse_dt.x / global_platform.window_width)).x;
+            model_manager->models[i].model.elements[3][1] += vec3_mulf(up,100 * ((f32)1.f * global_platform.mouse_dt.y / global_platform.window_height)).y;
+        }
+        else if (global_platform.right_mouse_down && last_entity_pressed == i) {
+            last_entity_pressed = i;
+            //sprintf(error_log, "collision detected!!");
+        }
+        else if (!global_platform.right_mouse_down)
+            last_entity_pressed = -1;
+    }
+
+
+}
+
+
 internal void 
 entity_manager_update(EntityManager *manager, Renderer *rend)
 {
 
     simworld_simulate(&manager->simworld);
     mouse_pick_phys(&manager->simworld, rend);
+    mouse_pick(&manager->model_manager, rend);
 
     for (u32 i = 0; i < manager->model_manager.next_index; ++i)
     {
