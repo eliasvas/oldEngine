@@ -401,6 +401,17 @@ obb_get_points(OBB obb, vec3 *arr)
     }
 }
 
+internal mat4 obb_extract_rotation_matrix(OBB obb)
+{
+    mat4 rotation_matrix = m4d(1.f);
+    u32 base_index = 0;
+
+    for (u32 i = 0; i < 3;++i)
+        for (u32 j = 0; j < 3; ++j)
+            rotation_matrix.elements[i][j] = ((f32*)obb.u)[base_index++];
+    return rotation_matrix;
+}
+
 internal AABB obb_to_aabb(OBB obb)
 {
     AABB res;
@@ -510,9 +521,9 @@ test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
     vec3 nB;//normal in OBB B (from face tests)
     vec3 nE;//normal in some edge (from edge tests)
 
-    i32 aMax = -FLT_MAX; //overlap with OBB A (from face tests)
-    i32 bMax = -FLT_MAX; //overlap with OBB B (from face tests)
-    i32 eMax = -FLT_MAX; //overlap with some edge (from edge tests)
+    f32 aMax = -FLT_MAX; //overlap with OBB A (from face tests)
+    f32 bMax = -FLT_MAX; //overlap with OBB B (from face tests)
+    f32 eMax = -FLT_MAX; //overlap with some edge (from edge tests)
 
     i32 aAxis = 0; //Axis of overlap for OBB A (from face tests)
     i32 bAxis = 0; //Axis of overlap for OBB B (from face tests)
@@ -533,14 +544,14 @@ test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
 
-    if (track_edge_axis(&aAxis, 1, overlap, &aMax, L, &nA))
+    if (track_face_axis(&aAxis, 1, overlap, &aMax, L, &nA))
         collide = FALSE;
 
     //L = Ay
     L = a.u[1];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (track_edge_axis(&aAxis, 2, overlap, &aMax, L, &nA))
+    if (track_face_axis(&aAxis, 2, overlap, &aMax, L, &nA))
         collide = FALSE;
 
 
@@ -549,7 +560,7 @@ test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
     L = a.u[2];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (track_edge_axis(&aAxis, 3, overlap, &aMax, L, &nA))
+    if (track_face_axis(&aAxis, 3, overlap, &aMax, L, &nA))
         collide = FALSE;
 
 
@@ -558,7 +569,7 @@ test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
     L = b.u[0];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (track_edge_axis(&bAxis, 4, overlap, &bMax, L, &nB))
+    if (track_face_axis(&bAxis, 4, overlap, &bMax, L, &nB))
         collide = FALSE;
 
 
@@ -566,7 +577,7 @@ test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
     L = b.u[1];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (track_edge_axis(&bAxis, 5, overlap, &bMax, L, &nB))
+    if (track_face_axis(&bAxis, 5, overlap, &bMax, L, &nB))
         collide = FALSE;
 
 
@@ -574,7 +585,7 @@ test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
     L = b.u[2];
     overlap = fabs(project(t, L)) - fabs(project(vec3_mulf(a.u[0],a.e.x), L)) - fabs(project(vec3_mulf(a.u[1],a.e.y), L)) - fabs(project(vec3_mulf(a.u[2],a.e.z), L)) 
             - fabs(project(vec3_mulf(b.u[0],b.e.x), L)) - fabs(project(vec3_mulf(b.u[1],b.e.y), L)) - fabs(project(vec3_mulf(b.u[2],b.e.z), L));
-    if (track_edge_axis(&bAxis, 6, overlap, &bMax, L, &nB))
+    if (track_face_axis(&bAxis, 6, overlap, &bMax, L, &nB))
         collide = FALSE;
 
     //L = Ax X Bx 
@@ -644,13 +655,62 @@ test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
     if (track_edge_axis(&eAxis, 15, overlap, &eMax, L, &nE))
         collide = FALSE;
 
-    sprintf(info_log, "edge axis: %d", eAxis);
 
 
+    //now find the axis of minimum penetration!
+     
+    i32 axis;
+    f32 max_overlap;
+    vec3 n;
+    f32 face_max = maximum(aMax, bMax);
+    if (eMax > face_max) //add bias to all compares??
+    {
+        axis = eAxis;
+        max_overlap = eMax;
+        n = nE;
+    }
+    else 
+    {
+        if (bMax > aMax)
+        {
+            axis = bAxis;
+            max_overlap = bMax;
+            n = nB;
+        }
+        else
+        {
+            axis = aAxis;
+            max_overlap = aMax;
+            n = nA;
+        }
+    }
+    sprintf(info_log, "axis of collision: %d", axis);
+
+    if (vec3_dot(n, vec3_sub(b.center, a.center)) < 0)
+        n = vec3_mulf(n, -1.f);
 
 
-    m->normal = vec3_normalize(t);
-    m->penetration = 0.1f;
+    //m->normal = vec3_normalize(t);
+    //m->penetration = 0.1f;
+
+    if (axis < 6) //face collision resolution
+    {
+        return FALSE;
+    }
+    else //edge collision resolution
+    {
+        mat4 rotation_matrix = obb_extract_rotation_matrix(a);
+        vec4 res = mat4_mulv(rotation_matrix, v4(n.x,n.y,n.z,1.f));
+        n = v3(res.x, res.y, res.z);
+        if (vec3_dot(n, t) < 0)
+            n = vec3_mulf(n, -1.f);
+        
+        m->normal = n;
+
+
+        m->penetration = fabs(max_overlap);
+    }
+
 
     return collide;
 }

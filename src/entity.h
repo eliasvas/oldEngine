@@ -329,7 +329,7 @@ internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
     {
         SimplePhysicsBody *pb = &manager->bodies[i];
         vec3 pos = v3(pb->position.x, pb->position.y, pb->position.z);
-        i32 collision = intersect_ray_sphere_simple(r, (Sphere){pos, 0.5});
+        i32 collision = intersect_ray_sphere_simple(r, (Sphere){pos, 0.5f});
         if (collision && global_platform.right_mouse_down || last_entity_pressed == i)
         {
             //sprintf(error_log, "good collision, mouse_dt = %f, %f", global_platform.mouse_dt.x, global_platform.mouse_dt.y);
@@ -359,7 +359,7 @@ internal void mouse_pick(ModelManager *model_manager, Renderer *rend)
     for (u32 i = 0; i < model_manager->next_index; ++i)
     {
         vec3 pos = v3(model_manager->models[i].model.elements[3][0], model_manager->models[i].model.elements[3][1], model_manager->models[i].model.elements[3][2]);
-        i32 collision = intersect_ray_sphere_simple(r, (Sphere){pos, 5.f});
+        i32 collision = intersect_ray_sphere_simple(r, (Sphere){pos, 0.f});
         if (collision && global_platform.right_mouse_down|| last_entity_pressed == i)
         {
             //sprintf(error_log, "good collision, mouse_dt = %f, %f", global_platform.mouse_dt.x, global_platform.mouse_dt.y);
