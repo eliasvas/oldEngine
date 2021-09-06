@@ -49,9 +49,9 @@ init(void)
     entity_manager_init(&entity_manager);
     scene_init("../assets/base.txt", &entity_manager);
 
-    model_init_cube(&debug_cube);
+    model_init_cube(&debug_cube, m4d(1.f));
     renderer_init(&rend);
-    model_init_cube(&light_cube);
+    model_init_cube(&light_cube, m4d(1.f));
     model_init_sphere(&sphere, 2.f, 50,50);
     model = model_info_init("../assets/arena/arena.mtl");
 
@@ -151,7 +151,7 @@ render(void)
             dui_draw_rect(200, 200, 270, 200, v4(0.1,0.1,0.1,0.9));
             do_slider(GEN_ID, 200 ,300, 4, &rend.multisampling_count);
             do_switch(GEN_ID, (dui_Rect){200,270,20,20}, &rend.renderer_settings.light_cull);
-            do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.debug_mode);
+            do_switch(GEN_ID, (dui_Rect){200,240,0,20}, &rend.renderer_settings.debug_mode);
             do_button(GEN_ID, (dui_Rect){260,200,150,30});
             dui_draw_string(280, 370, "options");
             dui_draw_string(200, 330, "anti-aliasing");

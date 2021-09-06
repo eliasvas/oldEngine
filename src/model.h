@@ -96,18 +96,97 @@ local_persist f32 cube_data[] = {
 };
 
 internal void 
-model_init_cube(Model* m)
+model_init_cube_simple(Model* m, mat4 model_matrix)
 {
     m->meshes = ALLOC(sizeof(MeshInfo));
     m->mesh_count = 1;
     m->meshes[0].vertices_count = 36;
-    m->model = mat4_translate(v3(0,0,0));
+    m->model = model_matrix;
     glGenVertexArrays(1, &m->meshes[0].vao);
     glBindVertexArray(m->meshes[0].vao); 
     GLuint VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * m->meshes[0].vertices_count, &cube_data, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 3));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void *) (sizeof(float) * 6));
+    glBindVertexArray(0);
+
+
+    shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
+    m->meshes[0].material = material_default();
+    texture_load_default(&(m->meshes[0].material.diff), v4(0.95,0.95,0.95,1));
+    m->meshes[0].material.has_diffuse_map = TRUE;
+    //texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
+    texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
+    m->meshes[0].material.has_specular_map= FALSE;
+      
+}
+
+internal void 
+model_init_cube(Model* m, mat4 model_matrix)
+{
+    m->meshes = ALLOC(sizeof(MeshInfo));
+    m->mesh_count = 1;
+    m->meshes[0].vertices_count = 36;
+    m->model = model_matrix;
+
+    Vertex cube_data_scaled[36];
+    u32 cube_data_index = 0;
+    vec3 scale = v3(model_matrix.elements[0][0], model_matrix.elements[1][1], model_matrix.elements[2][2]);
+    //calculate new vertices 
+    for (u32 triangle = 0; triangle < 12; ++triangle)
+    {
+
+        u32 start_index = 8*triangle*3;
+        Vertex vert1 = (*((Vertex*)(&cube_data[start_index])));
+        Vertex vert2 = (*((Vertex*)(&cube_data[start_index+8])));
+        Vertex vert3 = (*((Vertex*)(&cube_data[start_index+16])));
+
+        /*
+        mat4 rm = mat4_mul(mat4_rotate(90.f, vert1.normal), mat4_scale(scale));
+        vec3 object_space_scale = v3(rm.elements[0][0], rm.elements[1][1], rm.elements[2][2]);
+        vert1.tex_coord = vec2_mul(vert1.tex_coord, v2(object_space_scale.x, object_space_scale.y));
+        vert2.tex_coord = vec2_mul(vert2.tex_coord, v2(object_space_scale.x, object_space_scale.y));
+        vert3.tex_coord = vec2_mul(vert3.tex_coord, v2(object_space_scale.x, object_space_scale.y));
+        */
+        vec3 norm = vert1.normal;
+        if (equalf(fabs(norm.z), 1.f, 0.01f))
+        {
+            vert1.tex_coord = vec2_mul(vert1.tex_coord, v2(scale.x, scale.y));
+            vert2.tex_coord = vec2_mul(vert2.tex_coord, v2(scale.x, scale.y));
+            vert3.tex_coord = vec2_mul(vert3.tex_coord, v2(scale.x, scale.y));
+        }
+        else if (equalf(fabs(norm.x), 1.f, 0.01f))
+        {
+            vert1.tex_coord = vec2_mul(vert1.tex_coord, v2(scale.z, scale.y));
+            vert2.tex_coord = vec2_mul(vert2.tex_coord, v2(scale.z, scale.y));
+            vert3.tex_coord = vec2_mul(vert3.tex_coord, v2(scale.z, scale.y));
+        }
+        else if (equalf(fabs(norm.y), 1.f, 0.01f))
+        {
+            vert1.tex_coord = vec2_mul(vert1.tex_coord, v2(scale.x, scale.z));
+            vert2.tex_coord = vec2_mul(vert2.tex_coord, v2(scale.x, scale.z));
+            vert3.tex_coord = vec2_mul(vert3.tex_coord, v2(scale.x, scale.z));
+        }
+
+
+
+        cube_data_scaled[cube_data_index++] = vert1;
+        cube_data_scaled[cube_data_index++] = vert2;
+        cube_data_scaled[cube_data_index++] = vert3;
+    }
+    
+    glGenVertexArrays(1, &m->meshes[0].vao);
+    glBindVertexArray(m->meshes[0].vao); 
+    GLuint VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * m->meshes[0].vertices_count, &cube_data_scaled, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)0);
     glEnableVertexAttribArray(1);

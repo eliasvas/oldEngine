@@ -465,8 +465,8 @@ void scene_init(char *filepath, EntityManager * manager)
         if (strcmp("CUBE", str) == 0)
         {
             m = entity_add_model(&manager->model_manager,entity_create(manager));
-            model_init_cube(m);
-            m->model = mat4_mul(mat4_translate(pos), mat4_mul(mat4_rotate(0.0, v3(1,1,0)), mat4_scale(scale)));
+            mat4 model_matrix = mat4_mul(mat4_translate(pos), mat4_mul(mat4_rotate(0.0, v3(1,1,0)), mat4_scale(scale)));
+            model_init_cube(m, model_matrix);
            
             m->physics_body = entity_add_rigidbody(&manager->simworld,entity_create(manager));
             *(m->physics_body) = simple_physics_body_default();
@@ -490,8 +490,8 @@ void scene_init(char *filepath, EntityManager * manager)
             fscanf(file,"%f", &angle);
             fscanf(file,"%f %f %f", &axis.x, &axis.y, &axis.z);
             m = entity_add_model(&manager->model_manager,entity_create(manager));
-            model_init_cube(m);
-            m->model = mat4_mul(mat4_translate(pos),mat4_mul(mat4_rotate(angle, axis), mat4_scale(scale)));
+            mat4 model_matrix = mat4_mul(mat4_translate(pos),mat4_mul(mat4_rotate(angle, axis), mat4_scale(scale)));
+            model_init_cube(m, model_matrix);
            
             m->physics_body = entity_add_rigidbody(&manager->simworld,entity_create(manager));
             *(m->physics_body) = simple_physics_body_default();

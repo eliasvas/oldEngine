@@ -689,13 +689,11 @@ test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
     if (vec3_dot(n, vec3_sub(b.center, a.center)) < 0)
         n = vec3_mulf(n, -1.f);
 
-
-    //m->normal = vec3_normalize(t);
-    //m->penetration = 0.1f;
-
     if (axis < 6) //face collision resolution
     {
-        return FALSE;
+        m->normal = vec3_normalize(t);
+        m->penetration = fabs(max_overlap);
+
     }
     else //edge collision resolution
     {
