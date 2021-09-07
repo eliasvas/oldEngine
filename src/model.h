@@ -155,6 +155,9 @@ model_init_cube(Model* m, mat4 model_matrix)
         vert3.tex_coord = vec2_mul(vert3.tex_coord, v2(object_space_scale.x, object_space_scale.y));
         */
         vec3 norm = vert1.normal;
+        if (scale.x + scale.y + scale.z < 1.f)
+            goto ADD_CUBE_VERTEX;
+
         if (equalf(fabs(norm.z), 1.f, 0.01f))
         {
             vert1.tex_coord = vec2_mul(vert1.tex_coord, v2(scale.x, scale.y));
@@ -163,9 +166,9 @@ model_init_cube(Model* m, mat4 model_matrix)
         }
         else if (equalf(fabs(norm.x), 1.f, 0.01f))
         {
-            vert1.tex_coord = vec2_mul(vert1.tex_coord, v2(scale.z, scale.y));
-            vert2.tex_coord = vec2_mul(vert2.tex_coord, v2(scale.z, scale.y));
-            vert3.tex_coord = vec2_mul(vert3.tex_coord, v2(scale.z, scale.y));
+            vert1.tex_coord = vec2_mul(vert1.tex_coord, v2(scale.y, scale.z));
+            vert2.tex_coord = vec2_mul(vert2.tex_coord, v2(scale.y, scale.z));
+            vert3.tex_coord = vec2_mul(vert3.tex_coord, v2(scale.y, scale.z));
         }
         else if (equalf(fabs(norm.y), 1.f, 0.01f))
         {
@@ -174,8 +177,12 @@ model_init_cube(Model* m, mat4 model_matrix)
             vert3.tex_coord = vec2_mul(vert3.tex_coord, v2(scale.x, scale.z));
         }
 
+            vert1.tex_coord = vec2_mulf(vert1.tex_coord, 2.f);
+            vert2.tex_coord = vec2_mulf(vert2.tex_coord, 2.f);
+            vert3.tex_coord = vec2_mulf(vert3.tex_coord, 2.f);
 
 
+ADD_CUBE_VERTEX:
         cube_data_scaled[cube_data_index++] = vert1;
         cube_data_scaled[cube_data_index++] = vert2;
         cube_data_scaled[cube_data_index++] = vert3;

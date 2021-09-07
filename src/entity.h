@@ -329,7 +329,7 @@ internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
     {
         SimplePhysicsBody *pb = &manager->bodies[i];
         vec3 pos = v3(pb->position.x, pb->position.y, pb->position.z);
-        i32 collision = intersect_ray_sphere_simple(r, (Sphere){pos, 0.5f});
+        i32 collision = intersect_ray_sphere_simple(r, (Sphere){pos, 1.f});
         if (collision && global_platform.right_mouse_down || last_entity_pressed == i)
         {
             //sprintf(error_log, "good collision, mouse_dt = %f, %f", global_platform.mouse_dt.x, global_platform.mouse_dt.y);
@@ -490,8 +490,10 @@ void scene_init(char *filepath, EntityManager * manager)
             fscanf(file,"%f", &angle);
             fscanf(file,"%f %f %f", &axis.x, &axis.y, &axis.z);
             m = entity_add_model(&manager->model_manager,entity_create(manager));
-            mat4 model_matrix = mat4_mul(mat4_translate(pos),mat4_mul(mat4_rotate(angle, axis), mat4_scale(scale)));
+            //mat4 model_matrix = mat4_mul(mat4_translate(pos),mat4_mul(mat4_rotate(angle, axis), mat4_scale(scale)));
+            mat4 model_matrix = mat4_scale(scale);
             model_init_cube(m, model_matrix);
+            m->model = mat4_mul(mat4_translate(pos),mat4_mul(mat4_rotate(angle, axis), mat4_scale(scale)));
            
             m->physics_body = entity_add_rigidbody(&manager->simworld,entity_create(manager));
             *(m->physics_body) = simple_physics_body_default();
