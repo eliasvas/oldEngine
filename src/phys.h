@@ -468,6 +468,61 @@ internal OBB aabb_to_obb(AABB box)
     return obb;
 }
 
+internal void find_support_edge(OBB obb, vec3 n, vec3* a_out, vec3* b_out)
+{
+    vec4 normal = mat4_mulv(obb_extract_rotation_matrix(obb), v4(n.x, n.y, n.z, 1.f)); //bring collision normal to world space!
+    vec3 abs_n = v3(fabs(normal.x), fabs(normal.y), fabs(normal.z));
+    vec3 e = obb.e;
+    vec3 a,b;
+
+    if (abs_n.x > abs_n.y) //x > y
+    {
+        if (abs_n.y > abs_n.z) // x > y > z
+        {
+            a = v3(e.x, e.y, e.z);
+            b = v3(e.x, e.y, -e.z);
+        }
+        else //x > z > y || z > x > y
+        {
+            a = v3(e.x, e.y, e.z);
+            b = v3(e.x, -e.y, e.z);
+        }
+    }
+    else //y > x
+    {
+       if (abs_n.x > abs_n.z) //y > x > z 
+       {
+           a = v3(e.x, e.y, e.z);
+           b = v3(e.x, e.y, -e.z);
+       }
+       else // z > y > x || y > z > x
+       {
+           a = v3(e.x, e.y, e.z);
+           a = v3(-e.x, e.y, e.z);
+       
+       }
+    }
+
+    vec3 nsign = v3(SIGN(n.x), SIGN(n.y), SIGN(n.z));
+
+    a.x *= nsign.x;
+    a.y *= nsign.y;
+    a.z *= nsign.z;
+
+    b.x *= nsign.x;
+    b.y *= nsign.y;
+    b.z *= nsign.z;
+    
+
+    //@todo: check!!!!!!!!
+    vec4 a_t= v4(a.x,a.y, a.z,1.f);
+    a_t = mat4_mulv(obb_extract_rotation_matrix(obb), a_t);
+    vec4 b_t= v4(b.x, b.y, b.z, 1.f);
+    b_t = mat4_mulv(obb_extract_rotation_matrix(obb), b_t);
+    *a_out = v3(a_t.x, a_t.y, a_t.z);
+    *b_out = v3(b_t.x, b_t.y, b_t.z);
+}
+
 //projects a vector onto an axis
 internal f32 project(vec3 v, vec3 axis)
 {
@@ -698,7 +753,7 @@ test_obb_obb_manifold(OBB a, OBB b, Manifold *m)
     else //edge collision resolution
     {
         mat4 rotation_matrix = obb_extract_rotation_matrix(a);
-        vec4 res = mat4_mulv(rotation_matrix, v4(n.x,n.y,n.z,1.f));
+        vec4 res = mat4_mulv(rotation_matrix, v4(n.x,n.y,n.z,1.f)); //transform normal to world space!
         n = v3(res.x, res.y, res.z);
         if (vec3_dot(n, t) < 0)
             n = vec3_mulf(n, -1.f);
