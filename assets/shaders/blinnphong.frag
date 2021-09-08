@@ -64,7 +64,7 @@ layout(binding = 2, std430) buffer  visible_index_buffer
 };
 float shadow_calc(int cascade_index)
 {
-	float bias = 0.005;
+	float bias = 0.01;
 	//cascade_index = 0;
 	//bias = max(0.05 * (1.0 - dot(f_normal, dirlight.direction)), 0.005);  
 	// perform perspective divide (if ortho everything stays the same!)

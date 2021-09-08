@@ -59,7 +59,7 @@ internal b32 texture_load_default(Texture* tex, vec4 color)
         {
             data[i + j * 512] = color;
             if (i < (512/30) || j < (512/30) || i > (512/30)*29 || j > (512/30)*29)
-                data[i + j * 512] = v4(0.1,0.1,0.1,1.f);
+                data[i + j * 512] = v4(0.5,0.5,0.5,1.f);
 
         }
     }

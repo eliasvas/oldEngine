@@ -12,7 +12,7 @@ flesh out ideas quickly! It is built from scratch, no  external libraries.
 - Skeletal Animations (Sockets / LERP Blending / Additive Blending)
 - Immediate Mode UI Library
 - Full 3D Math Library
-- 3D-OBB Physics Engine
+- 3D Physics Engine
 - Cascaded Shadow Maps
 
 ## Building

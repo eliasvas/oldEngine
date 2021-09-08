@@ -14,9 +14,9 @@ typedef u32 DUIID;
 
 typedef struct dui_State
 {
-    DUIID hot;
-    DUIID active;
-    DUIID last_widget;
+    DUIID hot; //the item below the mouse cursor
+    DUIID active; //the item pressed
+    DUIID last_widget; //last item processed
     DUIID hot_to_be; //set next frame!
 
     vec2 mouse_pos;
@@ -30,6 +30,7 @@ typedef struct dui_Layout
     color4 bg, bg_dark, bg_lite;
 
     f32 cx, cy;
+    f32 scale;
 }dui_Layout;
 
 //------these functions are application dependent-------
