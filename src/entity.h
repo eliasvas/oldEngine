@@ -424,8 +424,8 @@ entity_manager_render(EntityManager *manager, Renderer *rend)
         else if (pb->collider.type == ORIENTED_BOUNDED_BOX)
         {
             renderer_push_obb_wireframe(rend, pb->collider.obb.center, pb->collider.obb.u, pb->collider.obb.e);
-            AABB bounded = obb_to_aabb(pb->collider.obb);
-            renderer_push_cube_wireframe(rend, bounded.min, bounded.max);
+            //AABB bounded = obb_to_aabb(pb->collider.obb);
+            //renderer_push_cube_wireframe(rend, bounded.min, bounded.max);
         }
     }
 }

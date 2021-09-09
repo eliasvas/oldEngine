@@ -20,6 +20,7 @@ typedef struct RendererSettings
   b32 light_cull;
   b32 debug_mode;
   b32 cascaded_render;
+  b32 sdf_fonts;
   //multisampling settings
   //depth peeling settings
 }RendererSettings;

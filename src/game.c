@@ -155,9 +155,9 @@ render(void)
             do_button(GEN_ID, (dui_Rect){260,200,150,30});
             dui_draw_string(280, 370, "options");
             dui_draw_string(200, 330, "anti-aliasing");
-            dui_draw_string(215, 275, "blinn");
-            dui_draw_string(220, 240, "normals");
-            dui_draw_string(290, 210, " PAUSE");
+            dui_draw_string(215, 270, "blinn");
+            dui_draw_string(215, 240, "normals");
+            dui_draw_string(285, 205, " PAUSE");
             char ms[64];
             sprintf(ms, "%.4f ms", global_platform.dt);
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);

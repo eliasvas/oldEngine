@@ -43,6 +43,7 @@ renderer_init(Renderer *rend)
     rend->renderer_settings.z_prepass = TRUE;
     rend->renderer_settings.debug_mode = FALSE;
     rend->renderer_settings.cascaded_render = TRUE;
+    rend->renderer_settings.sdf_fonts = TRUE;
 
     //initializing the test sphere
     model_init_sphere(&rend->test_sphere, 0.1, 8, 8);
@@ -240,11 +241,17 @@ renderer_init(Renderer *rend)
     shader_load_full(&rend->shaders[12], "../assets/shaders/phong33.vert", "../assets/shaders/red.frag","../assets/shaders/normal_vis.geo");
     shader_load(&rend->shaders[13],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
     shader_load(&rend->shaders[14],"../assets/shaders/billboard.vert","../assets/shaders/billboard.frag");
+    shader_load(&rend->shaders[15],"../assets/shaders/sdf_text.vert","../assets/shaders/sdf_text.frag");
 
 
     //misc
     texture_load(&rend->white_texture,"../assets/white.tga");
-    texture_load(&rend->bmf,"../assets/bmf.tga");
+
+    if (rend->renderer_settings.sdf_fonts)
+        texture_load(&rend->bmf,"../assets/sdf-font.tga");
+    else
+        texture_load(&rend->bmf,"../assets/font.tga");
+
     //generate debuf texture 
     glGenTextures(1, &rend->debug_texture);
     glActiveTexture(GL_TEXTURE0);
@@ -754,29 +761,31 @@ renderer_end_frame(Renderer *rend)
     glBindVertexArray(0);
 
 
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0,0,rend->renderer_settings.render_dim.x,rend->renderer_settings.render_dim.y);
- 
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0,0,rend->renderer_settings.render_dim.x,rend->renderer_settings.render_dim.y);
 
-  //fbo_copy_contents(rend->main_fbo.fbo,0);
-  fbo_copy_contents(rend->postproc_fbo.fbo,0);
-   //render filled rects
+
+    //fbo_copy_contents(rend->main_fbo.fbo,0);
+    fbo_copy_contents(rend->postproc_fbo.fbo,0);
+    //render filled rects
     glDisable(GL_DEPTH_TEST);
     use_shader(&rend->shaders[5]);
     shader_set_mat4fv(&rend->shaders[5], "view", (GLfloat*)rend->view.elements);
     glBindVertexArray(rend->filled_rect_vao);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, rend->filled_rect_alloc_pos);
     glBindVertexArray(0);
-  
 
 
 
-  //at the end we render the skybox
-    use_shader(&rend->shaders[7]);
-    shader_set_mat4fv(&rend->shaders[7], "view", (GLfloat*)rend->view.elements);
+
+    //at the end we render the skybox
+    u32 font_shader_index = rend->renderer_settings.sdf_fonts ? 15 : 7;
+
+    use_shader(&rend->shaders[font_shader_index]);
+    shader_set_mat4fv(&rend->shaders[font_shader_index], "view", (GLfloat*)rend->view.elements);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, rend->bmf.id);
-    shader_set_int(&rend->shaders[7], "bmf_sampler",0);
+    shader_set_int(&rend->shaders[font_shader_index], "bmf_sampler",0);
     glBindVertexArray(rend->text_vao);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4,rend->text_alloc_pos);
     glBindVertexArray(0);
@@ -842,7 +851,7 @@ void renderer_push_text(Renderer *rend, vec3 pos, vec2 dim, char *str)
         f32 uv_y = 1 - (letter / 16) /16.f - 1.f/16.f;
         vec2 uv_down_left = v2(uv_x, uv_y);
         //for each char in string .. put 'em in the instance data
-        pos.x += dim.x;
+        pos.x += dim.x / 2.f;
         RendererChar c = (RendererChar){pos, dim, uv_down_left}; //@Fix
         rend->text_instance_data[rend->text_alloc_pos++] = c;
     }
@@ -856,7 +865,7 @@ void renderer_push_char(Renderer *rend, vec3 pos, vec2 dim, char ch)
     vec2 uv_down_left = v2(uv_x, uv_y);
     //for each char in string .. put 'em in the instance data
     pos.x += dim.x;
-    RendererChar c = (RendererChar){pos, dim, uv_down_left}; //@Fix
+    RendererChar c = (RendererChar){pos, vec2_mulf(dim, 1.5), uv_down_left}; //@Fix
     rend->text_instance_data[rend->text_alloc_pos++] = c;
 }
 
