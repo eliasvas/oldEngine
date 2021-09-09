@@ -779,6 +779,7 @@ renderer_end_frame(Renderer *rend)
 
 
     //at the end we render the skybox
+
     u32 font_shader_index = rend->renderer_settings.sdf_fonts ? 15 : 7;
 
     use_shader(&rend->shaders[font_shader_index]);

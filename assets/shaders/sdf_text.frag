@@ -4,11 +4,11 @@ out vec4 frag_color;
 in vec2 f_tex_coords;
 uniform sampler2D bmf_sampler;
 
-float thickness = 0.5;
+float thickness = 0.6;
 float softness = 0.1;
-vec3 text_color = vec3(0.9,0.4,0.4);
+vec3 text_color = vec3(0.9,0.3,0.3);
 
-float outline_thickness = 0.47;
+float outline_thickness = 0.0;
 float outline_softness = 0.1;
 vec3 outline_color = vec3(0.1,0.1,0.1);
 void main()
@@ -18,13 +18,14 @@ void main()
 	
 	
 	
-	
-	float outline = smoothstep(1.0 - outline_thickness - outline_softness, 1.0 - outline_thickness + outline_softness, frag_color.a);
-	
 	float a = smoothstep(1.0 - thickness - softness, 1.0 - thickness + softness, frag_color.a);
 	
+	float outline = smoothstep(1.0 - outline_thickness - outline_softness, 1.0 - outline_thickness + outline_softness, a);
+	
+	
+	
 	frag_color.a = a;
-	frag_color.xyz = mix(outline_color, text_color, outline);
+	frag_color.xyz = mix(outline_color, text_color, a);
 	
 	
 } 
