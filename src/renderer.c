@@ -2,7 +2,6 @@
 #include "fbo.h"
 #include "skybox.h"
 #include "tools.h"
-//TODO check if Z Prepass works correctly
 
 extern char info_log[512]; 
 local_persist char point_attr[4][64] = {
@@ -44,13 +43,19 @@ renderer_init(Renderer *rend)
     rend->renderer_settings.debug_mode = FALSE;
     rend->renderer_settings.cascaded_render = TRUE;
     rend->renderer_settings.sdf_fonts = TRUE;
+    rend->renderer_settings.ssao_on = TRUE;
 
     //initializing the test sphere
     model_init_sphere(&rend->test_sphere, 0.1, 8, 8);
 
+    /* Query max color attachments
+    u32 max_color_attachments;
+    glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &max_color_attachments);
+    sprintf(info_log, "max_color_attachments = %i", max_color_attachments);
+    */
 
-
-    rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_COLOR_1| FBO_DEPTH);
+    rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_COLOR_1| FBO_COLOR_2 | FBO_DEPTH);
+    rend->ssao_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 |FBO_COLOR_1| FBO_DEPTH);
     rend->postproc_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 |FBO_COLOR_1| FBO_DEPTH);
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
     rend->shadowmap_fbo[0] = fbo_init(1024*2, 1024*2, FBO_DEPTH);
@@ -242,6 +247,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[13],"../assets/shaders/phong.vert","../assets/shaders/phong.frag");
     shader_load(&rend->shaders[14],"../assets/shaders/billboard.vert","../assets/shaders/billboard.frag");
     shader_load(&rend->shaders[15],"../assets/shaders/sdf_text.vert","../assets/shaders/sdf_text.frag");
+    shader_load(&rend->shaders[16],"../assets/shaders/ssao.vert","../assets/shaders/ssao.frag");
 
 
     //misc
@@ -340,7 +346,9 @@ renderer_begin_frame(Renderer *rend)
       rend->renderer_settings.render_dim.x = global_platform.window_width;
       rend->renderer_settings.render_dim.y = global_platform.window_height;
       fbo_resize(&rend->postproc_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_COLOR_1|FBO_DEPTH);
-      fbo_resize(&rend->main_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_COLOR_1|FBO_DEPTH);
+      fbo_resize(&rend->main_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_COLOR_1|FBO_COLOR_2 | FBO_DEPTH);
+      if (rend->renderer_settings.ssao_on)
+          fbo_resize(&rend->ssao_fbo, rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0|FBO_DEPTH);
 
         u32 work_groups_x = (rend->renderer_settings.render_dim.x + (rend->renderer_settings.render_dim.x % 16)) / 16;
         u32 work_groups_y = (rend->renderer_settings.render_dim.y + (rend->renderer_settings.render_dim.y % 16)) / 16;
@@ -352,6 +360,11 @@ renderer_begin_frame(Renderer *rend)
   fbo_bind(&rend->postproc_fbo);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glClearColor(0,0,0,0);
+
+  fbo_bind(&rend->ssao_fbo);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClearColor(0,0,0,0);
+
 
   for (u32 i = 0; i < RENDERER_CASCADES_COUNT; ++i)
   {
@@ -483,6 +496,9 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     shader_set_int(&shader[0], "shadow_map[2]", 6);
 
 
+    glActiveTexture(GL_TEXTURE7);
+    glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[2]);
+    shader_set_int(&shader[0], "ssao_texture", 7);
 
     shader_set_mat4fv(&shader[0], "model", (GLfloat*)data.model.elements);
     shader_set_mat4fv(&shader[0], "view", (GLfloat*)rend->view.elements);
@@ -575,9 +591,6 @@ renderer_end_frame(Renderer *rend)
       renderer_render_scene3D(rend,&rend->shaders[3]);
   }
 
-  //rend->view = prev_view;
-  //second we do an (optional) opaque Z Prepass 
-
   //update instance data for filled rect
   glBindBuffer(GL_ARRAY_BUFFER, rend->filled_rect_instance_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(RendererFilledRect) * rend->filled_rect_alloc_pos, &rend->filled_rect_instance_data[0], GL_DYNAMIC_DRAW);
@@ -601,12 +614,35 @@ renderer_end_frame(Renderer *rend)
   if (rend->renderer_settings.z_prepass)
   {
       glDepthFunc(GL_LESS);
-      glColorMask(0,0,0,0);
+      //glColorMask(0,0,0,0);
       glDepthMask(GL_TRUE);
       renderer_render_scene3D(rend,&rend->shaders[8]);
       glDepthFunc(GL_LEQUAL);
       glColorMask(1,1,1,1);
+
+      //we clear color attachment 1 (we need it to write bright colors!)
+      //glClearTexImage(rend->main_fbo.color_attachments[1], 0, GL_RGBA, GL_FLOAT, 0); 
   }
+
+  if (rend->renderer_settings.ssao_on)
+  {
+        //now we calculate the SSAO texture, we put it in the ssao fbo using depth + normals from main fbo
+        glBindFramebuffer(GL_FRAMEBUFFER, rend->ssao_fbo.fbo);
+        glBindVertexArray(rend->postproc_vao);
+        use_shader(&rend->shaders[16]);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[2]);
+        shader_set_int(&rend->shaders[16],"normal_texture",2);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
+        shader_set_int(&rend->shaders[16],"depth_texture",0);
+        shader_set_mat4fv(&rend->shaders[16], "proj", (GLfloat*)rend->proj.elements);
+        shader_set_mat4fv(&rend->shaders[16], "view", (GLfloat*)rend->view.elements);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+        glBindFramebuffer(GL_FRAMEBUFFER, rend->main_fbo.fbo);
+  }
+
   //launch compute shader for light culling
   {
       glMemoryBarrier(GL_ALL_BARRIER_BITS);

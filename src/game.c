@@ -32,16 +32,17 @@ global EntityManager entity_manager;
 global ParticleEmitter pe;
 /*
  Engine TODO:
-    -Fix Bloom effects
     -Physics Engine (Stabilize current version..)
     -Cascaded Shadow Maps!!!
+    -Fix Bloom effects
     -Light Attenuation and radius stuff
-    -See how UE4 does their PBR lighting
     -IMGUI tweaks (add size member configure events and stuff) 
     -Normal visualization is prb wrong, FIX
     -2D sprites (projected in 3d space) w/animations
     -Make the engine a LIB file
     -Collada Parser Overhaul
+    -SSAO with data from depth pass
+    -GI????????
 */
 internal void 
 init(void)
@@ -151,12 +152,12 @@ render(void)
             dui_draw_rect(200, 200, 270, 200, v4(0.1,0.1,0.1,0.9));
             do_slider(GEN_ID, 200 ,300, 4, &rend.multisampling_count);
             do_switch(GEN_ID, (dui_Rect){200,270,20,20}, &rend.renderer_settings.light_cull);
-            do_switch(GEN_ID, (dui_Rect){200,240,0,20}, &rend.renderer_settings.debug_mode);
+            do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.ssao_on);
             do_button(GEN_ID, (dui_Rect){260,200,150,30});
             dui_draw_string(280, 370, "options");
             dui_draw_string(200, 330, "anti-aliasing");
             dui_draw_string(215, 270, "blinn");
-            dui_draw_string(215, 240, "normals");
+            dui_draw_string(215, 240, "SSAO");
             dui_draw_string(285, 205, " PAUSE");
             char ms[64];
             sprintf(ms, "%.4f ms", global_platform.dt);

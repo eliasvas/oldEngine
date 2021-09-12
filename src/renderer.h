@@ -21,6 +21,7 @@ typedef struct RendererSettings
   b32 debug_mode;
   b32 cascaded_render;
   b32 sdf_fonts;
+  b32 ssao_on;
   //multisampling settings
   //depth peeling settings
 }RendererSettings;
@@ -121,6 +122,7 @@ typedef struct Renderer
   OpenGLFBO *current_fbo;
   OpenGLFBO postproc_fbo;
   OpenGLFBO main_fbo;
+  OpenGLFBO ssao_fbo;
   OpenGLFBO ui_fbo;
   OpenGLFBO shadowmap_fbo[3];
   OpenGLFBO depthpeel_fbo;

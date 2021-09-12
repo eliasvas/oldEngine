@@ -31,7 +31,7 @@ typedef struct OpenGLFBO
    };
 }OpenGLFBO;
 
-static OpenGLFBO 
+internal OpenGLFBO 
 fbo_init(u32 width, u32 height, i32 flags)
 {
     OpenGLFBO fbo = {0};
@@ -46,7 +46,7 @@ fbo_init(u32 width, u32 height, i32 flags)
         
         if(flags & FBO_COLOR_0)
         {
-            glGenTextures(1, fbo.color_attachments+0);
+            glGenTextures(1, &fbo.color_attachments[0]);
             glBindTexture(GL_TEXTURE_2D, fbo.color_attachments[0]);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -57,7 +57,7 @@ fbo_init(u32 width, u32 height, i32 flags)
         
         if(flags & FBO_COLOR_1)
         {
-            glGenTextures(1, fbo.color_attachments+1);
+            glGenTextures(1, &fbo.color_attachments[1]);
             glBindTexture(GL_TEXTURE_2D, fbo.color_attachments[1]);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -68,7 +68,7 @@ fbo_init(u32 width, u32 height, i32 flags)
         
         if(flags & FBO_COLOR_2)
         {
-            glGenTextures(1, fbo.color_attachments+2);
+            glGenTextures(1, &fbo.color_attachments[2]);
             glBindTexture(GL_TEXTURE_2D, fbo.color_attachments[2]);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -79,7 +79,7 @@ fbo_init(u32 width, u32 height, i32 flags)
         
         if(flags & FBO_COLOR_3)
         {
-            glGenTextures(1, fbo.color_attachments+3);
+            glGenTextures(1, &fbo.color_attachments[3]);
             glBindTexture(GL_TEXTURE_2D, fbo.color_attachments[3]);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -109,7 +109,7 @@ fbo_init(u32 width, u32 height, i32 flags)
     return fbo;
 };
 
-static void
+internal void
 fbo_cleanup(OpenGLFBO *fbo)
 {
     glDeleteFramebuffers(1, &fbo->fbo);
@@ -128,7 +128,7 @@ fbo_cleanup(OpenGLFBO *fbo)
 }
 
 //it FORCES the fbo to the size
-static void
+internal void
 fbo_resize(OpenGLFBO *fbo, u32 w, u32 h, i32 flags)
 {
     u32 adjusted_width = w + 1;
@@ -137,7 +137,7 @@ fbo_resize(OpenGLFBO *fbo, u32 w, u32 h, i32 flags)
     *fbo = fbo_init(w, h, flags);
 }
 
-static void
+internal void
 fbo_bind(OpenGLFBO *fbo)
 {
     if(fbo)
@@ -155,7 +155,7 @@ fbo_bind(OpenGLFBO *fbo)
     //renderer->active_fbo = fbo;
 }
 
-static void
+internal void
 fbo_clear(OpenGLFBO *fbo)
 {
     GLuint last_fbo_bound;
@@ -178,23 +178,23 @@ fbo_clear(OpenGLFBO *fbo)
 
 //please make sure the framebuffers are of the same size
 //I did it this way so you can copy to framebuffer 0 
-static void 
+internal void 
 fbo_copy_contents(GLuint src_fbo,GLuint dest_fbo)
 {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, src_fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest_fbo);
     
-glBlitFramebuffer(0, 0, global_platform.window_width, global_platform.window_height, 0, 0, 
+    glBlitFramebuffer(0, 0, global_platform.window_width, global_platform.window_height, 0, 0, 
         global_platform.window_width, global_platform.window_height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 }
 
-static void 
+internal void 
 fbo_blend_contents(GLuint src_fbo,GLuint dest_fbo)
 {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, src_fbo);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dest_fbo);
     
-glBlitFramebuffer(0, 0, global_platform.window_width, global_platform.window_height, 0, 0, 
+    glBlitFramebuffer(0, 0, global_platform.window_width, global_platform.window_height, 0, 0, 
         global_platform.window_width, global_platform.window_height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 }
 

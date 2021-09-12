@@ -1,6 +1,7 @@
 #version 330 core
 #define MAX_POINT_LIGHTS 512
 #define CASCADES 3
+
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 bright_color;
 in vec2 f_tex_coord;
@@ -53,6 +54,7 @@ uniform int point_light_count;
 uniform sampler2D shadow_map[CASCADES];
 uniform float cascade_ends_clip_space[CASCADES];
 uniform int number_of_tiles_x;
+uniform sampler2D ssao_texture;
 
 layout(binding = 1, std430) buffer  light_buffer
 { 
@@ -195,4 +197,7 @@ void main()
         bright_color = vec4(color.rgb,1.0);
     else
         bright_color = vec4(0.0, 0.0, 0.0, 1.0);
+		
+		
+	//frag_color = texture(ssao_texture, f_tex_coord);
 }

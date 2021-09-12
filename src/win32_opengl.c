@@ -176,6 +176,7 @@ LoadAllOpenGLProcedures()
    glBufferSubData = (PFNGLBUFFERSUBDATAPROC)GetGLFuncAddress("glBufferSubData");
    glDispatchCompute = (PFNGLDISPATCHCOMPUTEPROC)GetGLFuncAddress("glDispatchCompute");
    glMemoryBarrier = (PFNGLMEMORYBARRIERPROC)GetGLFuncAddress("glMemoryBarrier");
+   glClearTexImage = (PFNGLCLEARTEXIMAGEPROC)GetGLFuncAddress("glClearTexImage");
 
    //and on and on and on......
 }
