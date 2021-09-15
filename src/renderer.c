@@ -16,6 +16,9 @@ local_persist char big_point_attr[4][64] = {
         "point_lights[xx].diffuse",
         "point_lights[xx].specular",
 };
+local_persist char kernel_attr[64] = { "kernel[x]" };
+local_persist char big_kernel_attr[64] = { "kernel[xx]" };
+
 local_persist f32 screen_verts[] = { 
         -1.0f,  1.0f,  0.0f, 1.0f,
         -1.0f, -1.0f,  0.0f, 0.0f,
@@ -440,6 +443,25 @@ renderer_set_light_uniforms(Renderer *rend, Shader *s)
 
 
 }
+internal void
+renderer_set_ssao_kernel_uniforms(Renderer *rend, Shader *s, vec3 *ssao_kernel)
+{
+    for (i32 i = 0; i < 64;++i)
+    {
+      if (i < 10)
+      {
+        kernel_attr[7] = '0'+i;
+        shader_set_vec3(s,kernel_attr, ssao_kernel[i]);
+      }
+      else
+      {
+        big_kernel_attr[7] = '0'+ (i / 10);
+        big_kernel_attr[8] = '0'+ (i % 10);
+        shader_set_vec3(s,big_kernel_attr, ssao_kernel[i]);
+      }
+    }
+}
+
 //here we put the draw calls for everything that needs shadowmapping!
 renderer_render_scene3D(Renderer *rend,Shader *shader)
 {
@@ -497,7 +519,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
 
 
     glActiveTexture(GL_TEXTURE7);
-    glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[2]);
+    glBindTexture(GL_TEXTURE_2D, rend->ssao_fbo.color_attachments[0]);
     shader_set_int(&shader[0], "ssao_texture", 7);
 
     shader_set_mat4fv(&shader[0], "model", (GLfloat*)data.model.elements);
@@ -624,8 +646,21 @@ renderer_end_frame(Renderer *rend)
       //glClearTexImage(rend->main_fbo.color_attachments[1], 0, GL_RGBA, GL_FLOAT, 0); 
   }
 
+  //render ssao texture
   if (rend->renderer_settings.ssao_on)
   {
+        vec3 ssao_kernel[64];
+        for(u32 i = 0; i< 64; ++i)
+        {
+            //Note: these are TBN space coordinates!
+            vec3 sample = v3(random01() * 2.f - 1.f, random01() * 2.f - 1.f, random01());
+            sample = vec3_normalize(sample);
+            sample = vec3_mulf(sample, random01());
+            f32 scale = i / 64.f;
+            scale = lerp(0.1f, 1.f, scale * scale); //making samples closer to origin
+            sample = vec3_mulf(sample, scale);
+            ssao_kernel[i] = sample;
+        }
         //now we calculate the SSAO texture, we put it in the ssao fbo using depth + normals from main fbo
         glBindFramebuffer(GL_FRAMEBUFFER, rend->ssao_fbo.fbo);
         glBindVertexArray(rend->postproc_vao);
@@ -638,6 +673,7 @@ renderer_end_frame(Renderer *rend)
         shader_set_int(&rend->shaders[16],"depth_texture",0);
         shader_set_mat4fv(&rend->shaders[16], "proj", (GLfloat*)rend->proj.elements);
         shader_set_mat4fv(&rend->shaders[16], "view", (GLfloat*)rend->view.elements);
+        renderer_set_ssao_kernel_uniforms(rend, &rend->shaders[16], ssao_kernel);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
         glBindFramebuffer(GL_FRAMEBUFFER, rend->main_fbo.fbo);

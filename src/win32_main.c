@@ -146,9 +146,11 @@ WinMain(HINSTANCE Instance,
         windowClass.hInstance = Instance;
         windowClass.lpszClassName = "WindowClass";
         windowClass.hCursor = LoadCursor(0, IDC_ARROW);
-
+        windowClass.hIcon =(HICON)LoadImage(Instance, "../assets/engine_icon.ico", IMAGE_ICON, 64,64, LR_LOADFROMFILE);
     }
     RegisterClass(&windowClass);
+ 
+
     WND = CreateWindow(
             windowClass.lpszClassName, "engine",      // window class, title
             WS_OVERLAPPEDWINDOW, // style
@@ -157,6 +159,20 @@ WinMain(HINSTANCE Instance,
             Instance, NULL);           // instance, param
      
     HDC DC = GetDC(WND);        // Device Context
+
+    
+    //attach the icon!
+    HANDLE hIcon =(HICON)LoadImage(Instance, "../assets/engine_icon.ico", IMAGE_ICON, 64,64, LR_LOADFROMFILE);
+    if (hIcon) {
+        //Change both icons to the same icon handle.
+        SendMessage(WND, WM_SETICON, ICON_SMALL, hIcon);
+        SendMessage(WND, WM_SETICON, ICON_BIG, hIcon);
+
+        //This will ensure that the application icon gets changed too.
+        SendMessage(GetWindow(WND, GW_OWNER), WM_SETICON, ICON_SMALL, hIcon);
+        SendMessage(GetWindow(WND, GW_OWNER), WM_SETICON, ICON_BIG, hIcon);
+    }
+    
 
     //initializing the platform layer
     {
