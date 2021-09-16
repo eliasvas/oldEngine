@@ -116,7 +116,7 @@ void main()
 		normal_vector = normalize(f_TBN * normal_vector);
 	}
 	
-	vec3 ambient = dirlight.ambient * diffuse_color;
+	vec3 ambient = dirlight.ambient * diffuse_color * texture(ssao_texture, f_tex_coord).r;
 	
 	vec3 N = normalize(normal_vector);
 	vec3 L = normalize(-dirlight.direction);
