@@ -12,6 +12,7 @@ out vec3 f_frag_pos;
 out vec4 f_frag_pos_ls[CASCADES];
 out float clip_space_z;
 out mat3 f_TBN;
+out vec2 screen_space_pos;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -20,9 +21,9 @@ uniform mat4 light_space_matrix[CASCADES];
 
 void main()
 {
-    gl_Position = vec4(vertex_pos,1.0);
-	gl_Position = proj * view * model * gl_Position;
-
+	gl_Position = proj * view * model * vec4(vertex_pos,1.0);
+	screen_space_pos = (gl_Position / gl_Position.w).xy;
+	screen_space_pos = screen_space_pos * 0.5 + 0.5;
 	f_tex_coord = tex_coord;
 
 	f_normal = mat3(transpose(inverse(model))) * n;

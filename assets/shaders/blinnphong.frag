@@ -10,6 +10,11 @@ in vec3 f_normal;
 in vec4 f_frag_pos_ls[CASCADES];
 in float clip_space_z;
 in mat3 f_TBN;
+in vec2 screen_space_pos;
+
+uniform int window_width;
+uniform int window_height;
+
 struct Material {
     sampler2D diffuse_map;
     sampler2D specular_map;
@@ -116,7 +121,7 @@ void main()
 		normal_vector = normalize(f_TBN * normal_vector);
 	}
 	
-	vec3 ambient = dirlight.ambient * diffuse_color * texture(ssao_texture, f_tex_coord).r;
+	vec3 ambient = dirlight.ambient * diffuse_color * texture(ssao_texture, gl_FragCoord.xy / vec2(window_width, window_height)).r;
 	
 	vec3 N = normalize(normal_vector);
 	vec3 L = normalize(-dirlight.direction);

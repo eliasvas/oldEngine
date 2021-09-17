@@ -6,6 +6,7 @@ in vec2 TexCoords;
 uniform sampler2D screenTexture;
 uniform sampler2D brightTexture;
 uniform sampler2D depthTexture;
+uniform sampler2D ssao_texture;
 
 uniform float flag;
 uniform float weight[5] = float[] (0.2270270270, 0.1945945946, 0.1216216216, 0.0540540541, 0.0162162162);
@@ -36,7 +37,7 @@ void main()
        blurred += texture(brightTexture, TexCoords - vec2(offset.x * i, 0.0)).rgb * weight[i];
     }
 	///*
-	frag_color.rgb += blurred;
+	//frag_color.rgb += blurred;
 	
 	frag_color = vec4(pow(frag_color.xyz, vec3(gamma)), 1.0);
 
@@ -56,6 +57,8 @@ void main()
     
 	//frag_color = vec4(KernelColor, 1);
 	gl_FragDepth = linearize_depth(max(0.05,texture(depthTexture, TexCoords).x));
+	
+	frag_color = texture(ssao_texture, TexCoords);
 }
 
 

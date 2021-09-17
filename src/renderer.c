@@ -251,6 +251,7 @@ renderer_init(Renderer *rend)
     shader_load(&rend->shaders[14],"../assets/shaders/billboard.vert","../assets/shaders/billboard.frag");
     shader_load(&rend->shaders[15],"../assets/shaders/sdf_text.vert","../assets/shaders/sdf_text.frag");
     shader_load(&rend->shaders[16],"../assets/shaders/ssao.vert","../assets/shaders/ssao.frag");
+    shader_load(&rend->shaders[17],"../assets/shaders/blur.vert","../assets/shaders/blur.frag");
 
 
     //misc
@@ -533,6 +534,8 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     shader_set_float(&shader[0], "cascade_ends_clip_space[1]", rend->cascade_ends_clip_space[1]);
     shader_set_float(&shader[0], "cascade_ends_clip_space[2]", rend->cascade_ends_clip_space[2]);
     shader_set_vec3(&shader[0], "view_pos", view_pos);
+    shader_set_int(&shader[0], "window_width", global_platform.window_width);
+    shader_set_int(&shader[0], "window_height", global_platform.window_height);
     //set material properties
     shader_set_float(&shader[0], "material.shininess", data.material->shininess);
     shader_set_int(&shader[0], "material.has_diffuse_map", data.material->has_diffuse_map);
@@ -646,6 +649,7 @@ renderer_end_frame(Renderer *rend)
       //glClearTexImage(rend->main_fbo.color_attachments[1], 0, GL_RGBA, GL_FLOAT, 0); 
   }
 
+
   //render ssao texture
   if (rend->renderer_settings.ssao_on)
   {
@@ -662,19 +666,36 @@ renderer_end_frame(Renderer *rend)
             ssao_kernel[i] = sample;
         }
         //now we calculate the SSAO texture, we put it in the ssao fbo using depth + normals from main fbo
-        glBindFramebuffer(GL_FRAMEBUFFER, rend->ssao_fbo.fbo);
+        //glBindFramebuffer(GL_FRAMEBUFFER, rend->ssao_fbo.fbo);
+        fbo_bind(&rend->ssao_fbo);
         glBindVertexArray(rend->postproc_vao);
         use_shader(&rend->shaders[16]);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[2]);
         shader_set_int(&rend->shaders[16],"normal_texture",2);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[1]);
+        shader_set_int(&rend->shaders[16],"position_texture",1);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
         shader_set_int(&rend->shaders[16],"depth_texture",0);
         shader_set_mat4fv(&rend->shaders[16], "proj", (GLfloat*)rend->proj.elements);
         shader_set_mat4fv(&rend->shaders[16], "view", (GLfloat*)rend->view.elements);
+        mat4 inv_view = mat4_inv(rend->view);
+        vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
+        shader_set_vec3(&rend->shaders[16], "view_pos", view_pos); 
+
         renderer_set_ssao_kernel_uniforms(rend, &rend->shaders[16], ssao_kernel);
         glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        //after rendering ssao we blur it a bit :)
+        use_shader(&rend->shaders[17]);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, rend->ssao_fbo.color_attachments[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        shader_set_int(&rend->shaders[16],"screenTexture",0);
+
+
         glBindVertexArray(0);
         glBindFramebuffer(GL_FRAMEBUFFER, rend->main_fbo.fbo);
   }
@@ -828,6 +849,9 @@ renderer_end_frame(Renderer *rend)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
     shader_set_int(&rend->shaders[2],"depthTexture",0);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, rend->ssao_fbo.color_attachments[0]);
+    shader_set_int(&rend->shaders[2],"ssao_texture",3);
     shader_set_mat4fv(&rend->shaders[2], "proj", (GLfloat*)rend->proj.elements);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);

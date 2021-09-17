@@ -4,6 +4,8 @@ in vec2 TexCoords;
 
 uniform sampler2D depth_texture;
 uniform sampler2D normal_texture;
+uniform sampler2D position_texture;//we dont really need this
+
 
 uniform mat4 view;
 uniform mat4 proj;
@@ -33,7 +35,8 @@ void main()
 {
 	float d = linearize_depth(texture(depth_texture, TexCoords).z);
 	vec3 vr = normalize(view_ray);
-	vec3 positionVS = vr * d;
+	//vec3 positionVS = (vec4((vr * d),1) * view).xyz;
+	vec3 positionVS = texture(position_texture, TexCoords).xyz;
 	vec3 normal = texture(normal_texture, TexCoords).xyz;
 	
 	vec3 random_vec = normalize(vec3(rand(TexCoords), rand(TexCoords), rand(TexCoords)));
@@ -47,15 +50,15 @@ void main()
 	for (int i = 0; i < KERNEL_SIZE; ++i)
 	{
 		vec3 sample_pos = TBN * kernel[i];
-		sample_pos = positionVS;// + sample_pos * RADIUS;
+		sample_pos = positionVS + sample_pos * RADIUS;
 		
 		vec4 offset = vec4(sample_pos, 1.0);
 		offset = proj * offset;
 		offset.xyz /= offset.w;
 		offset.xyz = offset.xyz * 0.5 + 0.5;
-		float sample_depth = texture(depth_texture, offset.xy).z;
+		float sample_depth = texture(position_texture, offset.xy).z;
 		
-		occlusion += (sample_depth >= sample_pos.z + 0.001 ? 1.0 : 0.0);
+		occlusion += (sample_depth >= sample_pos.z + 0.1 ? 1.0 : 0.0);
 	}
 	occlusion = 1.0 - (occlusion/ KERNEL_SIZE);
 	
