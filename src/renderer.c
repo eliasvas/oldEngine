@@ -589,6 +589,7 @@ renderer_end_frame(Renderer *rend)
   }
 #endif
 
+  glDisable(GL_BLEND);
 
   //set light ssbo @check
   {
@@ -641,9 +642,12 @@ renderer_end_frame(Renderer *rend)
       glDepthFunc(GL_LESS);
       //glColorMask(0,0,0,0);
       glDepthMask(GL_TRUE);
+
+      //glDisable(GL_BLEND);
       renderer_render_scene3D(rend,&rend->shaders[8]);
       glDepthFunc(GL_LEQUAL);
       glColorMask(1,1,1,1);
+      //glEnable(GL_BLEND);
 
       //we clear color attachment 1 (we need it to write bright colors!)
       //glClearTexImage(rend->main_fbo.color_attachments[1], 0, GL_RGBA, GL_FLOAT, 0); 
@@ -829,6 +833,7 @@ renderer_end_frame(Renderer *rend)
       shader_set_int(&rend->shaders[10], "point_light_count", rend->point_light_count);
       renderer_render_scene3D(rend,&rend->shaders[10]);
    }
+  glEnable(GL_BLEND);
   skybox_render(&rend->skybox, rend->proj, rend->view);
 
 
@@ -887,6 +892,7 @@ renderer_end_frame(Renderer *rend)
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4,rend->text_alloc_pos);
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
 
 }
 

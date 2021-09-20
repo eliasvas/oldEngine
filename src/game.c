@@ -149,27 +149,26 @@ render(void)
             UI_OPEN = !UI_OPEN;
         if (UI_OPEN)
         {
-            dui_draw_rect(200, 200, 270, 200, v4(0.1,0.1,0.1,0.9));
-            do_slider(GEN_ID, 200 ,300, 4, &rend.multisampling_count);
-            do_switch(GEN_ID, (dui_Rect){200,270,20,20}, &rend.renderer_settings.light_cull);
-            do_switch(GEN_ID, (dui_Rect){200,240,20,20}, &rend.renderer_settings.ssao_on);
-            do_button(GEN_ID, (dui_Rect){260,200,150,30});
-            dui_draw_string(280, 370, "options");
-            dui_draw_string(200, 330, "anti-aliasing");
-            dui_draw_string(215, 270, "blinn");
-            dui_draw_string(215, 240, "SSAO");
-            dui_draw_string(285, 205, " PAUSE");
+            u32 e = 10;
+            dui_draw_rect(200 - e, 200 - e, DUI_DEF_X + 2 * e, 150 +2 * e, v4(0.1,0.1,0.1,0.9));
             char ms[64];
+            sprintf(ms, "samples: %i", rend.multisampling_count);
+
+            dui_slider_text(GEN_ID, 200 ,300, 8,ms, &rend.multisampling_count);
+            dui_switch_text(GEN_ID, (dui_Rect){200,250,DUI_DEF_X,DUI_DEF_Y}, "SSAO", &rend.renderer_settings.ssao_on);
+            dui_switch_text(GEN_ID, (dui_Rect){200,200,DUI_DEF_X,DUI_DEF_Y}, "cull", &rend.renderer_settings.light_cull);
+
             sprintf(ms, "%.4f ms", global_platform.dt);
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
             //sprintf(ms, "frame %i/%i", global_platform.frame_storage.current_offset, global_platform.frame_storage.memory_size);
             //dui_draw_string(380, 290, ms);
             dui_draw_string(320, 180, info_log);
+
         }
     }
 
     entity_manager_render(&entity_manager, &rend);
-    //do_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
+    //dui_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);
     renderer_push_animated_model(&rend, &ac.model);
     dui_frame_end();
     renderer_end_frame(&rend);

@@ -23,6 +23,31 @@ void dui_draw_char2(f32 x, f32 y,f32 w, f32 h, char ch)
 
 #endif
 
+
+u32 dui_draw_string(i32 x, i32 y, char *string)
+{
+    u32 width = 0;
+    while(*string)
+    {
+        dui_draw_char(x-16, y, *string);
+        width+=10;
+        x+=10;
+        ++string;
+    }
+    return width;
+}
+//return the total width of a string in window pixels
+u32 dui_str_len( char *string)
+{
+    u32 width = 0;
+    while(*string)
+    {
+        width+=10;
+        ++string;
+    }
+    return width;
+}
+
 b32 dui_rect_hit(dui_Rect rect)
 {
     if (rect.x > ui.mouse_pos.x || rect.x + rect.w < ui.mouse_pos.x || rect.y > ui.mouse_pos.y || rect.y + rect.h  < ui.mouse_pos.y)
@@ -45,7 +70,7 @@ void dui_frame_end(void)
         if (ui.active == 0)
             ui.active = -1;
 }
-b32 do_button(DUIID id, dui_Rect rect)
+b32 dui_button(DUIID id, dui_Rect rect)
 {
 
     if (dui_rect_hit(rect))
@@ -70,7 +95,7 @@ b32 do_button(DUIID id, dui_Rect rect)
     return 0;
 }
 
-b32 do_switch(DUIID id, dui_Rect rect, b32 *value)
+b32 dui_switch(DUIID id, dui_Rect rect, b32 *value)
 {
     if (dui_rect_hit(rect))
     {
@@ -96,43 +121,39 @@ b32 do_switch(DUIID id, dui_Rect rect, b32 *value)
 
 }
 
-b32 do_slider(DUIID id, f32 x, f32 y, f32 max, i32 *value)
+b32 dui_slider(DUIID id, f32 x, f32 y, f32 max, i32 *value)
 {
-    i32 xpos = ((256 - 16) * (*value)) / max;
+    i32 xpos = ((DUI_DEF_X- 8) * (*value)) / max;
 
-    if (dui_rect_hit((dui_Rect){x +8,y+8, 255,16}))
+    if (dui_rect_hit((dui_Rect){x,y, DUI_DEF_X,DUI_DEF_Y}))
     {
         ui.hot = id;
         if (ui.active == 0 && ui.mouse_down)
             ui.active = id;
     }
     //render slider
-    dui_draw_rect(x + 8, y + 8, 255, 16, layout.bg);
+    dui_draw_rect(x, y, DUI_DEF_X, DUI_DEF_Y, layout.bg);
 
     if (ui.active ==id || ui.hot == id)
-        dui_draw_rect(x + 8 + xpos, y + 8, 16, 16, layout.fg);
+        dui_draw_rect(x + xpos, y, 8, DUI_DEF_Y, layout.fg);
     else
-        dui_draw_rect(x + 8 + xpos, y + 8, 16, 16, layout.bg_lite);
+        dui_draw_rect(x + xpos, y, 8, DUI_DEF_Y, layout.bg_lite);
     //update slider value
     if (ui.active == id)
     {
         i32 mouse_pos = ui.mouse_pos.x - (x+8);
         if (mouse_pos < 0)mouse_pos = 0;
-        if (mouse_pos > 255)mouse_pos = 255;
-        i32 v = (mouse_pos * max) / 255;
+        if (mouse_pos > DUI_DEF_X)mouse_pos = DUI_DEF_X;
+        i32 v = (mouse_pos * max) / DUI_DEF_X;
         if (v!=*value){*value = v;return 1;}
     }
     return 0;
 }
-void dui_draw_string(i32 x, i32 y, char *string)
-{
-    while(*string)
-    {
-        dui_draw_char(x, y, *string);
-        x+=10;
-        ++string;
-    }
-}
+
+
+
+
+
 void dui_default(void)
 {
     layout.fg = v4(0.8,0.2,0.2,0.9f);
@@ -143,6 +164,43 @@ void dui_default(void)
     layout.cx = 0;
     layout.cy = 0;
 }
+
+b32 dui_slider_text(DUIID id, f32 x, f32 y, f32 max,char *string,  i32 *value)
+{
+    vec2 mid = v2(x + DUI_DEF_X/2, y + DUI_DEF_Y/ 2);
+    mid.x -= dui_str_len(string) / 2;
+    mid.y -= 16/2;
+    if(string != NULL)
+        dui_draw_string(mid.x,mid.y,string);
+
+
+    return dui_slider(id, x, y, max, value);
+}
+
+b32 dui_button_text(DUIID id, dui_Rect rect, char *string)
+{
+    vec2 mid = v2(rect.x + rect.w /2, rect.y + rect.h / 2);
+    mid.x -= dui_str_len(string) / 2;
+    mid.y -= 16/2;
+
+    if(string != NULL)
+        dui_draw_string(mid.x, mid.y, string);
+
+    return dui_button(id, rect);
+}
+
+b32 dui_switch_text(DUIID id, dui_Rect rect, char *string, b32 *value)
+{
+    vec2 mid = v2(rect.x + rect.w /2, rect.y + rect.h / 2);
+    mid.x -= dui_str_len(string) / 2;
+    mid.y -= 16/2;
+    if(string != NULL)
+        dui_draw_string(mid.x, mid.y, string);
+
+    return dui_switch(id, rect, value);
+}
+
+
 /*
 //@COROUTINE TEST
 char to_print[8];

@@ -15,6 +15,6 @@ void main()
 	vec2 pos = position * dim;
 	pos += vec2(offset);
 	pos = (pos - 0.5) * 2;
-    gl_Position = vec4(pos,0.0, 1.0); // see how we directly give a vec3 to vec4's constructor
+    gl_Position = vec4(pos,0.0, 1.0);
     //gl_Position = MVP * gl_Position;
 }

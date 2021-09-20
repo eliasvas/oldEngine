@@ -58,7 +58,7 @@ void main()
 	//frag_color = vec4(KernelColor, 1);
 	gl_FragDepth = linearize_depth(max(0.05,texture(depthTexture, TexCoords).x));
 	
-	frag_color = texture(ssao_texture, TexCoords);
+	//frag_color = texture(ssao_texture, TexCoords);
 }
 
 

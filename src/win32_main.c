@@ -191,7 +191,7 @@ WinMain(HINSTANCE Instance,
     QueryPerformanceFrequency(&fr);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    glEnable(GL_BLEND); // <-- this fucker makes artifacts appear in animaiton
+    //glEnable(GL_BLEND); // <-- this fucker makes artifacts appear in animaiton
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE); 
     glEnable(GL_FRAMEBUFFER_SRGB); 
