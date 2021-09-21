@@ -47,6 +47,8 @@ renderer_init(Renderer *rend)
     rend->renderer_settings.cascaded_render = TRUE;
     rend->renderer_settings.sdf_fonts = TRUE;
     rend->renderer_settings.ssao_on = TRUE;
+    rend->renderer_settings.gamma = 2.2f;
+    rend->renderer_settings.exposure = 1.0f;
 
     //initializing the test sphere
     model_init_sphere(&rend->test_sphere, 0.1, 8, 8);
@@ -858,6 +860,8 @@ renderer_end_frame(Renderer *rend)
     glBindTexture(GL_TEXTURE_2D, rend->ssao_fbo.color_attachments[0]);
     shader_set_int(&rend->shaders[2],"ssao_texture",3);
     shader_set_mat4fv(&rend->shaders[2], "proj", (GLfloat*)rend->proj.elements);
+    shader_set_float(&rend->shaders[2],"gamma",rend->renderer_settings.gamma);
+    shader_set_float(&rend->shaders[2],"exposure",rend->renderer_settings.exposure);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 

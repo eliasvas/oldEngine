@@ -11,6 +11,9 @@ uniform sampler2D ssao_texture;
 uniform float flag;
 uniform float weight[5] = float[] (0.2270270270, 0.1945945946, 0.1216216216, 0.0540540541, 0.0162162162);
 uniform mat4 proj;
+
+uniform float gamma;
+uniform float exposure;
 float linearize_depth(float d)
 {
 	///*
@@ -26,8 +29,8 @@ float linearize_depth(float d)
 
 void main()
 {
-	float gamma = 2.2;
-	float exposure = 1.0;
+	float g = gamma; //2.2
+	float e = exposure; //1.0
 	float offset = 1.0 / textureSize(brightTexture, 0).x;
 	frag_color = texture(screenTexture, TexCoords);
 	vec3 blurred;
@@ -39,11 +42,11 @@ void main()
 	///*
 	//frag_color.rgb += blurred;
 	
-	frag_color = vec4(pow(frag_color.xyz, vec3(gamma)), 1.0);
+	frag_color = vec4(pow(frag_color.xyz, vec3(g)), 1.0);
 
 	
 	
-	frag_color.rgb = vec3(1.0) - exp(-frag_color.rgb * exposure);
+	frag_color.rgb = vec3(1.0) - exp(-frag_color.rgb * e);
 	frag_color = vec4(pow(frag_color.xyz, vec3(1.0/gamma)), 1.0);
 	//*/
 	

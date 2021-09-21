@@ -22,8 +22,9 @@ typedef struct RendererSettings
   b32 cascaded_render;
   b32 sdf_fonts;
   b32 ssao_on;
-  //multisampling settings
-  //depth peeling settings
+  //for the postproc shader
+  f32 gamma;
+  f32 exposure;
 }RendererSettings;
 
 typedef struct RendererPointData

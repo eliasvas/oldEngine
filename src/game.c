@@ -14,6 +14,8 @@
 #include "dui.h"
 #include "net.h"
 #include "particle_system.h"
+#include "sound.h"
+
 mat4 view,proj;
 
 global Model debug_cube;
@@ -156,13 +158,14 @@ render(void)
 
             dui_slider_text(GEN_ID, 200 ,300, 8,ms, &rend.multisampling_count);
             dui_switch_text(GEN_ID, (dui_Rect){200,250,DUI_DEF_X,DUI_DEF_Y}, "SSAO", &rend.renderer_settings.ssao_on);
-            dui_switch_text(GEN_ID, (dui_Rect){200,200,DUI_DEF_X,DUI_DEF_Y}, "cull", &rend.renderer_settings.light_cull);
+            if(dui_button_text(GEN_ID, (dui_Rect){200,200,DUI_DEF_X,DUI_DEF_Y}, "blip"))
+                play_sound("../assets/blip.wav");
+
+
 
             sprintf(ms, "%.4f ms", global_platform.dt);
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
-            //sprintf(ms, "frame %i/%i", global_platform.frame_storage.current_offset, global_platform.frame_storage.memory_size);
-            //dui_draw_string(380, 290, ms);
-            dui_draw_string(320, 180, info_log);
+            dui_draw_string(200, 170, info_log);
 
         }
     }
