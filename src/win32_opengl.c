@@ -11,7 +11,7 @@
 #include <assert.h>
 #include "tools.h"
 
-#pragma comment (lib, "opengl32.lib")
+//#pragma comment (lib, "opengl32.lib")
 
 /* In short: We get a Device Context with GetDC(),
  * we pick a hardware accelerated pixel format with ChoosePixelFormat(),

@@ -12,7 +12,7 @@
 #include "animation.h"
 #include "entity.h"
 #include "dui.h"
-#include "net.h"
+//#include "net.h"
 #include "particle_system.h"
 #include "sound.h"
 

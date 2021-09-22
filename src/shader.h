@@ -230,7 +230,7 @@ shader_set_vec3(Shader * shader, char *name, vec3 value)
 internal void
 shader_set_vec4(Shader * shader, char *name, vec4 value)
 { 
-    glUniform3f(glGetUniformLocation(shader->ID, name), value.x,value.y,value.z, value.w); 
+    glUniform4f(glGetUniformLocation(shader->ID, name), value.x,value.y,value.z, value.w); 
 } 
 internal void 
 shader_set_mat4fv(Shader * shader, char *name, f32* value)

@@ -144,7 +144,7 @@ internal void mtl_read(char *mtl_filepath, Material *materials)
     {
         if (mtl_filepath)
             sprintf(error_log, "cant find mrl: %s", mtl_filepath);
-        return 0;
+        return;
     }
 
     char line[128];
@@ -229,8 +229,7 @@ internal void mtl_read(char *mtl_filepath, Material *materials)
               materials[material_offset].has_bump_map = TRUE;//!!
             }
 
-}
-return material_count;
+    }
 }
 
 
