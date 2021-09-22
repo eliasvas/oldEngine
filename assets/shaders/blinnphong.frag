@@ -60,6 +60,7 @@ uniform sampler2D shadow_map[CASCADES];
 uniform float cascade_ends_clip_space[CASCADES];
 uniform int number_of_tiles_x;
 uniform sampler2D ssao_texture;
+uniform int ssao_on;
 
 layout(binding = 1, std430) buffer  light_buffer
 { 
@@ -121,7 +122,7 @@ void main()
 		normal_vector = normalize(f_TBN * normal_vector);
 	}
 	
-	vec3 ambient = dirlight.ambient * diffuse_color * texture(ssao_texture, gl_FragCoord.xy / vec2(window_width, window_height)).r;
+	vec3 ambient = dirlight.ambient * diffuse_color * (texture(ssao_texture, gl_FragCoord.xy / vec2(window_width, window_height)).r * ssao_on + (1-ssao_on)*0.95);
 	
 	vec3 N = normalize(normal_vector);
 	vec3 L = normalize(-dirlight.direction);

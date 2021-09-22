@@ -5,7 +5,7 @@ in vec2 TexCoords;
 uniform sampler2D depth_texture;
 uniform sampler2D normal_texture;
 uniform sampler2D position_texture;//we dont really need this
-
+uniform sampler2D tex_noise;
 
 uniform mat4 view;
 uniform mat4 proj;
@@ -39,7 +39,8 @@ void main()
 	vec3 positionVS = texture(position_texture, TexCoords).xyz;
 	vec3 normal = texture(normal_texture, TexCoords).xyz;
 	
-	vec3 random_vec = normalize(vec3(rand(TexCoords), rand(TexCoords), rand(TexCoords)));
+	//vec3 random_vec = normalize(vec3(rand(TexCoords), rand(TexCoords), rand(TexCoords)));
+	vec3 random_vec = normalize(texture(tex_noise, TexCoords * 1.0).xyz);
 	//random_vec = normalize(vec3(0.2,0.5,0.3));
 	vec3 tangent = normalize(random_vec - normal * dot(random_vec, normal)); //should be sampled from noise texture
 	vec3 bitangent = cross(normal, tangent);
@@ -49,7 +50,7 @@ void main()
 	float occlusion = 0.0;
 	for (int i = 0; i < KERNEL_SIZE; ++i)
 	{
-		vec3 sample_pos = TBN * kernel[i]/2.0;
+		vec3 sample_pos = TBN * kernel[i];
 		sample_pos = positionVS + sample_pos * RADIUS;
 		
 		vec4 offset = vec4(sample_pos, 1.0);

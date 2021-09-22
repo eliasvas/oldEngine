@@ -36,6 +36,7 @@ global ParticleEmitter pe;
  Engine TODO:
     -Physics Engine (Stabilize current version..)
     -Cascaded Shadow Maps!!!
+    -Clean Shader grammar?!?!?!
     -Fix Bloom effects
     -Light Attenuation and radius stuff
     -IMGUI tweaks (add size member configure events and stuff) 

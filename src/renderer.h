@@ -189,6 +189,10 @@ typedef struct Renderer
   GLuint light_buffer;
   GLuint visible_light_indices_buffer;
   GLuint debug_texture;
+
+
+  //ssao stuff
+  vec3 ssao_kernel[64];
 }Renderer;
 
 void

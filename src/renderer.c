@@ -31,6 +31,41 @@ local_persist f32 screen_verts[] = {
 
 local_persist f32 filled_quad_verts[] = { 0.f,0.f, 0.f,1.f, 1.f,0.f, 1.f,1.f };
 
+internal void renderer_gen_ssao_kernel(Renderer *rend)
+{
+        for(u32 i = 0; i< 64; ++i)
+        {
+            //Note: these are TBN space coordinates!
+            vec3 sample = v3(random01() * 2.f - 1.f, random01() * 2.f - 1.f, random01());
+            sample = vec3_normalize(sample);
+            sample = vec3_mulf(sample, random01());
+            f32 scale = i / 64.f;
+            scale = lerp(0.1f, 1.f, scale * scale); //making samples closer to origin
+            sample = vec3_mulf(sample, scale);
+            rend->ssao_kernel[i] = sample;
+        }
+}
+
+internal void renderer_gen_ssao_noise(Renderer *rend)
+{
+    vec3 ssao_noise[16];
+    for (u32 i = 0; i < 16; ++i)
+    {
+        vec3 noise = v3(random01()* 2.0f - 1.0f, random01() * 2.0f - 1.0f, 0.0f); // rotate around z-axis (in tangent space)
+        ssao_noise[i] = noise;
+    }
+    u32 noise_tex; 
+    glGenTextures(1, &noise_tex);
+    glBindTexture(GL_TEXTURE_2D, noise_tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssao_noise[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    rend->ssao_fbo.color_attachments[3] = noise_tex;
+}
+
+
 void
 renderer_init(Renderer *rend)
 {
@@ -46,7 +81,7 @@ renderer_init(Renderer *rend)
     rend->renderer_settings.debug_mode = FALSE;
     rend->renderer_settings.cascaded_render = TRUE;
     rend->renderer_settings.sdf_fonts = TRUE;
-    rend->renderer_settings.ssao_on = TRUE;
+    rend->renderer_settings.ssao_on = FALSE;
     rend->renderer_settings.gamma = 2.2f;
     rend->renderer_settings.exposure = 1.0f;
 
@@ -81,6 +116,7 @@ renderer_init(Renderer *rend)
     skybox_init(&rend->skybox, faces);
 
 
+    renderer_gen_ssao_kernel(rend);
     //initialize postproc VAO
     {
         GLuint quad_vbo;
@@ -264,7 +300,7 @@ renderer_init(Renderer *rend)
     else
         texture_load(&rend->bmf,"../assets/font.tga");
 
-    //generate debuf texture 
+    //generate debug texture 
     glGenTextures(1, &rend->debug_texture);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, rend->debug_texture);
@@ -274,6 +310,9 @@ renderer_init(Renderer *rend)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, rend->renderer_settings.render_dim.x,rend->renderer_settings.render_dim.y, 0,  GL_RED, GL_FLOAT, 0);
     glBindImageTexture(0, rend->debug_texture, 0, GL_FALSE, 0,  GL_READ_WRITE, GL_R32F); //maybe its GL_R32F??      
+
+    //we change the last color attachment of the ssao fbo to a noise_texture that WILL stay fixed
+    renderer_gen_ssao_noise(rend);
     
 }
 
@@ -454,13 +493,13 @@ renderer_set_ssao_kernel_uniforms(Renderer *rend, Shader *s, vec3 *ssao_kernel)
       if (i < 10)
       {
         kernel_attr[7] = '0'+i;
-        shader_set_vec3(s,kernel_attr, ssao_kernel[i]);
+        shader_set_vec3(s,kernel_attr, rend->ssao_kernel[i]);
       }
       else
       {
         big_kernel_attr[7] = '0'+ (i / 10);
         big_kernel_attr[8] = '0'+ (i % 10);
-        shader_set_vec3(s,big_kernel_attr, ssao_kernel[i]);
+        shader_set_vec3(s,big_kernel_attr, rend->ssao_kernel[i]);
       }
     }
 }
@@ -499,7 +538,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, data.bump->id);
     shader_set_int(&shader[0], "material.bump_map", 2);
-
+    shader_set_int(&shader[0], "ssao_on", rend->renderer_settings.ssao_on);
 
 
     //in case we need the skybox's texture for the rendering
@@ -659,18 +698,6 @@ renderer_end_frame(Renderer *rend)
   //render ssao texture
   if (rend->renderer_settings.ssao_on)
   {
-        vec3 ssao_kernel[64];
-        for(u32 i = 0; i< 64; ++i)
-        {
-            //Note: these are TBN space coordinates!
-            vec3 sample = v3(random01() * 2.f - 1.f, random01() * 2.f - 1.f, random01());
-            sample = vec3_normalize(sample);
-            sample = vec3_mulf(sample, random01());
-            f32 scale = i / 64.f;
-            scale = lerp(0.1f, 1.f, scale * scale); //making samples closer to origin
-            sample = vec3_mulf(sample, scale);
-            ssao_kernel[i] = sample;
-        }
         //now we calculate the SSAO texture, we put it in the ssao fbo using depth + normals from main fbo
         //glBindFramebuffer(GL_FRAMEBUFFER, rend->ssao_fbo.fbo);
         fbo_bind(&rend->ssao_fbo);
@@ -679,6 +706,9 @@ renderer_end_frame(Renderer *rend)
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[2]);
         shader_set_int(&rend->shaders[16],"normal_texture",2);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[3]);
+        shader_set_int(&rend->shaders[16],"noise_texture",3);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[1]);
         shader_set_int(&rend->shaders[16],"position_texture",1);
@@ -691,7 +721,7 @@ renderer_end_frame(Renderer *rend)
         vec3 view_pos = v3(inv_view.elements[3][0],inv_view.elements[3][1],inv_view.elements[3][2]);
         shader_set_vec3(&rend->shaders[16], "view_pos", view_pos); 
 
-        renderer_set_ssao_kernel_uniforms(rend, &rend->shaders[16], ssao_kernel);
+        renderer_set_ssao_kernel_uniforms(rend, &rend->shaders[16], rend->ssao_kernel);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         //after rendering ssao we blur it a bit :)
