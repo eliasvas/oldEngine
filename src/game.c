@@ -34,6 +34,7 @@ global EntityManager entity_manager;
 global ParticleEmitter pe;
 /*
  Engine TODO:
+    -SSAO with data from depth pass (only thing missing is to find view-space position from depth)
     -Physics Engine (Stabilize current version..)
     -Cascaded Shadow Maps!!!
     -Clean Shader grammar?!?!?!
@@ -43,7 +44,6 @@ global ParticleEmitter pe;
     -2D sprites (projected in 3d space) w/animations
     -Make the engine a LIB file
     -Collada Parser Overhaul
-    -SSAO with data from depth pass
     -GI????????
 */
 internal void 

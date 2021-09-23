@@ -13,7 +13,8 @@ void main()
 {
     gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
     TexCoords = aTexCoords;
-	mat4 inv_view_proj = inverse(view) * inverse(proj);
-	vec4 positionWS = inv_view_proj * vec4(aPos, -1, 1);
+	mat4 inv_view_proj = inverse(proj)*inverse(view);
+	vec4 positionWS = inverse(view) * inverse(proj) * vec4(aPos, 1.0, 1.0);
+	
 	view_ray = positionWS.xyz - view_pos;
 }

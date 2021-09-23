@@ -94,8 +94,9 @@ renderer_init(Renderer *rend)
     sprintf(info_log, "max_color_attachments = %i", max_color_attachments);
     */
 
+    //                                                                                                    final color   bright color position_vs(TODO: remove not needed)
     rend->main_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 | FBO_COLOR_1| FBO_COLOR_2 | FBO_DEPTH);
-    rend->ssao_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 |FBO_COLOR_1| FBO_DEPTH);
+    rend->ssao_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
     rend->postproc_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0 |FBO_COLOR_1| FBO_DEPTH);
     rend->ui_fbo = fbo_init(rend->renderer_settings.render_dim.x, rend->renderer_settings.render_dim.y, FBO_COLOR_0);
     rend->shadowmap_fbo[0] = fbo_init(1024*2, 1024*2, FBO_DEPTH);
@@ -703,15 +704,12 @@ renderer_end_frame(Renderer *rend)
         fbo_bind(&rend->ssao_fbo);
         glBindVertexArray(rend->postproc_vao);
         use_shader(&rend->shaders[16]);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[2]);
-        shader_set_int(&rend->shaders[16],"normal_texture",2);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[3]);
         shader_set_int(&rend->shaders[16],"noise_texture",3);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[1]);
-        shader_set_int(&rend->shaders[16],"position_texture",1);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[2]);
+        shader_set_int(&rend->shaders[16],"position_texture",2);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
         shader_set_int(&rend->shaders[16],"depth_texture",0);
