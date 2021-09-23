@@ -39,8 +39,7 @@ global ParticleEmitter pe;
     -Clean Shader grammar?!?!?!
     -Fix Bloom effects
     -Light Attenuation and radius stuff
-    -IMGUI tweaks (add size member configure events and stuff) 
-    -Normal visualization is prb wrong, FIX
+    -Normal visualization in pbr wrong, FIX
     -2D sprites (projected in 3d space) w/animations
     -Make the engine a LIB file
     -Collada Parser Overhaul

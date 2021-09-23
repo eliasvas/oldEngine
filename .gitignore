@@ -1,6 +1,4 @@
 build/*
-*.exe
 *.pdb
 *.exp
-*.lib
 *.dll
