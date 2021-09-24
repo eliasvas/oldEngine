@@ -1,5 +1,5 @@
 #version 330 core
-out vec4 FragColor;
+out vec4 frag_color;
 
 in vec2 f_tex_coord;
 in vec3 f_frag_pos;
@@ -128,5 +128,5 @@ void main()
 		*/
 		color += ((specular + diffuse) + ambient);
 	}
-	FragColor = vec4(color,1.0);
+	frag_color = vec4(color,1.0);
 }

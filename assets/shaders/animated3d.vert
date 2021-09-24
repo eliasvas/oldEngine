@@ -5,7 +5,7 @@ const int MAX_BONES = 3; //max bones for each vertex
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
-layout(location = 2) in vec2 tex_coords;
+layout(location = 2) in vec2 tex_coord;
 layout(location = 3) in ivec3 joint_ids;
 layout(location = 4) in vec3 weights;
 
@@ -39,7 +39,7 @@ void main(){
 	//total_normal = vec4(normal,1.0);
 	gl_Position = proj * view * model * total_local_pos;
 	f_normal = normalize(total_normal.xyz);
-	f_tex_coord = tex_coords;
+	f_tex_coord = tex_coord;
 	f_frag_pos = vec3(model * total_local_pos);
 	f_frag_pos_ls = light_space_matrix * vec4(f_frag_pos, 1.0);
 

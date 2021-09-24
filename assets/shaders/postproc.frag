@@ -1,11 +1,11 @@
 #version 330 core
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 blurred_tex; //just for debugging
-in vec2 TexCoords;
+in vec2 f_tex_coord;
 
-uniform sampler2D screenTexture;
-uniform sampler2D brightTexture;
-uniform sampler2D depthTexture;
+uniform sampler2D screen_texture;
+uniform sampler2D bright_texture;
+uniform sampler2D depth_texture;
 uniform sampler2D ssao_texture;
 
 uniform float flag;
@@ -31,13 +31,13 @@ void main()
 {
 	float g = gamma; //2.2
 	float e = exposure; //1.0
-	float offset = 1.0 / textureSize(brightTexture, 0).x;
-	frag_color = texture(screenTexture, TexCoords);
+	float offset = 1.0 / textureSize(bright_texture, 0).x;
+	frag_color = texture(screen_texture, f_tex_coord);
 	vec3 blurred;
 	for(int i = 1; i < 5; ++i)
     {
-       blurred += texture(brightTexture, TexCoords + vec2(offset.x * i, 0.0)).rgb * weight[i];
-       blurred += texture(brightTexture, TexCoords - vec2(offset.x * i, 0.0)).rgb * weight[i];
+       blurred += texture(bright_texture, f_tex_coord + vec2(offset.x * i, 0.0)).rgb * weight[i];
+       blurred += texture(bright_texture, f_tex_coord - vec2(offset.x * i, 0.0)).rgb * weight[i];
     }
 	///*
 	//frag_color.rgb += blurred;
@@ -59,9 +59,9 @@ void main()
 	
     
 	//frag_color = vec4(KernelColor, 1);
-	gl_FragDepth = linearize_depth(max(0.05,texture(depthTexture, TexCoords).x));
+	gl_FragDepth = linearize_depth(max(0.05,texture(depth_texture, f_tex_coord).x));
 	
-	//frag_color = texture(ssao_texture, TexCoords);
+	//frag_color = texture(ssao_texture, f_tex_coord);
 }
 
 

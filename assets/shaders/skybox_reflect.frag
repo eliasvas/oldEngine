@@ -1,5 +1,5 @@
 #version 330 core
-out vec4 FragColor;
+out vec4 frag_color;
 
 in vec2 f_tex_coord;
 in vec3 f_frag_pos;
@@ -10,5 +10,5 @@ void main()
 {
 	vec3 I = normalize(f_frag_pos - view_pos);
     vec3 R = reflect(I, normalize(f_normal));
-    FragColor = vec4(texture(skybox, R).rgb, 1.0);
+    frag_color = vec4(texture(skybox, R).rgb, 1.0);
 }

@@ -1,5 +1,5 @@
 #version 330 core
-out vec4 FragColor;
+out vec4 frag_color;
 
 in vec2 f_tex_coord;
 in vec3 f_frag_pos;
@@ -76,7 +76,7 @@ float shadow_calc()
 
 void main()
 {
-	FragColor = texture(material.diffuse_map, f_tex_coord);
+	frag_color = texture(material.diffuse_map, f_tex_coord);
 	return;
 	vec3 ambient = dirlight.ambient * vec3(texture(material.diffuse_map,f_tex_coord));
 	
@@ -126,5 +126,5 @@ void main()
 		specular *= attenuation * 0.02;
 		color += ((specular + diffuse) + ambient);
 	}
-	FragColor = vec4(color,texture(material.diffuse_map,f_tex_coord).a);
+	frag_color = vec4(color,texture(material.diffuse_map,f_tex_coord).a);
 }

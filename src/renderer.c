@@ -727,7 +727,7 @@ renderer_end_frame(Renderer *rend)
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, rend->ssao_fbo.color_attachments[0]);
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        shader_set_int(&rend->shaders[16],"screenTexture",0);
+        shader_set_int(&rend->shaders[16],"screen_texture",0);
 
 
         glBindVertexArray(0);
@@ -877,13 +877,13 @@ renderer_end_frame(Renderer *rend)
     glBindVertexArray(rend->postproc_vao);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[0]);
-    shader_set_int(&rend->shaders[2],"screenTexture",1);
+    shader_set_int(&rend->shaders[2],"screen_texture",1);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, rend->main_fbo.color_attachments[1]);
-    shader_set_int(&rend->shaders[2],"brightTexture",2);
+    shader_set_int(&rend->shaders[2],"bright_texture",2);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, rend->main_fbo.depth_attachment);
-    shader_set_int(&rend->shaders[2],"depthTexture",0);
+    shader_set_int(&rend->shaders[2],"depth_texture",0);
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, rend->ssao_fbo.color_attachments[0]);
     shader_set_int(&rend->shaders[2],"ssao_texture",3);
