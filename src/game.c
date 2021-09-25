@@ -37,7 +37,6 @@ global ParticleEmitter pe;
     -SSAO with data from depth pass (only thing missing is to find view-space position from depth)
     -Physics Engine (Stabilize current version..)
     -Cascaded Shadow Maps!!!
-    -Clean Shader grammar?!?!?!
     -Fix Bloom effects
     -Light Attenuation and radius stuff
     -Normal visualization in pbr wrong, FIX

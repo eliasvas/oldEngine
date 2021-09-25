@@ -49,6 +49,7 @@ typedef struct RendererFilledRect
     vec3 offset;
     vec2 dim; //width and height of rect
     vec4 color;
+    i32 texture_unit; //in renderer?
 }RendererFilledRect;
 
 typedef struct RendererBillboard
@@ -56,6 +57,8 @@ typedef struct RendererBillboard
     vec3 center;
     vec4 color;
     vec2 dim;
+    //tex_coordinates
+    //tex_unit
     //maybe add texture info later :)
 }RendererBillboard;
 

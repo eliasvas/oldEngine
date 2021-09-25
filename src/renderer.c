@@ -147,15 +147,18 @@ renderer_init(Renderer *rend)
         glEnableVertexAttribArray(1);
         //this buffer should be update with the contents of filled rect instance data before rendering
         glBindBuffer(GL_ARRAY_BUFFER, rend->filled_rect_instance_vbo);
-        glVertexAttribPointer(1,3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(0 * sizeof(float)));
+        glVertexAttribPointer(1,3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void *)(0 * sizeof(float)));
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2,2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(3 * sizeof(float)));
+        glVertexAttribPointer(2,2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void *)(3 * sizeof(float)));
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3,4, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(5 * sizeof(float)));
+        glVertexAttribPointer(3,4, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void *)(5 * sizeof(float)));
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4,1, GL_INT, GL_FALSE, 10 * sizeof(float), (void *)(9 * sizeof(float)));
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glVertexAttribDivisor(1,1);
         glVertexAttribDivisor(2,1);
         glVertexAttribDivisor(3,1);
+        glVertexAttribDivisor(4,1);
     }
     //initialize point vao
     {
@@ -972,9 +975,16 @@ void renderer_push_animated_model(Renderer *rend, AnimatedModel *m)
 
 void renderer_push_filled_rect(Renderer *rend, vec3 pos, vec2 dim, vec4 color)
 {
-    RendererFilledRect rect = (RendererFilledRect){pos, dim, color};
+    RendererFilledRect rect = (RendererFilledRect){pos, dim, color, 0};
     rend->filled_rect_instance_data[rend->filled_rect_alloc_pos++] = rect;
 }
+
+void renderer_push_textured_rect(Renderer *rend, vec3 pos, vec2 dim, vec4 tex_coords, u32 texture_unit)
+{
+    RendererFilledRect rect = (RendererFilledRect){pos, dim, tex_coords, texture_unit};
+    rend->filled_rect_instance_data[rend->filled_rect_alloc_pos++] = rect;
+}
+
 
 void renderer_push_text(Renderer *rend, vec3 pos, vec2 dim, char *str)
 {

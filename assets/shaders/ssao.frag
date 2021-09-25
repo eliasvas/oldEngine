@@ -68,7 +68,7 @@ void main()
 		offset = proj * offset;
 		offset.xyz /= offset.w;
 		offset.xyz = offset.xyz * 0.5 + 0.5;
-		float sample_depth = texture(position_texture, offset.xy).z;
+		float sample_depth = (texture(position_texture, offset.xy).z);
 		
 		occlusion += (sample_depth >= sample_pos.z + 0.1 ? 1.0 : 0.0);
 	}

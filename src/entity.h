@@ -17,6 +17,7 @@ typedef struct PositionComponent
    vec3 position; 
 }PositionComponent;
 
+//PositionManager is just a dummy manager for me to remember how this whole thing works!
 typedef struct PositionManager
 {
     PositionComponent positions[MAX_COMPONENTS];
@@ -25,69 +26,92 @@ typedef struct PositionManager
     EntityHashMap table;
 }PositionManager;
 
-//creates an empty component of type position TODO generalize?
+//entity_add_x creates an empty component of type x 
 internal PositionComponent*
 entity_add_pos(PositionManager *manager, Entity entity)
 {
-  // INVALID_ENTITY is not allowed!
+  // INVALID_ENTITY(0) is not allowed!
   assert(entity != INVALID_ENTITY);
 
   // Only one of this component type per entity is allowed!
   //assert(lookup_hashmap(&manager->table, entity) == -1);
 
-  // Update the entity lookup table:
+  // Insert this entity in the hashmap lookup table, {entity, manager->next_index}
+  // We need the hashmap so we can do fast lookup, for example if we want to query the position component of some entity!
   hashmap_insert(&manager->table, entity, manager->next_index);
 
-  // New components are always pushed to the end:
+  // New components are always pushed to the end (we make an empty position to return)
   manager->positions[manager->next_index] = (PositionComponent){0}; 
 
-  // Also push corresponding entity:
+  // We put the entity id as the entity for the current index (manager->next_index)
   manager->entities[manager->next_index] = entity;
 
+  // Finally we return the empty position so that the invoker can initialize
+  // AND we increment the next_index for the Manager so that its ready for a new Component initialization!
   return &manager->positions[manager->next_index++];
 }
 
-//removes an entity and its component from the manager's data TODO generalize?
+//entity_remove_x removes an entity and its component from the manager's data
 internal void 
 entity_remove_pos(PositionManager* manager, Entity entity)
 {
-  u32 index = hashmap_lookup(&manager->table, entity);
-  if (index != -1)
-  {
-    // Directly index into components and entities array:
-    Entity entity = manager->entities[index];
 
-    if (index < manager->next_index)
+    // First we do a lookup to find the index where the entities' component is
+    // inside the Managers' data array.
+    u32 index = hashmap_lookup(&manager->table, entity);
+    // If (index == -1) then there is no component for that entity
+    // on the manager we are looking to remove, so we do nothing.
+    if (index != -1)
     {
-      // Swap out the dead element with the last one:
-      manager->positions[index] = manager->positions[manager->next_index-1];// try to use move
-      manager->entities[index] = manager->entities[manager->next_index-1];
+        Entity entity = manager->entities[index];
 
-      //NOTE: this is not ver performant..
-      hashmap_remove(&manager->table,entity);
-      hashmap_remove(&manager->table,manager->entities[index]);
-      hashmap_insert(&manager->table,manager->entities[index], index); 
+        // If the component was found, we see if (index < manager->next_index), making sure
+        // it is a real component and not garbage or something we already have deleted.
+        if (index < manager->next_index)
+        {
+          // Swap out the dead element with the last one (which is a valid component) in its place.
+          manager->positions[index] = manager->positions[manager->next_index-1];
+          manager->entities[index] = manager->entities[manager->next_index-1];
+
+          // Delete the old entity id from the hashmap so if we try to index/remove it
+          // again nothing will be found, then do the same thing for the last element
+          // since it moved to the deleted entities place and FINALLY and most importantly
+          // we add to the hashmap the pair {entities[index], index}, which is the last component
+          // we swapped and its corresponding index in the Managers array!
+          hashmap_remove(&manager->table,entity);
+          hashmap_remove(&manager->table,manager->entities[index]);
+          hashmap_insert(&manager->table,manager->entities[index], index); 
+        }
+
+        // At the end we shrink the container, making the last element we swapped simple garbage
+        manager->next_index--;
     }
-
-    //shrink the container 
-    manager->next_index--;
-  }
 }
 
 internal PositionComponent* 
 entity_get_pos(PositionManager *manager, Entity entity)
 {
+    // We lookup the managers' hashmap to find the component
+    // corresponding to Entity entity
     i32 index = hashmap_lookup(&manager->table, entity);
+
+    // If (index != -1), it means we found a component for this entity
     if (index != -1)
     {
         return &manager->positions[index];
     }
+
+    // If (index == -1) no such component was found so we just return NULL
     return NULL;
 }
+// x_manager_init makes a manager of type x
 internal void
 position_manager_init(PositionManager *manager)
 {
+    // First we create a hashmap for the {entity, index} mappings
     manager->table = hashmap_create(20);
+    // Then we make the next_index 0, so that we can write new components
+    // to the managers' array starting from position 0 (the start of the array :P)
     manager->next_index = 0;
 }
 
