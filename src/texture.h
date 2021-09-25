@@ -5,14 +5,25 @@
 
 
 
+typedef enum IMAGE_FORMAT
+{
+    RGB = 1,
+    RGBA,
+    IMAGE_FORMATS_COUNT,
+}IMAGE_FORMAT;
+
 typedef struct Texture 
 {
+    char name[64];
     GLuint id;
     u32 width;
     u32 height;
+    f32 *image_data;
+    b32 has_mips;
+    IMAGE_FORMAT format;
 }Texture;
 
-internal b32 texture_load(Texture* tex,const char *filename)
+internal b32 texture_load(Texture* tex,char *filename)
 {
     b32 result = 0;
     glGenTextures(1, &tex->id);
@@ -30,12 +41,15 @@ internal b32 texture_load(Texture* tex,const char *filename)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, image->width, image->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->image_data);
         glGenerateMipmap(GL_TEXTURE_2D);
+        tex->has_mips = TRUE;
+        tex->format = RGBA;
         result = 1;
     }else
       sprintf(error_log, "Texture: %s not found!", filename);
     tga_destroy(image);
     tex->width = image->width;
     tex->height = image->height;
+    sprintf(tex->name, filename);
     return result;
 }
 
@@ -71,5 +85,103 @@ internal b32 texture_load_default(Texture* tex, vec4 color)
     tex->height = 512;
     return result;
 }
+
+
+
+typedef struct TextureHandle
+{
+   u32 handle; // :) 
+}TextureHandle;
+
+#define MAX_TEXTURES 256 
+#define INVALID_HANDLE 0
+
+typedef struct TextureManager
+{
+    Texture textures[MAX_TEXTURES];
+    TextureHandle handles[MAX_TEXTURES];
+    u32 next_index; //this is index in the textures array
+    u32 next_handle; //this is for texture handles
+    IntHashMap table; //{TextureHandle, index} pairs
+}TextureManager;
+
+internal TextureHandle tm_gen_handle(TextureManager *manager)
+{
+    TextureHandle handle;
+    handle.handle = manager->next_handle++;
+}
+
+internal TextureHandle
+tm_load_texture(TextureManager *manager, char *filename)
+{
+  TextureHandle handle = tm_gen_handle(manager);
+  assert(handle.handle != INVALID_HANDLE);
+
+  hashmap_insert(&manager->table, handle.handle, manager->next_index);
+
+  manager->textures[manager->next_index] = (Texture){0}; 
+  manager->handles[manager->next_index] = handle;
+
+  //load the texture
+  texture_load(&manager->textures[manager->next_index],filename);
+
+  //return a handle to it
+  return manager->handles[manager->next_index++];
+}
+
+internal void 
+tm_remove_texture(TextureManager* manager, TextureHandle handle)
+{
+    u32 index = hashmap_lookup(&manager->table, handle.handle);
+
+    //if texture not found we dont need to do anything
+    if (index != -1)
+    {
+
+        if (index < manager->next_index)
+        {
+          manager->textures[index] = manager->textures[manager->next_index-1];
+          manager->handles[index] = manager->handles[manager->next_index-1];
+
+          hashmap_remove(&manager->table,handle.handle);
+          hashmap_remove(&manager->table,manager->handles[index].handle);
+          hashmap_insert(&manager->table,manager->handles[index].handle, index); 
+        }
+
+        manager->next_index--;
+    }
+}
+
+internal Texture* 
+tm_get_texture(TextureManager *manager, TextureHandle handle)
+{
+    i32 index = hashmap_lookup(&manager->table, handle.handle);
+
+    if (index != -1)
+    {
+        return &manager->textures[index];
+    }
+
+    return NULL;
+}
+
+global TextureManager tm;
+
+internal void
+tm_init(TextureManager *manager)
+{
+    manager->table = hashmap_create(20);
+    manager->next_index = 0;
+    manager->next_handle = 1;
+}
+
+internal void
+tm_bind(TextureManager *manager, TextureHandle handle, u32 texture_slot)
+{
+    glActiveTexture(GL_TEXTURE0 + texture_slot);
+    glBindTexture(GL_TEXTURE_2D, tm_get_texture(manager, handle)->id);
+}
+
+
 
 #endif

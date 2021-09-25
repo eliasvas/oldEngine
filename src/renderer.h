@@ -178,7 +178,7 @@ typedef struct Renderer
   Material default_material;
   Skybox skybox;
   Texture white_texture;
-  Texture bmf;
+  TextureHandle bmf;
   mat4 view;
   mat4 proj;
 
