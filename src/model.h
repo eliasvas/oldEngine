@@ -119,10 +119,12 @@ model_init_cube_simple(Model* m, mat4 model_matrix)
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
     m->meshes[0].material = material_default();
-    texture_load_default(&(m->meshes[0].material.diff), v4(0.95,0.95,0.95,1));
+    //texture_load_default(&(m->meshes[0].material.diff), v4(0.95,0.95,0.95,1));
+    m->meshes[0].material.diff = tm_load_texture(&tm,"../assets/texture.tga");
     m->meshes[0].material.has_diffuse_map = TRUE;
     //texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
-    texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
+    //texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
+    m->meshes[0].material.spec= tm_load_texture(&tm,"../assets/white.tga");
     m->meshes[0].material.has_specular_map= FALSE;
       
 }
@@ -205,10 +207,11 @@ ADD_CUBE_VERTEX:
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
     m->meshes[0].material = material_default();
-    texture_load_default(&(m->meshes[0].material.diff), v4(0.95,0.95,0.95,1));
-    m->meshes[0].material.has_diffuse_map = TRUE;
+    //texture_load_default(&(m->meshes[0].material.diff), v4(0.95,0.95,0.95,1));
+    m->meshes[0].material.diff = tm_load_texture(&tm,"../assets/texture.tga");
+    m->meshes[0].material.has_diffuse_map = FALSE;
     //texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
-    texture_load(&(m->meshes[0].material.spec),"../assets/white.tga");
+    m->meshes[0].material.spec = tm_load_texture(&tm,"../assets/white.tga");
     m->meshes[0].material.has_specular_map= FALSE;
       
 }
@@ -335,8 +338,8 @@ model_init_sphere(Model* m, f32 radius, u32 sectors, u32 stacks)
 
     shader_load(&m->s,"../assets/shaders/mesh.vert","../assets/shaders/mesh.frag");
     m->meshes[0].material = material_default();
-    //texture_load(&(m->meshes[0].material.diff),"../assets/mars.tga");
-    texture_load_default(&(m->meshes[0].material.diff), v4(random01()*2,random01()*2,random01()*2,random01()));
+    //texture_load_default(&(m->meshes[0].material.diff), v4(random01()*2,random01()*2,random01()*2,random01()));
+    m->meshes[0].material.diff = tm_load_texture(&tm,"../assets/texture.tga");
     m->meshes[0].material.has_diffuse_map = TRUE;
     m->meshes[0].material.has_specular_map= FALSE;
       
@@ -355,7 +358,7 @@ model_info_init(char *mtl_filepath)
   materials = ALLOC(sizeof(Material) * materials_count);
   mtl_read(mtl_filepath, materials);
   //2. read all different meshes AND their materials and initialize the MeshInfo **mesh
-  char objpath[32];
+  char objpath[64];
   u32 filepath_size = str_size(mtl_filepath);
   memcpy(objpath, mtl_filepath, str_size(mtl_filepath));
   objpath[filepath_size] = '\0';
@@ -383,13 +386,11 @@ model_render(Model *m)
 
     for (u32 i = 0; i < m->mesh_count; ++i)
     {
-   
-      shader_set_int(&m->s, "sampler", 0);
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, m->meshes[i].material.diff.id);
-      shader_set_int(&m->s, "m.specular", 1);
-      glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_2D, m->meshes[i].material.spec.id);
+      tm_bind(&tm, m->meshes[i].material.diff, 0);
+      shader_set_int(&m->s, "sampler",0);
+
+      tm_bind(&tm, m->meshes[i].material.spec, 1);
+      shader_set_int(&m->s, "m.specular",1);
 
       glBindVertexArray(m->meshes[i].vao);
       //glDrawArrays(GL_TRIANGLES,0, m->meshes[i].vertices_count);

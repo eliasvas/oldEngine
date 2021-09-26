@@ -36,6 +36,7 @@ global ParticleEmitter pe;
  Engine TODO:
     -SSAO with data from depth pass (only thing missing is to find view-space position from depth)
     -Physics Engine (Stabilize current version..)
+    -Make Hashmap cache friendly :D
     -Cascaded Shadow Maps!!!
     -Fix Bloom effects
     -Light Attenuation and radius stuff
@@ -48,11 +49,11 @@ global ParticleEmitter pe;
 internal void 
 init(void)
 {
+    renderer_init(&rend);
     entity_manager_init(&entity_manager);
     scene_init("../assets/base.txt", &entity_manager);
 
     model_init_cube(&debug_cube, m4d(1.f));
-    renderer_init(&rend);
     model_init_cube(&light_cube, m4d(1.f));
     model_init_sphere(&sphere, 2.f, 50,50);
     model = model_info_init("../assets/arena/arena.mtl");

@@ -38,9 +38,9 @@ typedef struct RendererModelData
   mat4 model;
   GLuint model_vao;
   u32 model_vertex_count;
-  Texture *diff;
-  Texture *spec;
-  Texture *bump;
+  TextureHandle diff;
+  TextureHandle spec;
+  TextureHandle bump;
   Material *material;
 }RendererModelData;
 

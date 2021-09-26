@@ -23,18 +23,19 @@ typedef struct Material
     f32 shininess;
     f32 specular_exponent; //how big the specular highlight will be, typically [1,256]
     f32 IOR; //index of refracion
-    Texture diff;
+    TextureHandle diff;
     b32 has_diffuse_map;
-    Texture spec;
+    TextureHandle spec;
     b32 has_specular_map;
-    Texture bump;
+    TextureHandle bump;
     b32 has_bump_map;
 }Material;
+
 internal Material 
 material_default(void)
 {
   Material material = (Material){0};
-  material.ambient = v3(0.1f,0.1f,0.1f);
+  material.ambient = v3(0.2f,0.2f,0.1f);
   material.diffuse = v3(0.8f,0.8f,0.8f);
   material.specular = v3(1.0f,1.0f,1.0f);
   material.emmisive = v3(0.3,0.3,0.3);
@@ -42,8 +43,6 @@ material_default(void)
   material.has_diffuse_map = FALSE;
   material.has_specular_map = FALSE;
   material.has_bump_map = FALSE;
-  material.diff = (Texture){0};
-  material.spec = (Texture){0};
   material.IOR = 0;
 }
 
@@ -160,7 +159,8 @@ internal void mtl_read(char *mtl_filepath, Material *materials)
                 materials[material_offset] = material_default();
                 fscanf(file, "%s", line);
                 memcpy(&materials[material_offset].name, line, str_size(line)+1);
-                texture_load(&(materials[material_offset].spec),"../assets/white.tga");
+                //texture_load(&tm, &(materials[material_offset].spec),"../assets/white.tga");
+                materials[material_offset].spec = tm_load_texture(&tm,"../assets/white.tga");
                 materials[material_offset].has_specular_map = FALSE;
             }
             else if (strcmp(line, "Ka") == 0)
@@ -206,7 +206,8 @@ internal void mtl_read(char *mtl_filepath, Material *materials)
               }
               memcpy(diff, mtl_filepath,file_index+1);
               memcpy(diff + file_index+1, line, str_size(line)+1);
-              texture_load(&(materials[material_offset].diff),diff);
+              //texture_load(&(materials[material_offset].diff),diff);
+              materials[material_offset].diff= tm_load_texture(&tm,diff);
               materials[material_offset].has_diffuse_map = TRUE;//!!
               //sprintf(error_log, "%s", diff);
             }
@@ -225,7 +226,8 @@ internal void mtl_read(char *mtl_filepath, Material *materials)
               }
               memcpy(bump, mtl_filepath,file_index+1);
               memcpy(bump + file_index+1, line, str_size(line)+1);
-              texture_load(&(materials[material_offset].bump),bump);
+              //texture_load(&(materials[material_offset].bump),bump);
+              materials[material_offset].bump= tm_load_texture(&tm,bump);
               materials[material_offset].has_bump_map = TRUE;//!!
             }
 
@@ -409,17 +411,16 @@ internal MeshInfo *obj_read(char *objpath, Material *materials)
         faces_start = faces_count;
       }
       current_mesh++;
-      char mtl_name[32];
+      char mtl_name[64];
       fscanf(file, "%s",mtl_name);
       Material found = {0};
       for (u32 i = 0; i < 32;++i) //TODO this is BAAAD why 32
-       if (strcmp(materials[i].name, mtl_name) == 0)
-       {
-           found = materials[i]; 
-           break;
-       }
-      meshes[current_mesh].material = found;
-    }
+          if (strncmp(materials[i].name, mtl_name, minimum(str_size(mtl_name), str_size(materials[i].name))) == 0)
+          {
+             meshes[current_mesh].material = materials[i];
+             break;
+          }
+      }
   }
 
 

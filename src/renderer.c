@@ -69,8 +69,8 @@ internal void renderer_gen_ssao_noise(Renderer *rend)
 void
 renderer_init(Renderer *rend)
 {
-    camera_init(&rend->cam);
     tm_init(&tm);
+    camera_init(&rend->cam);
     rend->multisampling = FALSE;
     rend->multisampling_count = 2;
     rend->depthpeeling = FALSE;
@@ -534,15 +534,16 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
 
 
     use_shader(&shader[0]);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, data.diff->id);
-    shader_set_int(&shader[0], "material.diffuse_map", 0);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, data.spec->id);
-    shader_set_int(&shader[0], "material.specular_map", 1);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, data.bump->id);
-    shader_set_int(&shader[0], "material.bump_map", 2);
+
+    tm_bind(&tm, data.diff, 0);
+    shader_set_int(&shader[0], "material.diffuse_map",0);
+
+    tm_bind(&tm, data.spec, 1);
+    shader_set_int(&shader[0], "material.specular_map",1);
+
+    tm_bind(&tm, data.bump, 2);
+    shader_set_int(&shader[0], "material.bump_map",2);
+
     shader_set_int(&shader[0], "ssao_on", rend->renderer_settings.ssao_on);
 
 
@@ -946,9 +947,9 @@ void renderer_push_model(Renderer *rend, Model *m)
     data.model = m->model;
     data.model_vao = m->meshes[i].vao;
     data.model_vertex_count = m->meshes[i].vertices_count;
-    data.diff = &m->meshes[i].material.diff;
-    data.spec = &m->meshes[i].material.spec;
-    data.bump = &m->meshes[i].material.bump;
+    data.diff = m->meshes[i].material.diff;
+    data.spec = m->meshes[i].material.spec;
+    data.bump = m->meshes[i].material.bump;
     data.material = &m->meshes[i].material;
     rend->model_instance_data[rend->model_alloc_pos++] = data;
   }

@@ -356,6 +356,7 @@ internal void mouse_pick_phys(SimulationWorld *manager, Renderer *rend)
         i32 collision = intersect_ray_sphere_simple(r, (Sphere){pos, 0.5f});
         if (collision && global_platform.right_mouse_down || last_entity_pressed == i)
         {
+            sprintf(info_log, "collision at: %f", global_platform.current_time);
             //sprintf(error_log, "good collision, mouse_dt = %f, %f", global_platform.mouse_dt.x, global_platform.mouse_dt.y);
             last_entity_pressed = i;
             vec3 right = vec3_normalize(vec3_cross(rend->cam.front,rend->cam.up));

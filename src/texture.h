@@ -2,8 +2,8 @@
 #define TEXTURE_H
 
 #include "tools.h"
-
-
+#include "platform.h" //just for the OpenGL function pointers
+extern char info_log[512]; 
 
 typedef enum IMAGE_FORMAT
 {
@@ -46,7 +46,7 @@ internal b32 texture_load(Texture* tex,char *filename)
         result = 1;
     }else
       sprintf(error_log, "Texture: %s not found!", filename);
-    tga_destroy(image);
+    //tga_destroy(image);
     tex->width = image->width;
     tex->height = image->height;
     sprintf(tex->name, filename);
@@ -93,7 +93,7 @@ typedef struct TextureHandle
    u32 handle; // :) 
 }TextureHandle;
 
-#define MAX_TEXTURES 256 
+#define MAX_TEXTURES 1024 
 #define INVALID_HANDLE 0
 
 typedef struct TextureManager
@@ -109,6 +109,7 @@ internal TextureHandle tm_gen_handle(TextureManager *manager)
 {
     TextureHandle handle;
     handle.handle = manager->next_handle++;
+    return handle; //:)
 }
 
 internal TextureHandle
@@ -124,6 +125,7 @@ tm_load_texture(TextureManager *manager, char *filename)
 
   //load the texture
   texture_load(&manager->textures[manager->next_index],filename);
+  sprintf(info_log, "number of textures in manager: %i", manager->next_index+1);
 
   //return a handle to it
   return manager->handles[manager->next_index++];
@@ -165,7 +167,7 @@ tm_get_texture(TextureManager *manager, TextureHandle handle)
     return NULL;
 }
 
-global TextureManager tm;
+TextureManager tm;
 
 internal void
 tm_init(TextureManager *manager)
@@ -178,8 +180,12 @@ tm_init(TextureManager *manager)
 internal void
 tm_bind(TextureManager *manager, TextureHandle handle, u32 texture_slot)
 {
-    glActiveTexture(GL_TEXTURE0 + texture_slot);
-    glBindTexture(GL_TEXTURE_2D, tm_get_texture(manager, handle)->id);
+    if (handle.handle > 1024)return;
+    if (handle.handle) //if (handle.handle == 0) this texture is invalid
+    {
+        glActiveTexture(GL_TEXTURE0 + texture_slot);
+        glBindTexture(GL_TEXTURE_2D, tm_get_texture(manager, handle)->id);
+    }
 }
 
 
