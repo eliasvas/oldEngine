@@ -25,6 +25,8 @@ typedef struct Texture
 
 internal b32 texture_load(Texture* tex,char *filename)
 {
+    if (strcmp(filename, "def") == 0)
+        return texture_load_default(tex, v4(0.8f,0.8f,0.8f,1.0f));
     b32 result = 0;
     glGenTextures(1, &tex->id);
     glBindTexture(GL_TEXTURE_2D, tex->id);
@@ -83,6 +85,7 @@ internal b32 texture_load_default(Texture* tex, vec4 color)
     free(data);
     tex->width = 512;
     tex->height = 512;
+    sprintf(tex->name, "def");
     return result;
 }
 
@@ -115,6 +118,15 @@ internal TextureHandle tm_gen_handle(TextureManager *manager)
 internal TextureHandle
 tm_load_texture(TextureManager *manager, char *filename)
 {
+  //if the texture exists already, return a handle to dat!
+  char *default_filename = "def"; //maybe memory leak? @check
+  if (filename == NULL)filename = &default_filename[0];
+  
+  for (u32 i = 0; i< manager->next_index; ++i)
+  {
+      if (strcmp(filename, manager->textures[i].name) == 0)
+          return manager->handles[i];
+  }
   TextureHandle handle = tm_gen_handle(manager);
   assert(handle.handle != INVALID_HANDLE);
 
@@ -180,7 +192,7 @@ tm_init(TextureManager *manager)
 internal void
 tm_bind(TextureManager *manager, TextureHandle handle, u32 texture_slot)
 {
-    if (handle.handle > 1024)return;
+    if (handle.handle > MAX_TEXTURES)return;
     if (handle.handle) //if (handle.handle == 0) this texture is invalid
     {
         glActiveTexture(GL_TEXTURE0 + texture_slot);
