@@ -22,6 +22,7 @@ typedef struct RendererSettings
   b32 cascaded_render;
   b32 sdf_fonts;
   b32 ssao_on;
+  b32 bump_on;
   //for the postproc shader
   f32 gamma;
   f32 exposure;

@@ -152,20 +152,21 @@ render(void)
         if (UI_OPEN)
         {
             u32 e = 10;
-            dui_draw_rect(200 - e, 200 - e, DUI_DEF_X + 2 * e, 150 +2 * e, v4(0.1,0.1,0.1,0.9));
+            dui_draw_rect(200 - e, 150 - e, DUI_DEF_X + 2 * e, 180 +3 * e, v4(0.1,0.1,0.1,0.9));
             char ms[64];
             sprintf(ms, "samples: %i", rend.multisampling_count);
 
             dui_slider_text(GEN_ID, 200 ,300, 8,ms, &rend.multisampling_count);
             dui_switch_text(GEN_ID, (dui_Rect){200,250,DUI_DEF_X,DUI_DEF_Y}, "SSAO", &rend.renderer_settings.ssao_on);
-            if(dui_button_text(GEN_ID, (dui_Rect){200,200,DUI_DEF_X,DUI_DEF_Y}, "blip"))
+            dui_switch_text(GEN_ID, (dui_Rect){200,200,DUI_DEF_X,DUI_DEF_Y}, "BUMP", &rend.renderer_settings.bump_on);
+            if(dui_button_text(GEN_ID, (dui_Rect){200,150,DUI_DEF_X,DUI_DEF_Y}, "blip"))
                 play_sound("../assets/blip.wav");
 
 
 
             sprintf(ms, "%.4f ms", global_platform.dt);
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
-            dui_draw_string(200, 170, info_log);
+            dui_draw_string(200, 120, info_log);
 
         }
     }

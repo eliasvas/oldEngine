@@ -83,6 +83,7 @@ renderer_init(Renderer *rend)
     rend->renderer_settings.cascaded_render = TRUE;
     rend->renderer_settings.sdf_fonts = TRUE;
     rend->renderer_settings.ssao_on = FALSE;
+    rend->renderer_settings.bump_on= FALSE;
     rend->renderer_settings.gamma = 2.2f;
     rend->renderer_settings.exposure = 1.0f;
 
@@ -587,7 +588,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     shader_set_float(&shader[0], "material.shininess", data.material->shininess);
     shader_set_int(&shader[0], "material.has_diffuse_map", data.material->has_diffuse_map);
     shader_set_int(&shader[0], "material.has_specular_map", data.material->has_specular_map);
-    shader_set_int(&shader[0], "material.has_bump_map", data.material->has_bump_map);
+    shader_set_int(&shader[0], "material.has_bump_map", data.material->has_bump_map && rend->renderer_settings.bump_on);
     shader_set_vec3(&shader[0], "material.ambient", data.material->ambient);
     shader_set_vec3(&shader[0], "material.diffuse", data.material->diffuse);
     shader_set_vec3(&shader[0], "material.specular", data.material->specular);
