@@ -144,7 +144,11 @@ render(void)
 
     particle_emitter_render(&pe, &rend);
     dui_frame_begin();
-
+	
+	
+	renderer_push_textured_rect(&rend, v3(0.1,0.1,0), v2(0.3,0.3), v4(0.0f,0.0f,1.f/16.0f,1.0f/16.0f), 1);
+	dui_text_box(GEN_ID, (dui_Rect){400,450,DUI_DEF_X,DUI_DEF_Y * 2}, "this is kind of a text box", str_size("this is kind of a text box"));
+	
     //UI bullshit..
     {
         if (global_platform.key_pressed[KEY_TAB])

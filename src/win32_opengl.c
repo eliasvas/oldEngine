@@ -237,7 +237,7 @@ internal b32 Win32InitOpenGL(HDC* device_context, HINSTANCE Instance){
     //SetPixelFormat(*device_context, pixelFormatID, &PFD); //maybe not needed
 
 
-    const int major_min = 4, minor_min = 3;     
+    const int major_min = 4, minor_min = 4;     
     int  contextAttribs[] = {
         WGL_CONTEXT_MAJOR_VERSION_ARB, major_min,
         WGL_CONTEXT_MINOR_VERSION_ARB, minor_min,

@@ -25,6 +25,7 @@ typedef struct dui_State
     vec2 mouse_pos;
     vec2 mouse_delta;
     b32 mouse_down;
+	f32 accum;
 }dui_State;
 
 typedef struct dui_Layout
@@ -45,6 +46,7 @@ b32 dui_button(DUIID id, dui_Rect rect);
 b32 dui_switch(DUIID id, dui_Rect rect, b32 *value);
 b32 dui_slider(DUIID id, f32 x, f32 y, f32 max, i32 *value);
 b32 dui_slider_text(DUIID id, f32 x, f32 y, f32 max, char *string, i32 *value);
+b32 dui_text_box(DUIID id, dui_Rect rect, char *string, u32 max_letters_to_draw);
 void dui_default(void);
 
 void dui_frame_begin(void);

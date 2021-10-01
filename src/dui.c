@@ -36,6 +36,20 @@ u32 dui_draw_string(i32 x, i32 y, char *string)
     }
     return width;
 }
+u32 dui_draw_stringn(i32 x, i32 y, char *string, u32 max_letters)
+{
+    u32 width = 0;
+	u32 i = 0;
+    while(*string && i < max_letters)
+    {
+        dui_draw_char(x-16, y, *string);
+        width+=10;
+        x+=10;
+        ++string;
+		++i;
+    }
+    return width;
+}
 //return the total width of a string in window pixels
 u32 dui_str_len( char *string)
 {
@@ -119,6 +133,44 @@ b32 dui_switch(DUIID id, dui_Rect rect, b32 *value)
     //#not
     return 0;
 
+}
+
+b32 dui_text_box(DUIID id, dui_Rect rect, char *string, u32 max_letters_to_draw)
+{
+	if (dui_rect_hit(rect))
+    {
+        ui.hot = id;
+        if (ui.active == 0 && ui.mouse_down)
+            ui.active = id;
+    }
+    if (ui.hot == id)
+    {
+        if (ui.active ==id)
+            dui_draw_rect(rect.x, rect.y, rect.w, rect.h, layout.fg);
+        else 
+            dui_draw_rect(rect.x, rect.y, rect.w, rect.h, layout.bg_lite);
+    }
+    else 
+        dui_draw_rect(rect.x, rect.y, rect.w, rect.h, layout.bg);
+	
+	u32 starting_height = rect.y + rect.h - 16;
+	u32 starting_width = rect.x;
+	u32 partitions = dui_str_len(string) / rect.w;
+	for (u32 i = 0; i <=partitions && max_letters_to_draw > 0; ++i)
+	{
+		dui_draw_stringn(starting_width, starting_height, string, minimum(rect.w /10, max_letters_to_draw));
+		starting_height -= 16;
+		string += (u32)rect.w / 10;
+		max_letters_to_draw -= (u32)rect.w / 10;
+	}
+    //user just clicked!
+    if (ui.mouse_down == 0 && ui.hot == id && ui.active == id)
+	{
+		ui.accum = INT_MAX;
+		return 1;
+	}
+    //#not
+    return 0;
 }
 
 b32 dui_slider(DUIID id, f32 x, f32 y, f32 max, i32 *value)
