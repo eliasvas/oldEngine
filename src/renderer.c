@@ -85,6 +85,7 @@ renderer_init(Renderer *rend)
     rend->renderer_settings.ssao_on = FALSE;
     rend->renderer_settings.bump_on= FALSE;
     rend->renderer_settings.gamma = 2.2f;
+    rend->renderer_settings.bright_blur_factor = 0; //blur of bright texture at end of render for spec highlights [0-n]
     rend->renderer_settings.exposure = 1.0f;
 
     //initializing the test sphere
@@ -306,6 +307,9 @@ renderer_init(Renderer *rend)
     else
         rend->bmf = tm_load_texture(&tm,"../assets/font.tga");
 
+    rend->test_tex = tm_load_texture(&tm,"../assets/texture.tga");
+
+
     //generate debug texture 
     glGenTextures(1, &rend->debug_texture);
     glActiveTexture(GL_TEXTURE0);
@@ -370,8 +374,8 @@ void renderer_calc_cascades(Renderer * rend, mat4 *light_space_matrix)
         }
         //sprintf(info_log, "[FRUSTUM]min:<%.2f %.2f %.2f>, max:<%.2f %.2f %.2f>", min.x, min.y, min.z, max.x, max.y, max.z);
 
-        //mat4 ortho_proj = orthographic_proj(min.x, max.x, min.y,max.y, min.z, max.z);
-        mat4 ortho_proj = orthographic_proj(-50,50,-50,50,-50, 50);
+        mat4 ortho_proj = orthographic_proj(min.x, max.x, min.y,max.y, min.z, max.z);
+        //mat4 ortho_proj = orthographic_proj(-50,50,-50,50,-50, 50);
         light_space_matrix[c] = mat4_mul(ortho_proj,light_matrix);
 
         //calculating clip space cascade ends!
@@ -647,13 +651,15 @@ renderer_end_frame(Renderer *rend)
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); 
   }
+
+  //calculate cascades for the RENDERER_CASCADES_COUNT shadow maps! 
+  renderer_calc_cascades(rend, rend->lsms);
+
+
   //first, we render the scene to the depth map
   fbo_bind(&rend->shadowmap_fbo[0]);
   rend->active_lsm = rend->lsms[0];
   renderer_render_scene3D(rend,&rend->shaders[3]);
-
-  //calculate cascades for the RENDERER_CASCADES_COUNT shadow maps! 
-  renderer_calc_cascades(rend, rend->lsms);
 
   if (rend->renderer_settings.cascaded_render)
   {
@@ -734,6 +740,7 @@ renderer_end_frame(Renderer *rend)
         glBindTexture(GL_TEXTURE_2D, rend->ssao_fbo.color_attachments[0]);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         shader_set_int(&rend->shaders[16],"screen_texture",0);
+        shader_set_int(&rend->shaders[16],"blur_factor",4);
 
 
         glBindVertexArray(0);
@@ -896,6 +903,7 @@ renderer_end_frame(Renderer *rend)
     shader_set_mat4fv(&rend->shaders[2], "proj", (GLfloat*)rend->proj.elements);
     shader_set_float(&rend->shaders[2],"gamma",rend->renderer_settings.gamma);
     shader_set_float(&rend->shaders[2],"exposure",rend->renderer_settings.exposure);
+    shader_set_int(&rend->shaders[2],"blur_factor",rend->renderer_settings.bright_blur_factor);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
@@ -911,9 +919,25 @@ renderer_end_frame(Renderer *rend)
 	glDisable(GL_DEPTH_TEST);
     use_shader(&rend->shaders[5]);
 	//binding ALL texture atlases
-	tm_bind(&tm, rend->bmf, 1);
+	tm_bind(&tm, rend->test_tex, 2);
+    shader_set_int(&rend->shaders[5], "sampler[2]",2);
+
+	
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo[0].depth_attachment);
     shader_set_int(&rend->shaders[5], "sampler[1]",1);
 	
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo[0].depth_attachment);
+    shader_set_int(&rend->shaders[5], "sampler[2]",2);
+ 	
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, rend->shadowmap_fbo[0].depth_attachment);
+    shader_set_int(&rend->shaders[5], "sampler[3]",3);
+ 
+
+
+ 
     shader_set_mat4fv(&rend->shaders[5], "view", (GLfloat*)rend->view.elements);
     glBindVertexArray(rend->filled_rect_vao);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, rend->filled_rect_alloc_pos);

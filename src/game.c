@@ -36,15 +36,8 @@ global ParticleEmitter pe;
  Engine TODO:
     -SSAO with data from depth pass (only thing missing is to find view-space position from depth)
     -Physics Engine (Stabilize current version..)
-    -Make Hashmap cache friendly :D
     -Cascaded Shadow Maps!!!
     -Fix Bloom effects
-    -Light Attenuation and radius stuff
-    -Normal visualization in pbr wrong, FIX
-    -2D sprites (projected in 3d space) w/animations
-    -Make the engine a LIB file
-    -Collada Parser Overhaul
-    -GI????????
 */
 internal void 
 init(void)
@@ -144,11 +137,6 @@ render(void)
 
     particle_emitter_render(&pe, &rend);
     dui_frame_begin();
-	
-	
-	renderer_push_textured_rect(&rend, v3(0.1,0.1,0), v2(0.3,0.3), v4(0.0f,0.0f,1.f/16.0f,1.0f/16.0f), 1);
-	dui_text_box(GEN_ID, (dui_Rect){400,450,DUI_DEF_X,DUI_DEF_Y * 2}, "this is kind of a text box", str_size("this is kind of a text box"));
-	
     //UI bullshit..
     {
         if (global_platform.key_pressed[KEY_TAB])
@@ -158,9 +146,9 @@ render(void)
             u32 e = 10;
             dui_draw_rect(200 - e, 150 - e, DUI_DEF_X + 2 * e, 180 +3 * e, v4(0.1,0.1,0.1,0.9));
             char ms[64];
-            sprintf(ms, "samples: %i", rend.multisampling_count);
+            sprintf(ms, "blur: %i", rend.renderer_settings.bright_blur_factor);
 
-            dui_slider_text(GEN_ID, 200 ,300, 8,ms, &rend.multisampling_count);
+            dui_slider_text(GEN_ID, 200 ,300, 8,ms, &rend.renderer_settings.bright_blur_factor);
             dui_switch_text(GEN_ID, (dui_Rect){200,250,DUI_DEF_X,DUI_DEF_Y}, "SSAO", &rend.renderer_settings.ssao_on);
             dui_switch_text(GEN_ID, (dui_Rect){200,200,DUI_DEF_X,DUI_DEF_Y}, "BUMP", &rend.renderer_settings.bump_on);
             if(dui_button_text(GEN_ID, (dui_Rect){200,150,DUI_DEF_X,DUI_DEF_Y}, "blip"))
@@ -172,6 +160,10 @@ render(void)
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
             dui_draw_string(200, 120, info_log);
 
+    renderer_push_textured_rect(&rend, v3(0.f,0.f,0), v2(0.1f,0.1f * global_platform.window_width/global_platform.window_height), v4(0.f,0.f,1.f,1.f), 1);
+    renderer_push_textured_rect(&rend, v3(0.1f,0.f,0), v2(0.1f,0.1f * global_platform.window_width/global_platform.window_height), v4(0.f,0.f,1.f,1.f), 2);
+    renderer_push_textured_rect(&rend, v3(0.2f,0.f,0), v2(0.1f,0.1f * global_platform.window_width/global_platform.window_height), v4(0.f,0.f,1.f,1.f), 3);
+ 
         }
     }
 

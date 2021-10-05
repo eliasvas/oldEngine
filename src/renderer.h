@@ -23,6 +23,7 @@ typedef struct RendererSettings
   b32 sdf_fonts;
   b32 ssao_on;
   b32 bump_on;
+  u32 bright_blur_factor;
   //for the postproc shader
   f32 gamma;
   f32 exposure;
@@ -180,6 +181,7 @@ typedef struct Renderer
   Skybox skybox;
   Texture white_texture;
   TextureHandle bmf;
+  TextureHandle test_tex;
   mat4 view;
   mat4 proj;
 

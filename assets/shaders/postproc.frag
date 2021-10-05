@@ -14,6 +14,7 @@ uniform mat4 proj;
 
 uniform float gamma;
 uniform float exposure;
+uniform int blur_factor;
 float linearize_depth(float d)
 {
 	///*
@@ -31,16 +32,21 @@ void main()
 {
 	float g = gamma; //2.2
 	float e = exposure; //1.0
-	float offset = 1.0 / textureSize(bright_texture, 0).x;
+	float tex_size = 1.0 / textureSize(bright_texture, 0).x;
 	frag_color = texture(screen_texture, f_tex_coord);
-	vec3 blurred;
-	for(int i = 1; i < 5; ++i)
-    {
-       blurred += texture(bright_texture, f_tex_coord + vec2(offset.x * i, 0.0)).rgb * weight[i];
-       blurred += texture(bright_texture, f_tex_coord - vec2(offset.x * i, 0.0)).rgb * weight[i];
-    }
+	vec3 blurred = vec3(0);
+	int blur = blur_factor + 1; //because there is no easy way to make slider go [1-n] :))))))))))))))
+	for(int i = -blur; i < blur; ++i)
+	{
+		for (int j = -blur; j < blur; ++j)
+		{
+			vec2 offset = vec2(float(i), float(j)) * tex_size;
+			blurred += texture(bright_texture, f_tex_coord + offset).xyz;
+		}
+	}
+	blurred = blurred / ((blur*2) * (blur*2));
 	///*
-	//frag_color.rgb += blurred;
+	frag_color.rgb += blurred;
 	
 	frag_color = vec4(pow(frag_color.xyz, vec3(g)), 1.0);
 

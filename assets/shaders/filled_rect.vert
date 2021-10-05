@@ -7,6 +7,7 @@ layout (location = 3) in vec4 color; //we also use color to store texture coordi
 layout (location = 4) in int texture_unit;
 
 out vec4 f_color;
+out vec2 f_tex_coord;
 out flat int f_tex_unit;
 
 uniform mat4 MVP;
@@ -21,4 +22,5 @@ void main()
 	
 	f_color = color;
 	f_tex_unit = texture_unit;
+	f_tex_coord = color.zw * position;
 }

@@ -72,7 +72,7 @@ layout(binding = 2, std430) buffer  visible_index_buffer
 };
 float shadow_calc(int cascade_index)
 {
-	float bias = 0.01;
+	float bias = 0.005;
 	//cascade_index = 0;
 	//bias = max(0.05 * (1.0 - dot(f_normal, dirlight.direction)), 0.005);  
 	// perform perspective divide (if ortho everything stays the same!)
@@ -115,7 +115,6 @@ void main()
 	vec3 specular_color = material.diffuse*(1 - material.has_specular_map) +material.has_specular_map * vec3(texture(material.specular_map,f_tex_coord));
 	
 	vec3 normal_vector = f_normal;
-	
 	if (material.has_bump_map)
 	{
 		normal_vector = texture(material.bump_map, f_tex_coord).xyz;
