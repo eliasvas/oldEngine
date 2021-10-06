@@ -19,13 +19,14 @@ out VS_OUT {
 void main()
 {
     gl_Position = vec4(vertex_pos,1.0);
-	gl_Position = proj * view * model * gl_Position;
+	gl_Position = view * model * gl_Position;
 
 	f_tex_coord = tex_coord;
 
 	f_normal = mat3(transpose(inverse(model))) * n;
+	mat3 normal_matrix = mat3(transpose(inverse(view * model)));
 	f_frag_pos = vec3(model*vec4(vertex_pos,1.0));
 	f_frag_pos_ls = light_space_matrix * vec4(f_frag_pos, 1.0);
 	
-	vs_out.normal = f_normal;
+	vs_out.normal = normalize(vec3(vec4(normal_matrix * n, 0.0)));
 }

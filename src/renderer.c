@@ -79,7 +79,7 @@ renderer_init(Renderer *rend)
     rend->renderer_settings.lighting_disabled = FALSE;
     rend->renderer_settings.light_cull = TRUE;
     rend->renderer_settings.z_prepass = TRUE;
-    rend->renderer_settings.debug_mode = FALSE;
+    rend->renderer_settings.debug_mode = FALSE; //visualizes normals :)
     rend->renderer_settings.cascaded_render = TRUE;
     rend->renderer_settings.sdf_fonts = TRUE;
     rend->renderer_settings.ssao_on = FALSE;

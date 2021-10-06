@@ -37,7 +37,6 @@ global ParticleEmitter pe;
     -SSAO with data from depth pass (only thing missing is to find view-space position from depth)
     -Physics Engine (Stabilize current version..)
     -Cascaded Shadow Maps!!!
-    -Fix Bloom effects
 */
 internal void 
 init(void)
@@ -152,11 +151,17 @@ render(void)
             dui_switch_text(GEN_ID, (dui_Rect){200,250,DUI_DEF_X,DUI_DEF_Y}, "SSAO", &rend.renderer_settings.ssao_on);
             dui_switch_text(GEN_ID, (dui_Rect){200,200,DUI_DEF_X,DUI_DEF_Y}, "BUMP", &rend.renderer_settings.bump_on);
             if(dui_button_text(GEN_ID, (dui_Rect){200,150,DUI_DEF_X,DUI_DEF_Y}, "blip"))
+            {
                 play_sound("../assets/blip.wav");
+                if (rend.renderer_settings.debug_mode == TRUE)
+                    rend.renderer_settings.debug_mode = FALSE;
+                else
+                    rend.renderer_settings.debug_mode = TRUE;
+            }
 
 
 
-            sprintf(ms, "%.4f ms", global_platform.dt);
+            sprintf(ms, "%.2f FPS", 1.f/global_platform.dt);
             renderer_push_text(&rend, v3(0.82,0.90,0.0), v2(0.015,0.025), ms);
             dui_draw_string(200, 120, info_log);
 
