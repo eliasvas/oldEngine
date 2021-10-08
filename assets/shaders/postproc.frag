@@ -58,11 +58,6 @@ void main()
 	
 	
 	
-	
-	
-	
-	
-	
     
 	//frag_color = vec4(KernelColor, 1);
 	gl_FragDepth = linearize_depth(max(0.05,texture(depth_texture, f_tex_coord).x));

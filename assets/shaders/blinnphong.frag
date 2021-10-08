@@ -144,7 +144,7 @@ void main()
 		if (clip_space_z < cascade_ends_clip_space[i])
 		{
 			cascade_index = i; 
-			//diffuse[i] += 0.1f;
+			diffuse[i] += 0.1f;
 			break;
 		}
 	}

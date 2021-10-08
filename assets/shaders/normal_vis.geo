@@ -26,7 +26,6 @@ void build_normals()
 	pos = gl_in[0].gl_Position;
 	gl_Position = pos + vec4(0.0,0.0,0.0,0.0);
 	EmitVertex();
-	
 	gl_Position = pos + vec4(gs_in[2].normal,1);
 	EmitVertex();
 	EndPrimitive();
