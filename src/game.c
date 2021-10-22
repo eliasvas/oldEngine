@@ -171,6 +171,10 @@ render(void)
  
         }
     }
+    renderer_push_textured_rect(&rend, v3(0.f,0.f,0), v2(0.1f,0.1f * global_platform.window_width/global_platform.window_height), v4(0.f,0.f,1.f,1.f), 1);
+    renderer_push_textured_rect(&rend, v3(0.1f,0.f,0), v2(0.1f,0.1f * global_platform.window_width/global_platform.window_height), v4(0.f,0.f,1.f,1.f), 2);
+    renderer_push_textured_rect(&rend, v3(0.2f,0.f,0), v2(0.1f,0.1f * global_platform.window_width/global_platform.window_height), v4(0.f,0.f,1.f,1.f), 3);
+ 
 
     entity_manager_render(&entity_manager, &rend);
     //dui_switch(GEN_ID, (dui_Rect){0,0,100,100}, &UI_OPEN);

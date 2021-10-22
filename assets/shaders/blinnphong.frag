@@ -14,6 +14,7 @@ in vec2 screen_space_pos;
 
 uniform int window_width;
 uniform int window_height;
+uniform mat4 view;
 
 struct Material {
     sampler2D diffuse_map;
@@ -89,6 +90,7 @@ float shadow_calc(int cascade_index)
     float closest_depth = texture(shadow_map[cascade_index], proj_coords.xy).r; 
     // get depth of current fragment from light's perspective
     float current_depth = proj_coords.z;
+	if (current_depth > 1.0)return 0;
     // check whether current frag pos is in shadow
     //float shadow = current_depth - bias > closest_depth  ? 1.0 : 0.0;
 	
@@ -138,10 +140,12 @@ void main()
 	//float spec = pow(max(dot(V,R),0.0),4);
 	vec3 specular = dirlight.specular * spec * specular_color;
 	
-	int cascade_index;
+	int cascade_index = -1;
+	vec4 frag_pos_vs = view * vec4(f_frag_pos, 1.0);
+	float d = abs(frag_pos_vs.z);
 	for (int i = 0; i < CASCADES; ++i)
 	{
-		if (clip_space_z < cascade_ends_clip_space[i])
+		if (d < cascade_ends_clip_space[i])
 		{
 			cascade_index = i; 
 			diffuse[i] += 0.1f;

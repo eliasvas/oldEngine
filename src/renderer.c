@@ -113,7 +113,7 @@ renderer_init(Renderer *rend)
 
     rend->default_material = material_default();
 
-    rend->directional_light = (DirLight){vec3_normalize(v3(-0.3,-0.7,-0.3)),v3(0.2,0.2,0.1),v3(0.8,0.8,0.8),v3(0.8f,0.8f,0.8f)};
+    rend->directional_light = (DirLight){vec3_normalize(v3(-0.4,-0.9,-0.1)),v3(0.2,0.2,0.1),v3(0.8,0.8,0.8),v3(0.8f,0.8f,0.8f)};
     rend->point_light_count = 0;
 
     char **faces= cubemap_default();
@@ -486,7 +486,8 @@ void renderer_calc_cascades(Renderer *rend, mat4 *light_space_matrix)
         mat4 view = rend->view;
 
         frust_get_corners_ws(rend, proj, view, frustum_corners);
-        for (int i = i; i<FRUSTUM_CORNERS_COUNT; ++i)global_frustum_corners[i * (c+1)] = frustum_corners[i];
+        //frust_get_corners_ws(rend, proj, m4d(1.f), frustum_corners);
+        //for (u32 i = 0; i<FRUSTUM_CORNERS_COUNT; ++i) global_frustum_corners[i * (c+1)] = frustum_corners[i];
 
         mat4 light_view = frust_get_light_view(rend, frustum_corners);
 
@@ -534,8 +535,8 @@ renderer_begin_frame(Renderer *rend)
   for (u32 i = 0; i < RENDERER_CASCADES_COUNT; ++i)
   {
       fbo_bind(&rend->shadowmap_fbo[i]);
-      glClear(GL_DEPTH_BUFFER_BIT);
-      //glClearColor(1,1,1,1);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glClearColor(0,0,0,0);
   }
 
 
