@@ -44,6 +44,7 @@ material_default(void)
   material.has_specular_map = FALSE;
   material.has_bump_map = FALSE;
   material.IOR = 0;
+  return material;
 }
 
 

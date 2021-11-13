@@ -1,4 +1,4 @@
-#version 330 core
+#version 440
 
 const int MAX_JOINTS = 55; //max joints in skeleton
 const int MAX_BONES = 3; //max bones for each vertex

@@ -1,4 +1,4 @@
-#version 330 core
+#version 440
 #define MAX_POINT_LIGHTS 512
 #define CASCADES 3
 
@@ -62,6 +62,7 @@ uniform float cascade_ends_clip_space[CASCADES];
 uniform int number_of_tiles_x;
 uniform sampler2D ssao_texture;
 uniform int ssao_on;
+uniform int csm_on;
 
 layout(binding = 1, std430) buffer  light_buffer
 { 
@@ -148,10 +149,11 @@ void main()
 		if (d < cascade_ends_clip_space[i])
 		{
 			cascade_index = i; 
-			diffuse[i] += 0.1f;
+			//diffuse[i] += 0.1f;
 			break;
 		}
 	}
+	if(csm_on == 0)cascade_index = 1;
 	
 	float shadow = shadow_calc(cascade_index);
 	

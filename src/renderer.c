@@ -661,6 +661,7 @@ renderer_render_scene3D(Renderer *rend,Shader *shader)
     shader_set_int(&shader[0], "material.bump_map",2);
 
     shader_set_int(&shader[0], "ssao_on", rend->renderer_settings.ssao_on);
+	shader_set_int(&shader[0], "ssao_on", global_platform.key_pressed[KEY_K]);
 
 
     //in case we need the skybox's texture for the rendering

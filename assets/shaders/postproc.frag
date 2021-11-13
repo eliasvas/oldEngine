@@ -1,4 +1,4 @@
-#version 330 core
+#version 440
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 blurred_tex; //just for debugging
 in vec2 f_tex_coord;

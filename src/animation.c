@@ -186,11 +186,14 @@ animation_controller_update_works(AnimationController *ac)
     {
         local_animated_transforms[i] = m4d(1.f);//mul_mat4(translate_mat4((vec3){0,0,0}), quat_om_angle((vec3){0,1,0}, 0));
     }
+	
 
     //setting every prev joint pose to m4d(1.f)
     for (u32 i = 0; i < ac->model.joint_count; ++i)
     {
+		
         JointKeyFrame current_pose = calc_current_animation_pose(ac, i); 
+		if (current_pose.joint_index > 1000)continue;
         if (ac->fade_blend_percentage < 0.001f)
         {
           ac->prev_pose[current_pose.joint_index] = (JointKeyFrame){0};
@@ -202,6 +205,7 @@ animation_controller_update_works(AnimationController *ac)
     for (u32 i = 0; i < ac->current_animation->joint_anims_count; ++i)
     {
         JointKeyFrame current_pose = calc_current_animation_pose(ac, i); 
+		if (current_pose.joint_index > 1000)continue;
         //JointKeyFrame current_pose = ac->anim->joint_animations[i].keyframes[((int)(global_platform.current_time * 24) % ac->anim->joint_animations[i].keyframe_count)];
         mat4 local_animated_transform = mat4_mul(mat4_translate(current_pose.transform.position), quat_to_mat4(current_pose.transform.rotation));
         local_animated_transforms[current_pose.joint_index] = local_animated_transform;

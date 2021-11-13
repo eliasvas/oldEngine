@@ -1,4 +1,4 @@
-#version 330 core
+#version 440
 layout (location = 0) in vec3 vertex_pos;
 
 out vec3 tex_coord;

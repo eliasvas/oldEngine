@@ -37,14 +37,15 @@ global LARGE_INTEGER fr,st,ft;
 #define SND_RING        0x00100000L /* Treat this as a "ring" from a communications app - don't duck me */
 #define SND_SYSTEM      0x00200000L /* Treat this as a system sound */
 
+
 internal void play_sound(char *path)
 {
-    PlaySound(path,NULL, SND_ASYNC);
+    return;
 }
 
 internal void play_sound_loop(char *path)
 {
-    PlaySound(path,NULL, SND_ASYNC | SND_LOOP);
+    return;
 }
 
 

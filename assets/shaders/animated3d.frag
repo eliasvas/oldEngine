@@ -1,4 +1,4 @@
-#version 330 core
+#version 440
 
 vec2 light_bias = vec2(0.5,0.5); //balance between ambient and diffuse..
 

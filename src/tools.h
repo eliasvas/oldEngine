@@ -98,13 +98,6 @@ cos_32s(f32 x)
     return (c1 + x2*(c2 + c3 * x2));
 }
 
-//this is a horrible implementation change pls
-INLINE f32 fmodf2(f32 a, f32 b)
-{
-    f32 div = a/b;
-    i32 mod = (i32)div;
-    return (f32)mod;
-}
 INLINE f32
 cos_32(f32 x){
     i32 quad; // what quadrant are we in?
@@ -126,12 +119,6 @@ INLINE f32 sin_32(f32 x)
 }
 #define sinf(x) sin_32(x)
 #define cosf(x) cos_32(x)
-INLINE f32 fmodf(f32 a, f32 b)
-{
-    f32 div = a/b;
-    i32 mod = (i32)div;
-    return (f32)mod;
-}
 
 #endif
 

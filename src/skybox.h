@@ -6,16 +6,16 @@
 
 internal char **cubemap_default()
 {
-  char *res[6] = {
-        "../assets/vrb/vrbft.tga",
-                "../assets/vrb/vrbbk.tga",
-        "../assets/vrb/vrbdn.tga", //up
-        "../assets/vrb/vrbup.tga", //dn
-"../assets/vrb/vrbrt.tga",
-        "../assets/vrb/vrblf.tga",
+    char** res = malloc(sizeof(char*) * 100);
+  
+        res[0] = "../assets/vrb/vrbft.tga";
+        res[1] = "../assets/vrb/vrbbk.tga";
+        res[2] = "../assets/vrb/vrbdn.tga";
+        res[3] = "../assets/vrb/vrbup.tga";
+        res[4] = "../assets/vrb/vrbrt.tga";
+        res[5] = "../assets/vrb/vrblf.tga";
 
-  };
-  return res;
+  return (char**)res;
 }
 
 internal u32 

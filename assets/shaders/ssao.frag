@@ -1,4 +1,4 @@
-#version 330 core
+#version 440
 //ssao from depth technique: https://theorangeduck.com/page/pure-depth-ssao
 //general ssao: https://learnopengl.com/Advanced-Lighting/SSAO
 layout (location = 0) out vec4 frag_color;
